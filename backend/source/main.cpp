@@ -1,10 +1,12 @@
 
 #include <iostream>
+#include <thread>
 
 #include <pqxx/pqxx>
 #include "civetweb/CivetServer.h"
 
 #include "args.hpp"
+#include "utils.hpp"
 
 #define DEFAULT_PORT "8080"
 #define DEFAULT_REQUEST_TIMEOUT_TIME_MS "10000"
@@ -44,7 +46,7 @@ mg_context *startCivetweb (ArgsParser &argParser) {
 }
 
 
-int main () {
+int main (int argc, const char *argv[]) {
 	logger.init();
 	logger << std::endl;
 	ArgsParser argParser;
