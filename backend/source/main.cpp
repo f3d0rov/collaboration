@@ -7,6 +7,7 @@
 
 #include "args.hpp"
 #include "utils.hpp"
+#include "resource.hpp"
 
 #define DEFAULT_PORT "8080"
 #define DEFAULT_REQUEST_TIMEOUT_TIME_MS "10000"
@@ -56,6 +57,7 @@ int main (int argc, const char *argv[]) {
 			{
 				ArgOption ("v", "version", "Вывод версии программы"),
 				ArgOption ("h", "help", "Вывод доступных опций"),
+				ArgOption ("i", "index", "Путь к директории с файлами фронтенда", true),
 				ArgOption ("p", "port", "Порт для входящих запросов", true),
 				ArgOption ("", "request-timeout", "Таймаут запросов", true),
 				ArgOption ("", "civetweb-error-log", "Файл для записи ошибок Civetweb", true),
@@ -94,6 +96,8 @@ int main (int argc, const char *argv[]) {
 		logger << "Не получилось запустить CivetWeb" << std::endl;
 		return -1;
 	}
+
+	Resource test (ctx, "test");
 
 	while (1) { // Ждем входящие подключения
 		std::this_thread::sleep_for (std::chrono::seconds (1));

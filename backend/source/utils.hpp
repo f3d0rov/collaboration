@@ -13,7 +13,7 @@
 
 #include <functional>
 
-#define LOG_FILE_PATH "wms_service.log"
+#define LOG_FILE_PATH "collab-server.log"
 
 std::string getCurrentTimeString();
 void chdirToExecutableDirectory (std::string progPath);
