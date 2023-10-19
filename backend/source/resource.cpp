@@ -11,6 +11,11 @@ body (body), status (status) {
 
 }
 
+Response::Response (std::string body, std::string mimeType, int status):
+body (body), status (status), mime (mimeType) {
+
+}
+
 
 Resource::Resource (mg_context* ctx, std::string uri):
 _uri (uri) {
@@ -60,8 +65,9 @@ int Resource::_processRequest (mg_connection* conn) {
 		
 		Response response = this->processRequest (method, uri, body);
 		
-		if (response.status == 200) { 
-			mg_send_http_ok(conn, "application/json; charset=utf-8", response.body.length());
+		if (response.status == 200) {
+			std::string header = response.mime + "; charset=utf-8";
+			mg_send_http_ok(conn, header.c_str(), response.body.length());
 			mg_write (conn, response.body.c_str(), response.body.length());
 			// this->reportRequest (
 			// 	response, uri, method, std::string (ri->remote_addr) + ":" + std::to_string(ri->remote_port), body.length(), usElapsedFrom_hiRes(start)

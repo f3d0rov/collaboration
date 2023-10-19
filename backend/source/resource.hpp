@@ -14,10 +14,12 @@ class Resource;
 class Response {
 	public:
 		std::string body = "";
+		std::string mime = "text/html";
 		int status = 200;
 
 		Response (int status);
 		Response (std::string body, int status = 200);
+		Response (std::string body, std::string mimeType, int status = 200);
 };
 
 
@@ -28,6 +30,7 @@ class Resource {
 		static int _staticProcessRequest (mg_connection* conn, void* cbdata);
 		std::string _readRequestBody (mg_connection* conn);
 		int _processRequest (mg_connection* conn);
+		
 	public:
 		Resource (mg_context *ctx, std::string uri);
 

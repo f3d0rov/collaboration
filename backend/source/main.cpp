@@ -7,11 +7,15 @@
 
 #include "args.hpp"
 #include "utils.hpp"
+
 #include "resource.hpp"
+#include "web_resource.hpp"
 
 #define DEFAULT_PORT "8080"
 #define DEFAULT_REQUEST_TIMEOUT_TIME_MS "10000"
 #define DEFAULT_CIVETWEB_ERROR_LOG_FILE "civetweb-errors.log"
+
+#define DEFAULT_INDEX_DIRECTORY_PATH "../../frontend/"
 
 
 int logCivetwebMessage (const mg_connection *conn, const char *message) {
@@ -31,7 +35,7 @@ mg_context *startCivetweb (ArgsParser &argParser) {
 		0
 	};
 
-	logger << "Starting CivetWeb at port " << port << ", request timeout is " << requestTimeout << " ms" << std::endl;
+	logger << "Запускаем CivetWeb на порте " << port << ", таймаут запроса: " << requestTimeout << " мс" << std::endl;
 
 	mg_callbacks callbacks;
 	memset(&callbacks, 0, sizeof (callbacks)); // Clear the created object
@@ -61,7 +65,8 @@ int main (int argc, const char *argv[]) {
 				ArgOption ("p", "port", "Порт для входящих запросов", true),
 				ArgOption ("", "request-timeout", "Таймаут запросов", true),
 				ArgOption ("", "civetweb-error-log", "Файл для записи ошибок Civetweb", true),
-				ArgOption ("", "dbconfig", "Путь к файлу .json с данными для подключения к PostgreSQL", true)/*,
+				ArgOption ("", "dbconfig", "Путь к файлу .json с данными для подключения к PostgreSQL", true)
+				/*,
 				ArgOption ("", "db-connections", "Number of initial connections to PostgreSQL", true)*/
 			}
 		);
@@ -97,7 +102,10 @@ int main (int argc, const char *argv[]) {
 		return -1;
 	}
 
-	Resource test (ctx, "test");
+	std::string frontendDir = argParser.getArgValue ("index", DEFAULT_INDEX_DIRECTORY_PATH);
+	if (!argParser.hasArg ("index")) chdirToExecutableDirectory (argv[0]);
+
+	SharedDirectory sharedFiles (ctx, frontendDir, false);
 
 	while (1) { // Ждем входящие подключения
 		std::this_thread::sleep_for (std::chrono::seconds (1));
