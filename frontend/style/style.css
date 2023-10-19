@@ -18,29 +18,8 @@ body {
     background-repeat: no-repeat;
     background-attachment: fixed;
 
-	overflow-y: hidden;
-	overflow-x: hidden;
-
 	color: white;
-
 	font-family: 'Oswald', sans-serif;
-}
-
-.titleText {
-	margin-left: auto;
-	margin-right: auto;
-	margin-top: 10%;
-	margin-bottom: 3%;
-
-	width: 100%;
-	text-align: center;
-	
-	color: white;
-
-	font-family: 'Bebas Neue', sans-serif;
-	font-size: 184px;
-
-	transform: rotate(-5deg);
 }
 
 .search {
@@ -103,17 +82,32 @@ body {
 	height: 40px;
 }
 
-.searchSuggestion {
-	color: #aeaeae;
+.search {
+	width: 100%;
+	text-align: center;
+
+	font-size: 30px;
 }
 
-.searchSuggestion a {
-	text-decoration: none;
-	transition: color 0.2s ease-in-out;
+.searchBoxGroup {
+	padding: 10px;
 }
 
-.searchSuggestion a:link, .searchSuggestion a:visited {
-	color: rgb(145, 0, 0);
+#searchBox {
+	display: inline-block;
+
+	font-family: 'Oswald', sans-serif;
+	font-size: 30px;
+
+	width: 40%;
+	padding: 3px;
+	
+	background-color: #330b0b;
+	color: white;
+
+	border-radius: 5px;
+	border: none;
+	vertical-align: middle;
 }
 
 ::placeholder { /* Firefox */
@@ -123,16 +117,40 @@ body {
 }
   
 ::-ms-input-placeholder { /* Edge 12 -18 */
-color: rgb(88, 63, 63);
-text-align: center;
+	color: rgb(88, 63, 63);
+	text-align: center;
 }
 
-.searchSuggestion a:hover {
-	color: rgb(227, 0, 0);
+#searchButton {
+	display: inline-block;
+
+	width: 40px;
+	height: 40px;
+	
+	line-height: 40px;
+	background-color: #330b0b;
+	border-radius: 3px;
+	
+	text-align: center;
+	font-size: 40px;
+
+	padding: 5px;
+	margin: 5px;
+
+	vertical-align: middle;
+
+	cursor: pointer;
+
+	transition: background-color 0.2s ease-in-out;
 }
 
-.searchSuggestion a:active {
-	color: rgb(255, 0, 0);
+#searchButton:hover {
+	background-color: #4b1111;
+}
+
+#searchIcon {
+	width: 40px;
+	height: 40px;
 }
 
 .bottomLeftLinks {
