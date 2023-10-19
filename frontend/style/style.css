@@ -19,6 +19,7 @@ body {
     background-attachment: fixed;
 
 	overflow-y: hidden;
+	overflow-x: hidden;
 
 	color: white;
 
@@ -39,6 +40,7 @@ body {
 	font-family: 'Bebas Neue', sans-serif;
 	font-size: 184px;
 
+	transform: rotate(-5deg);
 }
 
 .search {
