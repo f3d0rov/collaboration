@@ -20,6 +20,8 @@ body {
 
 	color: white;
 	font-family: 'Oswald', sans-serif;
+
+	overflow-y: scroll;
 }
 
 .search {
@@ -194,4 +196,24 @@ body {
 
 	background: linear-gradient(90deg, #150909, 80%, black);
 	box-shadow: rgb(97, 0, 0) 0 1px 25px;
+
+	top: 0px;
+	left: 0px;
+}
+
+.page {
+	display: block;
+	width: 80%;
+	/* height: 1250px; */
+	
+	background-color: #130d0d;
+
+	margin-top: 100px;
+	margin-left: auto;
+	margin-right: auto;
+	padding: 10px;
+
+	border-radius: 10px;
+
+	font-size: 28px;
 }
