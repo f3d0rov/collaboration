@@ -73,7 +73,7 @@ int main (int argc, const char *argv[]) {
 				ArgOption ("", "request-timeout", "Таймаут запросов", true),
 				ArgOption ("", "civetweb-error-log", "Файл для записи ошибок Civetweb", true),
 				ArgOption ("", "dbconfig", "Путь к файлу .json с данными для подключения к PostgreSQL", true),
-				ArgOption ("", "db-connections", "Number of initial connections to PostgreSQL", true)
+				ArgOption ("", "db-connections", "Количество одновременных соединений с PostgreSQL", true)
 			}
 		);
 

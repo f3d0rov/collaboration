@@ -188,9 +188,10 @@ body {
 
 	transform: rotate(-5deg);
 
-	padding: 4px;
 	padding-top: 15px;
 	padding-bottom: 15px;
+	padding-left: 8px;
+	padding-right: 4px;
 }
 
 .header {
@@ -217,9 +218,14 @@ body {
 	margin-top: 100px;
 	margin-left: auto;
 	margin-right: auto;
+	margin-bottom: 40px;
 	padding: 10px;
 
 	border-radius: 10px;
 
 	font-size: 28px;
+}
+
+.template {
+	display: none;
 }

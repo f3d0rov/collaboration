@@ -1,4 +1,9 @@
 
+body {
+	height: fit-content;
+	overflow: auto;
+}
+
 #personImage {
 	width: 200px;
 	height: 300px;
@@ -43,4 +48,41 @@
 #personBio {
 	padding-right: 50px;
 	/* padding-left: 50px; */
+}
+
+.timeline {
+	margin-top: 20px;
+}
+
+.timelineElemIcon {
+	vertical-align: top;
+}
+
+.timelineElemData {
+	vertical-align: top;
+	padding-top: 10px;
+}
+
+.timelineElemData a:link, a:visited {
+	text-decoration: none;
+	transition: color 0.2s ease-in-out;
+	color: rgb(172, 0, 0);
+}
+
+.timelineElemData a:hover {
+	color: rgb(227, 0, 0);
+}
+
+.timelineElemData a:active {
+	color: rgb(255, 0, 0);
+}
+
+.timelineElemData .timepoint {
+	color: grey;
+}
+
+.timelineConnector {
+	position: absolute;
+	left: 0;
+	top: 0;
 }

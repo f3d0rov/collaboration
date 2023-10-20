@@ -12,10 +12,12 @@
 		
 		<link rel="stylesheet" type="text/css" href="style/style.css">
 		<link rel="stylesheet" type="text/css" href="style/person.css">
+
+		<script src="scripts/person.js"></script>
 	</head>
 	<body>
 		<div class = "header">
-			<a href="index.html">
+			<a href="/">
 				<div class = "headerLogo"> 
 				COLLABORATION.
 				</div>
@@ -44,6 +46,75 @@
 					</td>
 				</tr>
 			</table>
+
+			<div class = "timeline">
+				<div class = "timelineElem" id = "te_1">
+					<table>
+						<tr>
+							<td>
+								<img src = "./resources/timeline/band.svg" class = "timelineElemIcon">
+							</td>
+							<td class = "timelineElemData">
+								Основание <a href="?"> Nine Inch Nails </a>
+								<div class = "timepoint"> 1988 </div>
+							</td>
+						</tr>
+					</table>
+				</div>
+
+				<svg class = "timelineConnector template" role="img" id = "timelineConnectorTemplate" width = "8px" height="100px">
+					<line x1="4" y1="0" x2="4" y2="100" stroke="white" stroke-width="4"/>
+				</svg>
+
+				<div class = "timelineElem" id = "te_2">
+					<table>
+						<tr>
+							<td>
+								<img src = "./resources/timeline/song.svg" class = "timelineElemIcon"/>
+							</td>
+							<td class = "timelineElemData">
+								Сингл <a href="?"> Nine Inch Nails </a> - Down In It
+								<div class = "timepoint"> 15.09.1989 </div>
+							</td>
+						</tr>
+					</table>
+				</div>
+
+				<div class = "timelineElem" id = "te_3">
+					<table>
+						<tr>
+							<td>
+								<img src = "./resources/timeline/album.svg" class = "timelineElemIcon"/>
+							</td>
+							<td class = "timelineElemData">
+								Альбом <a href="?"> Nine Inch Nails </a> - <a href = "?"> Pretty Hate Machine </a>
+								<div class = "timepoint"> 20.10.1989 </div>
+							</td>
+						</tr>
+					</table>
+				</div>
+
+				<div class = "timelineElem" id = "te_4">
+					<table>
+						<tr>
+							<td>
+								<img src = "./resources/timeline/song.svg" class = "timelineElemIcon"/>
+							</td>
+							<td class = "timelineElemData">
+								Сингл <a href="?"> Nine Inch Nails </a> - Head Like A Hole
+								<div class = "timepoint"> 22.03.1990 </div>
+							</td>
+						</tr>
+					</table>
+				</div>
+			</div>
+		</div>
+
+
+
+		
+		<div class = "bottomLeftLinks"> 
+			<a href = "https://github.com/f3d0rov/collaboration"> <img src = "./resources/github-mark-white.svg" id = "github-link-image"> </a>
 		</div>
 	</body>
 </html>
