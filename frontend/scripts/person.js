@@ -1,3 +1,4 @@
+// TODO: fix connector shift when page is scrolled down
 
 function connect (i, a, b) {
 	let aIcon = a.querySelector('.timelineElemIcon');

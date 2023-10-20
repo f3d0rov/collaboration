@@ -30,6 +30,9 @@ body {
 
 #personHeader p {
 	margin: 0px;
+	line-height: 40px;
+	margin-top: 10px;
+	margin-bottom: 10px;
 }
 
 #personOriginalName {
