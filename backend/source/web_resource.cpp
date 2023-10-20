@@ -21,7 +21,7 @@ void WebResource::_cacheFile () {
 }
 
 bool WebResource::_cacheIsInvalid () {
-	return (!this->_cached.has_value()) || (this->_cacheTime + CACHED_FILES_RELOAD_PERIOD >= std::chrono::system_clock::now());
+	return (!this->_cached.has_value()) || (this->_cacheTime + CACHED_FILES_RELOAD_PERIOD <= std::chrono::system_clock::now());
 }
 
 void WebResource::_loadCacheIfInvalid () {
