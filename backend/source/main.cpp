@@ -105,7 +105,9 @@ int main (int argc, const char *argv[]) {
 	std::string frontendDir = argParser.getArgValue ("index", DEFAULT_INDEX_DIRECTORY_PATH);
 	if (!argParser.hasArg ("index")) chdirToExecutableDirectory (argv[0]);
 
-	SharedDirectory sharedFiles (ctx, frontendDir, false);
+	SharedDirectory sharedFiles (ctx, frontendDir, true);
+	WebResource indexPage (ctx, "", frontendDir + "/index.html");
+	WebResource personPage (ctx, "p", frontendDir + "/person.html");
 
 	while (1) { // Ждем входящие подключения
 		std::this_thread::sleep_for (std::chrono::seconds (1));

@@ -24,6 +24,7 @@ std::string getFileExtension (std::string path) {
 }
 
 std::string mimeForExtension (std::string ext) {
+	// TODO: better
 	const std::map <std::string, std::string> table = {
 		{"html", "text/html"},
 		{"ico", "image/vnd.microsoft.icon"},

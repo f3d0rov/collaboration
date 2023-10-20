@@ -7,6 +7,8 @@
 
 	border: solid 1px;
 	border-color: white;
+
+	vertical-align: top;
 }
 
 #personCard {
@@ -18,11 +20,18 @@
 #personHeader {
 	font-family: 'Oswald', sans-serif;
 	font-size: 64px;
+	line-height: 64px;
+}
+
+#personHeader p {
+	margin: 0px;
 }
 
 #personOriginalName {
 	font-size: 40px;
 	color: grey;
+
+	line-height: 40px;
 }
 
 #personLifetime {
