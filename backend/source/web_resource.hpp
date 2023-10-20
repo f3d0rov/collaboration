@@ -1,6 +1,6 @@
 #pragma once
 
-#include <map>
+#include <vector>
 #include <memory>
 #include <fstream>
 #include <filesystem>
@@ -46,7 +46,7 @@ class WebResource: public Resource {
 
 class SharedDirectory {
 	private:
-		std::map <std::string, std::unique_ptr <WebResource> > _resources;
+		std::vector < std::unique_ptr <WebResource> > _resources;
 
 	public:
 		SharedDirectory (mg_context *ctx, std::string directoryPath, bool ignoreHtml = true);

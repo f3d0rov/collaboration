@@ -10,6 +10,7 @@
 
 #include "resource.hpp"
 #include "web_resource.hpp"
+#include "api/randomSearchPromptResource.hpp"
 
 #define DEFAULT_PORT "8080"
 #define DEFAULT_REQUEST_TIMEOUT_TIME_MS "10000"
@@ -108,6 +109,9 @@ int main (int argc, const char *argv[]) {
 	SharedDirectory sharedFiles (ctx, frontendDir, true);
 	WebResource indexPage (ctx, "", frontendDir + "/index.html");
 	WebResource personPage (ctx, "p", frontendDir + "/person.html");
+
+	Resource api404 (ctx, "api");
+	RandomSearchPromptResource RandomSearchPromptResource (ctx, "api/rsp");
 
 	while (1) { // Ждем входящие подключения
 		std::this_thread::sleep_for (std::chrono::seconds (1));

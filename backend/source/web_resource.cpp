@@ -6,6 +6,8 @@ WebResource::WebResource (mg_context *ctx, std::string uri, std::string path, st
 Resource (ctx, uri) {
 	this->_filepath = path;
 	this->_mime = mime;
+
+	logger << "Ресурс: \"/" << uri << "\" (" << path << ") [" << std::filesystem::file_size (path) << "B, " << mime << "]" <<  std::endl;
 }
 
 void WebResource::_cacheFile () {
@@ -48,7 +50,6 @@ std::string WebResource::mime () {
 
 
 SharedDirectory::SharedDirectory (mg_context *ctx, std::string directoryPath, bool ignoreHtml) {
-	logger << "Распространяемые ресурсы:" << std::endl;
 	for (auto& i: std::filesystem::recursive_directory_iterator (directoryPath)) {
 		auto path = i.path();
 		if (!std::filesystem::is_regular_file (path)) continue;
@@ -59,11 +60,9 @@ SharedDirectory::SharedDirectory (mg_context *ctx, std::string directoryPath, bo
 		std::string ext = getFileExtension (uri);
 
 		if (ignoreHtml && (ext == "html" || ext == "htm")) continue;
-		std::string mime = mimeForExtension (ext);
+		std::string mime = mg_get_builtin_mime_type (uri.c_str());
 
-		this->_resources.emplace (uri, std::make_unique <WebResource> (ctx, uri, fullPathStr, mime));
-
-		logger << "\"" << uri << "\" (" << fullPathStr << ") [" << std::filesystem::file_size (path) << "B, " << mime << "]" <<  std::endl;
+		this->_resources.emplace_back (std::make_unique <WebResource> (ctx, uri, fullPathStr, mime));
 	}
 }
 

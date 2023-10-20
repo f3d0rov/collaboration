@@ -20,7 +20,6 @@
 std::string getCurrentTimeString();
 void chdirToExecutableDirectory (std::string progPath);
 std::string getFileExtension (std::string path);
-std::string mimeForExtension (std::string ext);
 
 template <class T> std::chrono::microseconds usElapsedFrom_hiRes (T start) {
     return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);

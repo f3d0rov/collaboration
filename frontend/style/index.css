@@ -24,6 +24,9 @@ body {
 
 .searchSuggestion {
 	color: #aeaeae;
+	opacity: 0;
+
+	transition: opacity 1s ease-in-out;
 }
 
 .searchSuggestion a {

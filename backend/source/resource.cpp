@@ -50,7 +50,7 @@ int Resource::_processRequest (mg_connection* conn) {
 	if (conn == nullptr) {
 		logger << "mg_connection is NULL while processing request to " << "/" << this->_uri << std::endl;
 		logger << "Dropping request." << std::endl;
-		return 500;
+		return 0;
 	}
 
 	const mg_request_info *ri = mg_get_request_info(conn);
@@ -90,7 +90,7 @@ int Resource::_processRequest (mg_connection* conn) {
 		return 500;
 	}
 
-	return 500;
+	return 0;
 }
 
 Response Resource::processRequest (std::string method, std::string uri, std::string request) {
