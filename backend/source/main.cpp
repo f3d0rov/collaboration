@@ -8,13 +8,19 @@
 #include "args.hpp"
 #include "utils.hpp"
 
+#include "database.hpp"
 #include "resource.hpp"
 #include "web_resource.hpp"
+#include "api_resource.hpp"
+
 #include "api/randomSearchPromptResource.hpp"
 
 #define DEFAULT_PORT "8080"
 #define DEFAULT_REQUEST_TIMEOUT_TIME_MS "10000"
 #define DEFAULT_CIVETWEB_ERROR_LOG_FILE "civetweb-errors.log"
+
+#define DEFAULT_DB_CONFIG_FILE "db-config.json"
+#define DEFAULT_DB_CONNECTION_COUNT "4"
 
 #define DEFAULT_INDEX_DIRECTORY_PATH "../../frontend/"
 
@@ -66,9 +72,8 @@ int main (int argc, const char *argv[]) {
 				ArgOption ("p", "port", "Порт для входящих запросов", true),
 				ArgOption ("", "request-timeout", "Таймаут запросов", true),
 				ArgOption ("", "civetweb-error-log", "Файл для записи ошибок Civetweb", true),
-				ArgOption ("", "dbconfig", "Путь к файлу .json с данными для подключения к PostgreSQL", true)
-				/*,
-				ArgOption ("", "db-connections", "Number of initial connections to PostgreSQL", true)*/
+				ArgOption ("", "dbconfig", "Путь к файлу .json с данными для подключения к PostgreSQL", true),
+				ArgOption ("", "db-connections", "Number of initial connections to PostgreSQL", true)
 			}
 		);
 
@@ -96,15 +101,22 @@ int main (int argc, const char *argv[]) {
 	}
 
 	logger << "Запускаем сервер COLLABORATION. " << std::endl;
+
+	std::string frontendDir = argParser.getArgValue ("index", DEFAULT_INDEX_DIRECTORY_PATH);
+	if (!argParser.hasArg ("index")) chdirToExecutableDirectory (argv[0]);
 	
+	database.init (argParser.getArgValue ("dbconfig", DEFAULT_DB_CONFIG_FILE), std::stoi(argParser.getArgValue ("db-connections", DEFAULT_DB_CONNECTION_COUNT)));
+	if (!database.started()) {
+		logger << "Failed to establish database connection" << std::endl;
+		return -1;
+	}
+
 	mg_context* ctx = startCivetweb (argParser);
 	if (ctx == nullptr) {
 		logger << "Не получилось запустить CivetWeb" << std::endl;
 		return -1;
 	}
 
-	std::string frontendDir = argParser.getArgValue ("index", DEFAULT_INDEX_DIRECTORY_PATH);
-	if (!argParser.hasArg ("index")) chdirToExecutableDirectory (argv[0]);
 
 	SharedDirectory sharedFiles (ctx, frontendDir, true);
 	WebResource indexPage (ctx, "", frontendDir + "/index.html");

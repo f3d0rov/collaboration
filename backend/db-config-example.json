@@ -1,0 +1,6 @@
+{
+	"host": "<postgresql-server-address>",
+	"port": "<postgresql-server-port>",
+	"user": "<postgresql-user>",
+	"password": "<your-password>"
+}
