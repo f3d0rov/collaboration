@@ -1,4 +1,3 @@
-// TODO: fix connector shift when page is scrolled down
 
 function connect (i, a, b) {
 	let aIcon = a.querySelector('.timelineElemIcon');
@@ -8,12 +7,12 @@ function connect (i, a, b) {
 	let bBR = bIcon.getBoundingClientRect ();
 
 	let topPoint = { 
-		x: (aBR.left + aBR.right) / 2,
-		y: aBR.bottom - 16
+		x: (aBR.left + aBR.right) / 2 + window.scrollX,
+		y: aBR.bottom - 16 + window.scrollY
 	};
 	let bottomPoint = {
-		x: (bBR.left + bBR.right) / 2,
-		y: bBR.top + 16
+		x: (bBR.left + bBR.right) / 2 + window.scrollX,
+		y: bBR.top + 16 + window.scrollY
 	};
 
 	let template = document.getElementById ("timelineConnectorTemplate");
