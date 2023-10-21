@@ -24,6 +24,7 @@ function genConnector (topPoint, bottomPoint) {
 	clone.classList.add ('actualConnector');
 	clone.style.left = (topPoint.x - 4) + 'px';
 	clone.style.top = topPoint.y + 'px';
+	clone.setAttribute ('height', (bottomPoint.y - topPoint.y) + 'px');
 	line.setAttribute('y2', bottomPoint.y - topPoint.y);
 	template.parentElement.appendChild (clone);
 

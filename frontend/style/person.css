@@ -57,7 +57,15 @@ body {
 	margin-top: 20px;
 }
 
+.timelineElemIconBox {
+	vertical-align: top;
+}
+
 .timelineElemIcon {
+	vertical-align: top;
+}
+
+.timelineElemIcon img {
 	vertical-align: top;
 }
 
