@@ -1,20 +1,21 @@
 
-function connect (i, a, b) {
-	let aIcon = a.querySelector('.timelineElemIcon');
-	let bIcon = b.querySelector('.timelineElemIcon');
-
-	let aBR = aIcon.getBoundingClientRect ();
-	let bBR = bIcon.getBoundingClientRect ();
-
-	let topPoint = { 
-		x: (aBR.left + aBR.right) / 2 + window.scrollX,
-		y: aBR.bottom - 16 + window.scrollY
+function getElemBottomCoordsForConnector (elem) {
+	let br = elem.getBoundingClientRect ();
+	return {
+		x: (br.left + br.right) / 2 + window.scrollX,
+		y: br.bottom - 16 + window.scrollY
 	};
-	let bottomPoint = {
-		x: (bBR.left + bBR.right) / 2 + window.scrollX,
-		y: bBR.top + 16 + window.scrollY
-	};
+}
 
+function getElemTopCoordsForConnector (elem) {
+	let br = elem.getBoundingClientRect ();
+	return {
+		x: (br.left + br.right) / 2 + window.scrollX,
+		y: br.top + 16 + window.scrollY
+	};
+}
+
+function genConnector (topPoint, bottomPoint) {
 	let template = document.getElementById ("timelineConnectorTemplate");
 	let clone = template.cloneNode (true);
 	line = clone.querySelector ('line');
@@ -24,9 +25,20 @@ function connect (i, a, b) {
 	clone.style.left = (topPoint.x - 4) + 'px';
 	clone.style.top = topPoint.y + 'px';
 	line.setAttribute('y2', bottomPoint.y - topPoint.y);
-	clone.id = "connector_" + i;
-
 	template.parentElement.appendChild (clone);
+
+	return clone;
+}
+
+function connect (i, a, b) {
+	let aIcon = a.querySelector('.timelineElemIcon');
+	let bIcon = b.querySelector('.timelineElemIcon');
+
+	let topPoint = getElemBottomCoordsForConnector (aIcon);
+	let bottomPoint = getElemTopCoordsForConnector (bIcon);
+
+	let clone = genConnector (topPoint, bottomPoint);
+	clone.id = "connector_" + i;
 }
 
 function generateConnectors (ev) {
