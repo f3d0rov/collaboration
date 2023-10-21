@@ -71,7 +71,11 @@ body {
 
 .timelineElemData {
 	vertical-align: top;
-	padding-top: 10px;
+	padding-top: 15px;
+}
+
+.timepointBody {
+	font-size: 26px;
 }
 
 .timelineElemData a:link, a:visited {
