@@ -4,7 +4,7 @@
 
 std::string hashForPassword (std::string password, std::string salt) {
 	std::string salted = password + salt;
-	return sha256 (salted);
+	return sha3_256 (salted);
 }
 
 
@@ -20,7 +20,7 @@ std::string UserLoginResource::generateUniqueSessionId (pqxx::work& work) {
 	int iterations = 0;
 
 	do {
-		sid = randomizer.hex (SESSION_ID_LEN);
+		sid = randomizer.str (SESSION_ID_LEN);
 		std::string query = std::string ("SELECT session_id FROM user_login where session_id=") + work.quote (sid) + ";";
 		auto rows = work.exec (query);
 		len = rows.size ();

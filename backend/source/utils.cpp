@@ -45,22 +45,31 @@ bool isAscii (std::string s) {
 	return true;
 }
 
-std::string sha256 (std::string str) {
-	unsigned char hash[SHA256_DIGEST_LENGTH];
+std::string sha3_256 (std::string input) {;
+	// const EVP_MD *EVP_sha3_256(void);
+	EVP_MD_CTX *mdctx;
+	if ((mdctx = EVP_MD_CTX_new()) == nullptr)
+		throw std::runtime_error ("sha3_256: (mdctx = EVP_MD_CTX_new()) == nullptr");
+	if (1 != EVP_DigestInit_ex(mdctx, EVP_sha3_256(), nullptr))
+		throw std::runtime_error ("sha3_256: 1 != EVP_DigestInit_ex(mdctx, EVP_sha3_256(), nullptr)");
+	if(1 != EVP_DigestUpdate(mdctx, input.c_str(), input.length()))
+		throw std::runtime_error ("sha3_256: 1 != EVP_DigestInit_ex(mdctx, EVP_sha3_256(), nullptr)");
+	unsigned char* digest = (unsigned char*) OPENSSL_malloc (EVP_MD_size (EVP_sha3_256()));
+	if (digest == nullptr) throw ("sha3_256: digest == nullptr");
+	unsigned int digest_len = 0;
+	if (1 != EVP_DigestFinal_ex(mdctx, digest, &digest_len))
+		throw ("sha3_256: 1 != EVP_DigestFinal_ex(mdctx, digest, &digest_len)");
 
-    SHA256_CTX sha256;
-    SHA256_Init(&sha256);
-    SHA256_Update(&sha256, str.c_str(), str.size());
-    SHA256_Final(hash, &sha256);
+	EVP_MD_CTX_free(mdctx);
 
-    std::stringstream ss;
-    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-        ss << std::hex << std::setw(2) << std::setfill('0') << ((int) hash[i]);
-    }
+	std::stringstream ss;
+	for (int i = 0; i < EVP_MD_size(EVP_sha3_256()); i++) {
+		ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(digest[i]);
+	}
 
-    return ss.str();
+	OPENSSL_free (digest);
+	return ss.str();
 }
-
 
 Logger::Logger(): std::ostream(this) {
 

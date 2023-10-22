@@ -16,6 +16,7 @@
 
 #include <functional>
 
+#include <openssl/evp.h>
 #include <openssl/sha.h>
 
 #define LOG_FILE_PATH "collab-server.log"
@@ -28,7 +29,7 @@ std::string readFile (std::string path, std::ios_base::openmode mode = std::ios:
 std::string lowercase (std::string s);
 bool isAscii (std::string s);
 
-std::string sha256 (std::string input);
+std::string sha3_256 (std::string input);
 
 template <class T> std::chrono::microseconds usElapsedFrom_hiRes (T start) {
     return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
