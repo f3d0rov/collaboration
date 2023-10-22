@@ -20,6 +20,7 @@ class OwnedConnection;
 class DBQueueTicket;
 class Database;
 void execSqlFile (std::string path);
+std::string lowercase (std::string s);
 
 struct DatabaseConnection {
 	std::shared_ptr <pqxx::connection> conn;

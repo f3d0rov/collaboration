@@ -7,6 +7,7 @@
 #include <filesystem>
 
 #include <string>
+#include <cctype> // std::tolower
 #include <map>
 
 #include <ctime>
@@ -23,6 +24,9 @@ std::string getCurrentTimeString();
 void chdirToExecutableDirectory (std::string progPath);
 std::string getFileExtension (std::string path);
 std::string readFile (std::string path, std::ios_base::openmode mode = std::ios::in);
+
+std::string lowercase (std::string s);
+bool isAscii (std::string s);
 
 std::string sha256 (std::string input);
 

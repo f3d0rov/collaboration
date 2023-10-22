@@ -14,6 +14,7 @@ class Randomizer {
 		Randomizer ();
 		PseudoRandomEngine::result_type operator() ();
 		std::string hex (int len);
+		std::string str (int len);
 };
 
 extern Randomizer randomizer;

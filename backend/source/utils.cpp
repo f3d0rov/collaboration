@@ -30,6 +30,21 @@ std::string readFile (std::string path, std::ios_base::openmode mode) {
 	return ss.str();
 }
 
+std::string lowercase (std::string s) {
+	std::string res = s;
+	for (int i = 0; i < res.length(); i++) {
+		res[i] = std::tolower (res[i]);
+	}
+	return res;
+}
+
+bool isAscii (std::string s) {
+	for (int i = 0; i < s.length(); i++) {
+		if (static_cast<unsigned char>(s[i]) > 127) return false;
+	}
+	return true;
+}
+
 std::string sha256 (std::string str) {
 	unsigned char hash[SHA256_DIGEST_LENGTH];
 

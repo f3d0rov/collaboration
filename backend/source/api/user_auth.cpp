@@ -26,7 +26,7 @@ std::string UserLoginResource::generateUniqueSessionId (pqxx::work& work) {
 		len = rows.size ();
 		
 		iterations++;
-		if (iterations >= 100) {
+		if (iterations >= 10) {
 			throw std::logic_error ("UserLoginResource::generateUniqueSessionId не может сгенерировать session_id");
 		}
 	} while (len != 0);
@@ -34,13 +34,13 @@ std::string UserLoginResource::generateUniqueSessionId (pqxx::work& work) {
 	return sid;
 }
 
-ApiResponse UserLoginResource::successfulLogin (pqxx::work& work, int uid, std::string device_id, std::string username) {
-	std::string sessionId = this->generateUniqueSessionId (work);
+std::string UserLoginResource::authUserWithWork (int uid, std::string device_id, pqxx::work &work) {
+	std::string sessionId = UserLoginResource::generateUniqueSessionId (work);
 
 	std::string removeOldCookiesOnDevice = std::string ("")
 		+ "DELETE FROM user_login "
 		+ "WHERE user_uid=" + std::to_string(uid)
-		+ "&&device_id=" + device_id + ";";
+		+ " AND device_id=" + work.quote(device_id) + ";";
 	
 	std::string addNewSession = std::string ("")
 		+ "INSERT INTO user_login "
@@ -49,12 +49,26 @@ ApiResponse UserLoginResource::successfulLogin (pqxx::work& work, int uid, std::
 			/* session_id */	+ work.quote (sessionId) + ","
 			/* user_uid */ 		+ std::to_string (uid) + ","
 			/* last_access */ 	+ "CURRENT_TIMESTAMP,"
-			/* device_id */ 	+ device_id
+			/* device_id */ 	+ work.quote(device_id)
 		+ ");";
 	
 	work.exec (removeOldCookiesOnDevice);
 	work.exec (addNewSession);
+	return sessionId;
+}
 
+std::string UserLoginResource::authUser (int uid, std::string device_id) {
+	auto conn = database.connect ();
+	pqxx::work work (*conn.conn);
+
+	auto sessionId = UserLoginResource::authUserWithWork (uid, device_id, work);
+
+	work.commit();
+	return sessionId;
+}
+
+ApiResponse UserLoginResource::successfulLogin (pqxx::work& work, int uid, std::string device_id, std::string username) {
+	std::string sessionId = UserLoginResource::authUserWithWork (uid, device_id, work);
 	return ApiResponse ({ {"session_id", sessionId}, {"username", username}, {"uid", uid} });
 }
 
@@ -67,9 +81,9 @@ ApiResponse UserLoginResource::processRequest (std::string method, std::string u
 
 	std::string username, password, device_id;
 	try {
-		username = body["username"].template get<std::string>();
-		password = body["password"].template get<std::string>();
-		device_id = body["device_id"].template get<std::string>();
+		username = lowercase(body["username"].template get<std::string>());
+		password = lowercase(body["password"].template get<std::string>());
+		device_id = lowercase(body["device_id"].template get<std::string>());
 	} catch (nlohmann::json::exception &e) {
 		return ApiResponse (400);
 	}
@@ -119,6 +133,17 @@ ApiResource (ctx, uri) {
 
 }
 
+bool CheckUsernameAvailability::isAvailable (std::string username) {
+	auto conn = database.connect ();
+	pqxx::work work (*conn.conn);
+	std::string checkAvailabilityQuery = std::string ("SELECT uid FROM users WHERE username=") + work.quote (lowercase(username)) + ";";
+	auto res = work.exec (checkAvailabilityQuery);
+	bool free = res.size() == 0;
+
+	work.commit();
+	return free;
+}
+
 ApiResponse CheckUsernameAvailability::processRequest(std::string method, std::string uri, nlohmann::json body) {
 	if (method != "POST") return ApiResponse (405);
 
@@ -130,23 +155,27 @@ ApiResponse CheckUsernameAvailability::processRequest(std::string method, std::s
 		return ApiResponse (400);
 	}
 
-	auto conn = database.connect ();
-	pqxx::work work (*conn.conn);
-	std::string checkAvailabilityQuery = std::string ("SELECT uid FROM users WHERE username=") + work.quote (username) + ";";
-	auto res = work.exec (checkAvailabilityQuery);
-	bool free = res.size() == 0;
-
 	ApiResponse response (200);
 	response.body["username"] = username;
-	response.body["status"] = free ? "free" : "taken";
+	response.body["status"] = CheckUsernameAvailability::isAvailable (username) ? "free" : "taken";
 
-	work.commit();
 	return response;
 }
 
 CheckEmailAvailability::CheckEmailAvailability (mg_context* ctx, std::string uri):
 ApiResource (ctx, uri) {
 
+}
+
+bool CheckEmailAvailability::isAvailable (std::string email) {
+	auto conn = database.connect ();
+	pqxx::work work (*conn.conn);
+	std::string checkAvailabilityQuery = std::string ("SELECT uid FROM users WHERE email=") + work.quote (lowercase(email)) + ";";
+	auto res = work.exec (checkAvailabilityQuery);
+	bool available = res.size() == 0;
+
+	work.commit();
+	return available;
 }
 
 ApiResponse CheckEmailAvailability::processRequest(std::string method, std::string uri, nlohmann::json body) {
@@ -160,16 +189,96 @@ ApiResponse CheckEmailAvailability::processRequest(std::string method, std::stri
 		return ApiResponse (400);
 	}
 
-	auto conn = database.connect ();
-	pqxx::work work (*conn.conn);
-	std::string checkAvailabilityQuery = std::string ("SELECT uid FROM users WHERE email=") + work.quote (email) + ";";
-	auto res = work.exec (checkAvailabilityQuery);
-	bool free = res.size() == 0;
-
 	ApiResponse response (200);
 	response.body["email"] = email;
-	response.body["status"] = free ? "free" : "taken";
+	response.body["status"] = CheckEmailAvailability::isAvailable (email) ? "free" : "taken";
 
-	work.commit();
 	return response;
+}
+
+
+
+UserRegisterResource::UserRegisterResource (mg_context* ctx, std::string uri):
+ApiResource (ctx, uri) {
+
+}
+
+bool UserRegisterResource::checkPasswordFormat (std::string password) {
+	return password.length() < 64;
+}
+
+bool UserRegisterResource::checkUsernameFormat (std::string username) {
+	if (!(isAscii(username) && username.length() < 64)) return false;
+	for (auto &i: username) {
+		if (!std::isalnum (i)) return false; // If not a character or digit
+	}
+	return true;
+}
+
+bool UserRegisterResource::checkEmailFormat (std::string email) {
+	// Fuck all
+	int atSymbol = email.find ('@');
+	int lastDot = email.find_last_of ('.');
+	if (atSymbol == email.npos || lastDot == email.npos) return false;
+	if (email.find ('@', atSymbol + 1) != email.npos) return false; // multiple '@'
+	return lastDot > atSymbol;
+}
+
+
+std::string UserRegisterResource::generateSalt () {
+	return randomizer.str (SALT_LEN);
+}
+
+ApiResponse UserRegisterResource::processRequest (std::string method, std::string uri, nlohmann::json body){
+	if (method != "POST") return ApiResponse (405);
+	if (!(body.contains ("username") && body.contains ("email") && body.contains ("password") && body.contains ("device_id")))
+		return ApiResponse (400);
+
+	std::string username, email, password, device_id;
+
+	try {
+		username = lowercase(body["username"].template get <std::string>());
+		email = lowercase(body["email"].template get <std::string>());
+		password = lowercase(body["password"].template get <std::string>());
+		device_id = lowercase(body["device_id"].template get <std::string>());
+	} catch (nlohmann::json::exception& e) {
+		return ApiResponse (400);
+	}
+
+	if (!this->checkEmailFormat (email)) return ApiResponse ({{"status", "incorrect_email_format"}}, 200);
+	if (!this->checkUsernameFormat (username)) return ApiResponse ({{"status", "incorrect_username_format"}}, 200);
+	if (!this->checkPasswordFormat (password)) return ApiResponse ({{"status", "incorrect_password_format"}}, 200);
+
+	if (!CheckEmailAvailability::isAvailable (email))
+		return ApiResponse ({ {"status", "email_taken"} }, 200);
+
+	if (!CheckUsernameAvailability::isAvailable (username))
+		return ApiResponse ({ {"status", "username_taken"} }, 200);
+
+	std::string pass_salt = UserRegisterResource::generateSalt();
+	std::string pass_hash = hashForPassword (password, pass_salt);
+
+	auto conn = database.connect ();
+	pqxx::work work (*conn.conn);
+
+	std::string createUserQuery = std::string ("")
+		+ "INSERT INTO users "
+		+ "(username, email, pass_hash, pass_salt) "
+		+ "VALUES ("
+			/* username */	+ work.quote (username) + ","
+			/* email */		+ work.quote (email) + ","
+			/* pass_hash */ + work.quote (pass_hash) + ","
+			/* pass_salt */ + work.quote (pass_salt)
+		+ ");";
+	work.exec (createUserQuery);
+
+	std::string getUserIdQuery = std::string ("")
+		+ "SELECT uid FROM users WHERE username=" + work.quote (username) + ";";
+	auto user = work.exec1 (getUserIdQuery);
+	int uid = user[0].as<int>();
+
+	std::string sessionId = UserLoginResource::authUserWithWork (uid, device_id, work);
+	work.commit();
+	
+	return ApiResponse ({ {"session_id", sessionId}, {"username", username}, {"uid", uid}, {"status", "success"} });
 }

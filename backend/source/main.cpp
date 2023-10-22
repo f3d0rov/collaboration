@@ -142,6 +142,7 @@ int main (int argc, const char *argv[]) {
 	RandomSearchPromptResource RandomSearchPromptResource (ctx, "api/rsp");
 
 	UserLoginResource userLoginResource (ctx, "api/login");
+	UserRegisterResource userRegisterResource (ctx, "api/register");
 	CheckUsernameAvailability checkUsernameAvailability (ctx, "api/check_username");
 	CheckEmailAvailability checkEmailAvailability (ctx, "api/check_email");
 

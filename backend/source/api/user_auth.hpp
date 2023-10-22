@@ -7,6 +7,7 @@
 #include "../randomizer.hpp"
 
 #define SESSION_ID_LEN 128
+#define SALT_LEN 64
 
 
 class UserLoginResource;
@@ -27,11 +28,15 @@ std::string hashForPassword (std::string password, std::string salt);
 */
 class UserLoginResource: public ApiResource {
 	private:
-		std::string generateUniqueSessionId (pqxx::work& work);
 
 		ApiResponse successfulLogin (pqxx::work& work, int uid, std::string device_id, std::string username);
 	public:
 		UserLoginResource (mg_context* ctx, std::string uri);
+
+		static std::string generateUniqueSessionId (pqxx::work& work);
+		static std::string authUserWithWork (int uid, std::string device_id, pqxx::work &work);
+		static std::string authUser (int uid, std::string device_id);
+
 		ApiResponse processRequest(std::string method, std::string uri, nlohmann::json body) override;
 };
 
@@ -44,6 +49,8 @@ class UserLoginResource: public ApiResource {
 class CheckUsernameAvailability: public ApiResource {
 	public:
 		CheckUsernameAvailability (mg_context* ctx, std::string uri);
+		static bool isAvailable (std::string username);
+
 		ApiResponse processRequest(std::string method, std::string uri, nlohmann::json body) override;
 };
 
@@ -57,19 +64,32 @@ class CheckUsernameAvailability: public ApiResource {
 class CheckEmailAvailability: public ApiResource {
 	public:
 		CheckEmailAvailability (mg_context* ctx, std::string uri);
+		static bool isAvailable (std::string email);
+
 		ApiResponse processRequest(std::string method, std::string uri, nlohmann::json body) override;
 };
 
 
 /********************
- * POST {username, password, email} to attempt registration
+ * POST {username, password, email, device_id} to attempt registration
  * Returns a login cookie on success
+ * Possible responses: 
+ * { {"session_id": sessionId}, {"username": username}, {"uid": uid}, {"status": "success"} }
+ * {"status": "username_taken"}
+ * {"status": "email_taken"} 
+ * {"status", "incorrect_email_format"}
+ * {"status", "incorrect_username_format"}
+ * {"status", "incorrect_password_format"}
 */
 class UserRegisterResource: public ApiResource {
+	private:
+		std::string generateSalt ();
+		bool checkPasswordFormat (std::string password);
+		bool checkUsernameFormat (std::string username);
+		bool checkEmailFormat (std::string email);
 	public:
 		UserRegisterResource (mg_context* ctx, std::string uri);
 		ApiResponse processRequest(std::string method, std::string uri, nlohmann::json body) override;
-
 };
 
 
