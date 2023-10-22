@@ -23,36 +23,27 @@ std::string getFileExtension (std::string path) {
 	return path.substr (i + 1);
 }
 
-std::string mimeForExtension (std::string ext) {
-	// TODO: better
-	const std::map <std::string, std::string> table = {
-		{"html", "text/html"},
-		{"ico", "image/vnd.microsoft.icon"},
-		{"bin", "application/octet-stream"},
-		{"bmp", "image/bmp"},
-		{"css", "text/css"},
-		{"csv", "text/csv"},
-		{"doc", "application/msword"},
-		{"docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"},
-		{"gif", "image/gif"},
-		{"jpeg", "image/jpeg"},
-		{"jpg", "image/jpeg"},
-		{"js", "text/javascript"},
-		{"json", "application/json"},
-		{"png", "image/png"},
-		{"pdf", "image/pdf"},
-		{"svg", "image/svg+xml"},
-		{"tif", "image/tiff"},
-		{"tiff", "image/tiff"},
-		{"txt", "text/plain"},
-		{"webp", "image/webp"},
-		{"xml", "application/xml"},
-		{"zip", "application/zip"},
-		{"7z", "application/x-7z-compressed"}
-	};
+std::string readFile (std::string path, std::ios_base::openmode mode) {
+	std::ifstream in (path, std::ios::in | mode);
+	std::stringstream ss;
+	ss << in.rdbuf();
+	return ss.str();
+}
 
-	if (table.find (ext) == table.end()) return "application/octet-stream";
-	return table.at (ext);
+std::string sha256 (std::string str) {
+	unsigned char hash[SHA256_DIGEST_LENGTH];
+
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, str.c_str(), str.size());
+    SHA256_Final(hash, &sha256);
+
+    std::stringstream ss;
+    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        ss << std::hex << std::setw(2) << std::setfill('0') << ((int) hash[i]);
+    }
+
+    return ss.str();
 }
 
 

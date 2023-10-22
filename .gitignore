@@ -1,4 +1,4 @@
-backend/build
+backend/build/collab-server
 backend/obj
 .vscode
 *.log

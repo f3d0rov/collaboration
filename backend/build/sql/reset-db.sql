@@ -1,0 +1,12 @@
+drop table if exists search_index;
+drop table if exists concerts;
+drop table if exists songs;
+drop table if exists albums;
+drop table if exists bands;
+drop table if exists participation;
+drop table if exists personalities;
+drop table if exists event_reports;
+drop table if exists events;
+drop table if exists user_contributions;
+drop table if exists user_login;
+drop table if exists users;

@@ -15,11 +15,16 @@
 
 #include <functional>
 
+#include <openssl/sha.h>
+
 #define LOG_FILE_PATH "collab-server.log"
 
 std::string getCurrentTimeString();
 void chdirToExecutableDirectory (std::string progPath);
 std::string getFileExtension (std::string path);
+std::string readFile (std::string path, std::ios_base::openmode mode = std::ios::in);
+
+std::string sha256 (std::string input);
 
 template <class T> std::chrono::microseconds usElapsedFrom_hiRes (T start) {
     return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);

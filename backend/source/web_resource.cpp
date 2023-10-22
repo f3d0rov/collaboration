@@ -11,12 +11,7 @@ Resource (ctx, uri) {
 }
 
 void WebResource::_cacheFile () {
-	std::ifstream in;
-	in.open (this->_filepath, std::ios::in | std::ios::binary);
-
-	std::stringstream ss;
-	ss << in.rdbuf();
-	this->_cached.emplace (ss.str());
+	this->_cached.emplace (readFile (this->_filepath, std::ios::binary));
 	this->_cacheTime = std::chrono::system_clock::now();
 }
 

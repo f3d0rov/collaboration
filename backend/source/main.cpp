@@ -14,6 +14,7 @@
 #include "api_resource.hpp"
 
 #include "api/randomSearchPromptResource.hpp"
+#include "api/user_auth.hpp"
 
 #define DEFAULT_PORT "8080"
 #define DEFAULT_REQUEST_TIMEOUT_TIME_MS "10000"
@@ -57,6 +58,14 @@ mg_context *startCivetweb (ArgsParser &argParser) {
 	return ctx;
 }
 
+void resetDatabase () {
+	execSqlFile ("sql/reset-db.sql");
+}
+
+void setupDatabase () {
+	execSqlFile ("sql/make-db.sql");
+}
+
 
 int main (int argc, const char *argv[]) {
 	logger.init();
@@ -73,7 +82,8 @@ int main (int argc, const char *argv[]) {
 				ArgOption ("", "request-timeout", "Таймаут запросов", true),
 				ArgOption ("", "civetweb-error-log", "Файл для записи ошибок Civetweb", true),
 				ArgOption ("", "dbconfig", "Путь к файлу .json с данными для подключения к PostgreSQL", true),
-				ArgOption ("", "db-connections", "Количество одновременных соединений с PostgreSQL", true)
+				ArgOption ("", "db-connections", "Количество одновременных соединений с PostgreSQL", true),
+				ArgOption ("", "remake-db", "Удалить и заново создать базу данных")
 			}
 		);
 
@@ -111,6 +121,12 @@ int main (int argc, const char *argv[]) {
 		return -1;
 	}
 
+	if (argParser.hasArg ("remake-db")) {
+		logger << "Пересоздаем базу данных..." << std::endl;
+		resetDatabase ();
+		setupDatabase ();
+	}
+
 	mg_context* ctx = startCivetweb (argParser);
 	if (ctx == nullptr) {
 		logger << "Не получилось запустить CivetWeb" << std::endl;
@@ -124,6 +140,10 @@ int main (int argc, const char *argv[]) {
 
 	Resource api404 (ctx, "api");
 	RandomSearchPromptResource RandomSearchPromptResource (ctx, "api/rsp");
+
+	UserLoginResource userLoginResource (ctx, "api/login");
+	CheckUsernameAvailability checkUsernameAvailability (ctx, "api/check_username");
+	CheckEmailAvailability checkEmailAvailability (ctx, "api/check_email");
 
 	while (1) { // Ждем входящие подключения
 		std::this_thread::sleep_for (std::chrono::seconds (1));

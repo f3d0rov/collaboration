@@ -19,7 +19,7 @@ struct DatabaseConnection;
 class OwnedConnection;
 class DBQueueTicket;
 class Database;
-
+void execSqlFile (std::string path);
 
 struct DatabaseConnection {
 	std::shared_ptr <pqxx::connection> conn;
@@ -100,3 +100,11 @@ class Database {
 };
 
 extern Database database;
+
+void execSqlFile (std::string path) {
+	std::string file = readFile (path);
+	auto conn = database.connect ();
+	pqxx::work work (*conn.conn);
+	work.exec (file);
+	work.commit ();
+}
