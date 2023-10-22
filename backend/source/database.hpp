@@ -101,10 +101,3 @@ class Database {
 
 extern Database database;
 
-void execSqlFile (std::string path) {
-	std::string file = readFile (path);
-	auto conn = database.connect ();
-	pqxx::work work (*conn.conn);
-	work.exec (file);
-	work.commit ();
-}

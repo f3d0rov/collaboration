@@ -95,7 +95,7 @@ ApiResponse UserLoginResource::processRequest (std::string method, std::string u
 		uid = row[2].as <int>();
 	} catch (pqxx::unexpected_rows& e) {
 		// pqxx::unexpected_rows не передает количество, предполагаем 0 - пользователь с указанным `username` не существует
-		return ApiResponse ({"status", "no_such_user"}, 200);
+		return ApiResponse ({{"status", "no_such_user"}}, 200);
 	} catch (std::exception &e) {
 		logger << "Ошибка UserLoginResource::processRequest() при попытке получения данных пользователя: " << e.what() << std::endl;
 		return ApiResponse (500);
@@ -110,7 +110,7 @@ ApiResponse UserLoginResource::processRequest (std::string method, std::string u
 	}
 
 	work.commit ();
-	return ApiResponse ({"status", "incorrect_password"}, 200);
+	return ApiResponse ({{"status", "incorrect_password"}}, 200);
 }
 
 
