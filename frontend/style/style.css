@@ -24,24 +24,17 @@ body {
 	overflow-y: scroll;
 }
 
-.search {
-	width: 100%;
-	text-align: center;
-
-	font-size: 30px;
+a {
+	text-decoration: none;
 }
 
-.searchBoxGroup {
-	padding: 10px;
-}
-
-#searchBox {
-	display: inline-block;
+#headerSearchBox {
+	display: block;
 
 	font-family: 'Oswald', sans-serif;
 	font-size: 30px;
 
-	width: 40%;
+	width: 60%;
 	padding: 3px;
 	
 	background-color: #330b0b;
@@ -52,18 +45,18 @@ body {
 	vertical-align: middle;
 }
 
-#searchButton {
-	display: inline-block;
+#headerSearchButton {
+	display: block;
 
-	width: 40px;
-	height: 40px;
+	width: 30px;
+	height: 30px;
+	line-height: 30px;
 	
-	line-height: 40px;
 	background-color: #330b0b;
 	border-radius: 3px;
 	
 	text-align: center;
-	font-size: 40px;
+	font-size: 30px;
 
 	padding: 5px;
 	margin: 5px;
@@ -75,47 +68,13 @@ body {
 	transition: background-color 0.2s ease-in-out;
 }
 
-#searchButton:hover {
+#headerSearchButton:hover {
 	background-color: #4b1111;
 }
 
-#searchIcon {
-	width: 40px;
-	height: 40px;
-}
-
-.headerSearch {
-	display: inline-block;
-	/* width: 30%; */
-	float: right;
-}
-
-.search {
-	width: 100%;
-	text-align: center;
-
-	font-size: 30px;
-}
-
-.searchBoxGroup {
-	padding: 10px;
-}
-
-#searchBox {
-	display: inline-block;
-
-	font-family: 'Oswald', sans-serif;
-	font-size: 30px;
-
-	width: 600px;
-	padding: 3px;
-	
-	background-color: #330b0b;
-	color: white;
-
-	border-radius: 5px;
-	border: none;
-	vertical-align: middle;
+#headerSearchIcon {
+	width: 30px;
+	height: 30px;
 }
 
 ::placeholder { /* Firefox */
@@ -125,38 +84,6 @@ body {
   
 ::-ms-input-placeholder { /* Edge 12 -18 */
 	color: rgb(88, 63, 63);
-}
-
-#searchButton {
-	display: inline-block;
-
-	width: 40px;
-	height: 40px;
-	
-	line-height: 40px;
-	background-color: #330b0b;
-	border-radius: 3px;
-	
-	text-align: center;
-	font-size: 40px;
-
-	padding: 5px;
-	margin: 5px;
-
-	vertical-align: middle;
-
-	cursor: pointer;
-
-	transition: background-color 0.2s ease-in-out;
-}
-
-#searchButton:hover {
-	background-color: #4b1111;
-}
-
-#searchIcon {
-	width: 40px;
-	height: 40px;
 }
 
 .bottomLeftLinks {
@@ -177,7 +104,7 @@ body {
 }
 
 .headerLogo {
-	display: inline-block;
+	display: block;
 	width: 10%;
 	text-align: center;
 	
@@ -188,13 +115,80 @@ body {
 
 	transform: rotate(-5deg);
 
-	padding-top: 15px;
-	padding-bottom: 15px;
-	padding-left: 8px;
+	/* align-self: center; */
+
+	padding-top: 20px;
+	padding-bottom: 10px;
+	padding-left: 40px;
 	padding-right: 4px;
 }
 
+.headerLogoContainer {
+	width: fit-content;
+	height: fit-content;
+
+	align-self: center;
+	justify-self: center;
+
+	flex: 1 1 200px;
+}
+
+.headerSearch {
+	display: flex;
+	/* width: 30%; */
+	flex: 5 1 400px;
+	align-items: center;
+	justify-content: center;
+}
+
+.userCard {
+	display: flex;
+	flex: 1 1 200px;
+	/* background-color: rgb(27, 0, 0); */
+	align-content: flex-end;
+	/* height: 40px; */
+}
+
+.username {
+	color: white;
+	text-decoration: none;
+	font-size: 24px;
+}
+
+#username {
+	color: white;
+}
+
+.logoutButton {
+	color: #4b1111;
+	transition: color 0.2s ease-in-out;
+	font-size: 16px;
+}
+
+.logoutButton:hover {
+	color: red;
+	cursor: pointer;
+}
+
+.userlinks {
+	display: flex;
+	flex-flow: column;
+	flex: 10;
+
+	padding-right: 10px;
+	text-align: right;
+}
+
+.userIcon {
+	width: 64px;
+	height: 64px;
+}
+
 .header {
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	justify-content: space-around;
 	position: fixed;
 
 	margin: 0px;
@@ -228,4 +222,10 @@ body {
 
 .template {
 	display: none;
+}
+
+.contribCurr {
+	font-family: 'Bebas Neue', sans-serif;
+	transform: rotate(-5deg);
+	font-size: larger;
 }

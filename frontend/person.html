@@ -17,14 +17,27 @@
 	</head>
 	<body>
 		<div class = "header">
-			<a href="/">
-				<div class = "headerLogo"> 
-				COLLABORATION.
-				</div>
-			</a>
+			<div class = "headerLogoContainer">
+				<a href="/">
+					<div class = "headerLogo"> 
+					COLLABORATION.
+					</div>
+				</a>
+			</div>
 			<div class = "headerSearch">
-				<input id = "searchBox" placeholder="...">
-				<div id = "searchButton"> <img src="./resources/search-icon.svg" id = "searchIcon"> </div>
+				<input id = "headerSearchBox" placeholder="...">
+				<div id = "headerSearchButton"> <img src="/resources/search-icon.svg" id = "headerSearchIcon"> </div>
+			</div>
+			<div class = "userCard">
+				<div class = "userlinks"> 
+					<div >
+						<a href="/u?=4" class = "username" id = "username"> 10 <span class="contribCurr">C</span> &ThinSpace;&centerdot;&ThinSpace; username </a>
+					</div>
+					<div class = "logoutButton"> Выйти </div>
+				</div>
+				<a href="/u?=4">
+					<img src="/resources/user.svg" class = "userIcon">
+				</a>
 			</div>
 		</div>
 
