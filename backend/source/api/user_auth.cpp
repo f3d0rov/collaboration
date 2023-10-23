@@ -69,7 +69,7 @@ std::string UserLoginResource::authUser (int uid, std::string device_ip) {
 
 ApiResponse UserLoginResource::successfulLogin (pqxx::work& work, int uid, std::string device_ip, std::string username) {
 	std::string sessionId = UserLoginResource::authUserWithWork (uid, device_ip, work);
-	return ApiResponse ({ {"username", username}, {"uid", uid} }).setCookie (
+	return ApiResponse ({ {"username", username}, {"uid", uid}, {"status", "success"}}).setCookie (
 		"session_id", sessionId, true, 60*60*24*365
 	).setCookie (
 		"username", username, false, 60*60*24*365
@@ -130,6 +130,32 @@ ApiResponse UserLoginResource::processRequest (RequestData &rd, nlohmann::json b
 }
 
 
+
+UserLogoutResource::UserLogoutResource (mg_context* ctx, std::string uri):
+ApiResource (ctx, uri) {
+
+}
+
+ApiResponse UserLogoutResource::processRequest (RequestData& rd, nlohmann::json body) {
+	if (rd.method != "POST") return 405;
+	if (!rd.setCookies.contains ("session_id")) return ApiResponse (400);
+	std::string session_id = rd.setCookies["session_id"];
+
+	auto conn = database.connect();
+	pqxx::work work (*conn.conn);
+
+	std::string invalidateSessionQuery = std::string ()
+		+ "DELETE FROM user_login "
+		+ "WHERE session_id=" + work.quote (session_id) + ";";
+
+	auto res = work.exec (invalidateSessionQuery, "LogoutResource::processRequest::invalidateSessionQuery");
+	work.commit ();
+
+	return ApiResponse (200).setCookie ("session_id", "x", true, 0);
+}
+
+
+
 CheckUsernameAvailability::CheckUsernameAvailability (mg_context* ctx, std::string uri):
 ApiResource (ctx, uri) {
 
@@ -163,6 +189,8 @@ ApiResponse CheckUsernameAvailability::processRequest(RequestData &rd, nlohmann:
 
 	return response;
 }
+
+
 
 CheckEmailAvailability::CheckEmailAvailability (mg_context* ctx, std::string uri):
 ApiResource (ctx, uri) {
@@ -288,6 +316,9 @@ ApiResponse UserRegisterResource::processRequest (RequestData &rd, nlohmann::jso
 	);
 }
 
+
+
+
 CheckSessionResource::CheckSessionResource (mg_context* ctx, std::string uri):
 ApiResource (ctx, uri) {
 
@@ -318,14 +349,28 @@ UsernameUid CheckSessionResource::checkSessionId (std::string sessionId) {
 	uu.username = unameRow[0].as <std::string>();
 	uu.permissionLevel = unameRow[1].as <int>();
 	uu.valid = true;
+
+	std::string setLastAccessTimestampUser = std::string()
+		+ "UPDATE users "
+		+ "SET last_access=CURRENT_TIMESTAMP "
+		+ "WHERE uid=" + std::to_string (uu.uid) + ";";
+	
+	std::string setLastAccessTimestampSession = std::string()
+		+ "UPDATE user_login "
+		+ "SET last_access=CURRENT_TIMESTAMP "
+		+ "WHERE session_id=" + work.quote (sessionId) + ";";
+
+	work.exec (setLastAccessTimestampUser);
+	work.exec (setLastAccessTimestampSession);
+	work.commit ();
 	return uu;
 }
 
 
 ApiResponse CheckSessionResource::processRequest (RequestData &rd, nlohmann::json body) {
 	if (rd.method != "POST") return ApiResponse (405);
-	if (!rd.setCookies.contains ("session_id")) return ApiResponse ({{"status", "unauthorized"}}, 200);
+	if (!rd.setCookies.contains ("session_id")) return ApiResponse ({{"status", "unauthorized"}}, 200).setCookie ("session_id", "", true, 0);
 	UsernameUid uu = CheckSessionResource::checkSessionId (rd.setCookies["session_id"]);
-	if (!uu.valid) return ApiResponse ({{"status", "unauthorized"}}, 200);
+	if (!uu.valid) return ApiResponse ({{"status", "unauthorized"}}, 200).setCookie ("session_id", "", true, 0);
 	return ApiResponse ({{"status", "authorized"}, {"username", uu.username}, {"uid", uu.uid}}, 200);
 }

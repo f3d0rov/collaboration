@@ -7,6 +7,7 @@ create table users (
 	pass_hash varchar(64),
 	pass_salt varchar(64),
 
+	last_access timestamp default CURRENT_TIMESTAMP,
 	permission_level int not null default 0
 );
 
@@ -15,7 +16,7 @@ create table user_login (
 	user_uid int references users (uid) not null,
 	last_access timestamp,
 
-	device_id varchar (128)
+	device_ip inet
 );
 
 create table user_contributions (

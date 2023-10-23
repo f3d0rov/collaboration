@@ -29,18 +29,18 @@
 				<input id = "headerSearchBox" placeholder="...">
 				<div id = "headerSearchButton"> <img src="/resources/search-icon.svg" id = "headerSearchIcon"> </div>
 			</div>
-			<div class = "userCard template">
+			<div class = "userCard hidden" id = "userCardAuthed">
 				<div class = "userlinks"> 
 					<div>
 						<a href="/u?=4" class = "username" id = "username"> username </a>
 					</div>
-					<div class = "logoutButton"> Выйти </div>
+					<div id = "logoutButton" class = "logoutButton"> Выйти </div>
 				</div>
 				<a href="/u?=4">
 					<img src="/resources/user.svg" class = "userIcon">
 				</a>
 			</div>
-			<div class = "loginRegister">
+			<div class = "loginRegister" id = "userCardUnauthed">
 				<div class = "headerLoginButton" id = "headerLoginButton">
 					Войти
 				</div>
@@ -105,11 +105,11 @@
 					<div class = "loginFormLabel">
 						Имя пользователя
 					</div>
-					<input class = "loginWindowInput" id = "username" type="username">
+					<input class = "loginWindowInput" id = "loginUsername" type="username">
 					<div class = "loginFormLabel">
 						Пароль
 					</div>
-					<input class = "loginWindowInput" id = "password" type="password">
+					<input class = "loginWindowInput" id = "loginPassword" type="password">
 
 					<div class = "loginWindowButton noselect" id="attemptLogin">
 						Войти
@@ -123,17 +123,17 @@
 					<div class = "loginFormLabel">
 						Имя пользователя
 					</div>
-					<input class = "loginWindowInput" id = "username" type="username">
+					<input class = "loginWindowInput" id = "regUsername" type="username">
 					
 					<div class = "loginFormLabel">
 						Адрес почты
 					</div>
-					<input class = "loginWindowInput" id = "email" type="email">
+					<input class = "loginWindowInput" id = "regEmail" type="email">
 
 					<div class = "loginFormLabel">
 						Пароль
 					</div>
-					<input class = "loginWindowInput" id = "password" type="password">
+					<input class = "loginWindowInput" id = "regPassword" type="password">
 
 					<div class = "loginWindowButton noselect" id="attemptRegister">
 						Зарегистрироваться

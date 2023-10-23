@@ -157,6 +157,10 @@ a {
 	/* height: 40px; */
 }
 
+.userCard.hidden {
+	display: none;
+}
+
 .username {
 	color: white;
 	text-decoration: none;
@@ -205,6 +209,10 @@ a {
 
 	justify-content: end;
 	text-align: right;
+}
+
+.loginRegister.hidden {
+	display: none;
 }
 
 .userIcon {

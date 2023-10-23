@@ -21,9 +21,9 @@ class CheckSessionResource;
 std::string hashForPassword (std::string password, std::string salt);
 
 /*********************
- * POST {username, password, device id} to attempt login
+ * POST {username, password} to attempt login
  * Returns:
- * Success -> {"session_id": sessionId}, "username": username, "uid": uid }
+ * Success -> {"username": username, "uid": uid , status: "success"}
  * No specified user -> {"status": "no_such_user"}
  * Incorrect password -> {"status": "incorrect_password"}
 */
@@ -40,6 +40,17 @@ class UserLoginResource: public ApiResource {
 
 		ApiResponse processRequest (RequestData &rd, nlohmann::json body) override;
 };
+
+
+/**********
+ * POST {} -> clears user_login session
+*/
+class UserLogoutResource: public ApiResource {
+	public:
+		UserLogoutResource (mg_context* ctx, std::string uri);
+		ApiResponse processRequest (RequestData& rd, nlohmann::json body) override;
+};
+
 
 /*********************
  * POST {username} to check username availability
@@ -103,12 +114,14 @@ class UserPublicDataResource: public ApiResource {
 		ApiResponse processRequest (RequestData &rd, nlohmann::json body) override;
 };
 
+
 struct UsernameUid {
 	std::string username;
 	int uid;
 	int permissionLevel;
 	bool valid = false;
 };
+
 
 /*********
  * POST {} -> checks if http-only cookie session_id is set & valid, returns user id, username if true
@@ -117,5 +130,5 @@ class CheckSessionResource: public ApiResource {
 	public:
 		CheckSessionResource (mg_context* ctx, std::string uri);
 		static UsernameUid checkSessionId (std::string sessionId);
-		ApiResponse processRequest (RequestData &rd, nlohmann::json body) override;
+		ApiResponse processRequest (RequestData& rd, nlohmann::json body) override;
 };

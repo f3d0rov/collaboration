@@ -25,7 +25,10 @@ ApiResponse& ApiResponse::addHeader (std::string name, std::string value) {
 }
 
 ApiResponse& ApiResponse::setCookie (std::string name, std::string value, bool httpOnly, long long maxAge) {
-	this->addHeader ("Set-Cookie", name + "=" + value + "; Max-Age=" + std::to_string (maxAge) + "; SameSite=strict" + (httpOnly ? "; HttpOnly" : ""));
+	this->addHeader (
+		"Set-Cookie",
+		cookieString (name, value, httpOnly, maxAge)
+	);
 	return *this;
 }
 

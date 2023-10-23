@@ -141,11 +141,12 @@ int main (int argc, const char *argv[]) {
 	Resource api404 (ctx, "api");
 	RandomSearchPromptResource RandomSearchPromptResource (ctx, "api/rsp");
 
-	UserLoginResource userLoginResource (ctx, "api/login");
-	UserRegisterResource userRegisterResource (ctx, "api/register");
-	CheckUsernameAvailability checkUsernameAvailability (ctx, "api/check_username");
-	CheckEmailAvailability checkEmailAvailability (ctx, "api/check_email");
-	CheckSessionResource checkSessionResource (ctx, "api/whoami");
+	UserLoginResource userLoginResource 				(ctx, "api/u/login");
+	UserLogoutResource userLogoutResource 				(ctx, "api/u/logout");
+	UserRegisterResource userRegisterResource 			(ctx, "api/u/register");
+	CheckUsernameAvailability checkUsernameAvailability	(ctx, "api/u/check_username");
+	CheckEmailAvailability checkEmailAvailability 		(ctx, "api/u/check_email");
+	CheckSessionResource checkSessionResource 			(ctx, "api/u/whoami");
 
 	while (1) { // Ждем входящие подключения
 		std::this_thread::sleep_for (std::chrono::seconds (1));

@@ -30,6 +30,16 @@ std::string readFile (std::string path, std::ios_base::openmode mode) {
 	return ss.str();
 }
 
+
+std::string cookieString (std::string name, std::string value, bool httpOnly, long long maxAge) {
+	return name + "=" + value
+		+ "; Max-Age="
+		+ std::to_string (maxAge)
+		+ "; SameSite=strict; Path=/"
+		+ (httpOnly ? "; HttpOnly" : "");
+}
+
+
 std::string lowercase (std::string s) {
 	std::string res = s;
 	for (int i = 0; i < res.length(); i++) {
