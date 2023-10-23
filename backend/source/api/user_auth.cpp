@@ -34,22 +34,22 @@ std::string UserLoginResource::generateUniqueSessionId (pqxx::work& work) {
 	return sid;
 }
 
-std::string UserLoginResource::authUserWithWork (int uid, std::string device_id, pqxx::work &work) {
+std::string UserLoginResource::authUserWithWork (int uid, std::string ip, pqxx::work &work) {
 	std::string sessionId = UserLoginResource::generateUniqueSessionId (work);
 
 	std::string removeOldCookiesOnDevice = std::string ("")
 		+ "DELETE FROM user_login "
 		+ "WHERE user_uid=" + std::to_string(uid)
-		+ " AND device_id=" + work.quote(device_id) + ";";
+		+ " AND device_ip=" + work.quote(ip) + ";";
 	
 	std::string addNewSession = std::string ("")
 		+ "INSERT INTO user_login "
-		+ "(session_id, user_uid, last_access, device_id)"
+		+ "(session_id, user_uid, last_access, device_ip)"
 		+ "VALUES (" 
 			/* session_id */	+ work.quote (sessionId) + ","
 			/* user_uid */ 		+ std::to_string (uid) + ","
 			/* last_access */ 	+ "CURRENT_TIMESTAMP,"
-			/* device_id */ 	+ work.quote(device_id)
+			/* device_ip */ 	+ work.quote(ip)
 		+ ");";
 	
 	work.exec (removeOldCookiesOnDevice);
@@ -57,18 +57,18 @@ std::string UserLoginResource::authUserWithWork (int uid, std::string device_id,
 	return sessionId;
 }
 
-std::string UserLoginResource::authUser (int uid, std::string device_id) {
+std::string UserLoginResource::authUser (int uid, std::string device_ip) {
 	auto conn = database.connect ();
 	pqxx::work work (*conn.conn);
 
-	auto sessionId = UserLoginResource::authUserWithWork (uid, device_id, work);
+	auto sessionId = UserLoginResource::authUserWithWork (uid, device_ip, work);
 
 	work.commit();
 	return sessionId;
 }
 
-ApiResponse UserLoginResource::successfulLogin (pqxx::work& work, int uid, std::string device_id, std::string username) {
-	std::string sessionId = UserLoginResource::authUserWithWork (uid, device_id, work);
+ApiResponse UserLoginResource::successfulLogin (pqxx::work& work, int uid, std::string device_ip, std::string username) {
+	std::string sessionId = UserLoginResource::authUserWithWork (uid, device_ip, work);
 	return ApiResponse ({ {"username", username}, {"uid", uid} }).setCookie (
 		"session_id", sessionId, true, 60*60*24*365
 	).setCookie (
@@ -79,15 +79,13 @@ ApiResponse UserLoginResource::successfulLogin (pqxx::work& work, int uid, std::
 ApiResponse UserLoginResource::processRequest (RequestData &rd, nlohmann::json body) {
 	if (rd.method != "POST") return ApiResponse (405);
 	bool hasUsername = body.contains ("username"),
-		hasPassword = body.contains ("password"),
-		hasDeviceId = body.contains ("device_id");
-	if (!(hasUsername && hasPassword && hasDeviceId)) return ApiResponse (400); // Missing crucial data
+		hasPassword = body.contains ("password");
+	if (!(hasUsername && hasPassword)) return ApiResponse (400); // Missing crucial data
 
 	std::string username, password, device_id;
 	try {
 		username = lowercase(body["username"].template get<std::string>());
 		password = lowercase(body["password"].template get<std::string>());
-		device_id = lowercase(body["device_id"].template get<std::string>());
 	} catch (nlohmann::json::exception &e) {
 		return ApiResponse (400);
 	}
@@ -122,7 +120,7 @@ ApiResponse UserLoginResource::processRequest (RequestData &rd, nlohmann::json b
 	std::string attemptHash = hashForPassword (password, pass_salt);
 	if (attemptHash == pass_hash) {
 		// Success!
-		ApiResponse result = this->successfulLogin (work, uid, device_id, username);
+		ApiResponse result = this->successfulLogin (work, uid, rd.ip, username);
 		work.commit();
 		return result;
 	}
@@ -235,16 +233,15 @@ std::string UserRegisterResource::generateSalt () {
 
 ApiResponse UserRegisterResource::processRequest (RequestData &rd, nlohmann::json body){
 	if (rd.method != "POST") return ApiResponse (405);
-	if (!(body.contains ("username") && body.contains ("email") && body.contains ("password") && body.contains ("device_id")))
+	if (!(body.contains ("username") && body.contains ("email") && body.contains ("password")))
 		return ApiResponse (400);
 
-	std::string username, email, password, device_id;
+	std::string username, email, password;
 
 	try {
 		username = lowercase(body["username"].template get <std::string>());
 		email = lowercase(body["email"].template get <std::string>());
 		password = lowercase(body["password"].template get <std::string>());
-		device_id = lowercase(body["device_id"].template get <std::string>());
 	} catch (nlohmann::json::exception& e) {
 		return ApiResponse (400);
 	}
@@ -281,7 +278,7 @@ ApiResponse UserRegisterResource::processRequest (RequestData &rd, nlohmann::jso
 	auto user = work.exec1 (getUserIdQuery);
 	int uid = user[0].as<int>();
 
-	std::string sessionId = UserLoginResource::authUserWithWork (uid, device_id, work);
+	std::string sessionId = UserLoginResource::authUserWithWork (uid, rd.ip, work);
 	work.commit();
 	
 	return ApiResponse ({ {"username", username}, {"uid", uid}, {"status", "success"} }).setCookie (

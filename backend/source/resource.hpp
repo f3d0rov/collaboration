@@ -35,8 +35,9 @@ class RequestData {
 		std::string uri;
 		std::string body;
 		std::map <std::string, std::string> setCookies;
+		std::string ip;
 
-		void setCookiesFromString (std::string cookies);
+		void setCookiesFromString (const char* cookies_);
 };
 
 class Resource {

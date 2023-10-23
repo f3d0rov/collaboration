@@ -35,8 +35,10 @@ const std::vector <std::pair<std::string, std::string>>& Response::headers() {
 	return this->_customHeaders;
 }
 
-void RequestData::setCookiesFromString (std::string cookies) {
+void RequestData::setCookiesFromString (const char* cookies_) {
 	this->setCookies = std::map <std::string, std::string>();
+	if (cookies_ == nullptr) return;
+	std::string cookies (cookies_);
 	
 	bool last = false;
 	do {
@@ -106,6 +108,8 @@ int Resource::_processRequest (mg_connection* conn) {
 		rd.body = body;
 		rd.method = method;
 		rd.uri = uri;
+		rd.ip = ri->remote_addr;
+
 		const char *cookie = mg_get_header(conn, "Cookie");
 		rd.setCookiesFromString (cookie);
 		// logger << "Cookie: " << cookie << std::endl;
