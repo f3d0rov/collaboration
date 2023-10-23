@@ -148,7 +148,7 @@ ApiResponse UserLogoutResource::processRequest (RequestData& rd, nlohmann::json 
 		+ "DELETE FROM user_login "
 		+ "WHERE session_id=" + work.quote (session_id) + ";";
 
-	auto res = work.exec (invalidateSessionQuery, "LogoutResource::processRequest::invalidateSessionQuery");
+	auto res = work.exec (invalidateSessionQuery);
 	work.commit ();
 
 	return ApiResponse (200).setCookie ("session_id", "x", true, 0);
@@ -336,7 +336,7 @@ UsernameUid CheckSessionResource::checkSessionId (std::string sessionId) {
 		+ "FROM user_login "
 		+ "WHERE session_id=" + work.quote (sessionId) + ";";
 
-	pqxx::result res = work.exec (checkSessionIdQuery, "CheckSessionResource::checkSessionId::checkSessionIdQuery");
+	pqxx::result res = work.exec (checkSessionIdQuery);
 
 	if (res.size() == 0) return uu;
 	uu.uid = res[0][0].as <int>();
@@ -345,7 +345,7 @@ UsernameUid CheckSessionResource::checkSessionId (std::string sessionId) {
 		+ "FROM users "
 		+ "WHERE uid=" + std::to_string (uu.uid) + ";";
 	
-	pqxx::row unameRow = work.exec1 (getUsernameByUid, "CheckSessionResource::checkSessionId::getUsernameByUid");
+	pqxx::row unameRow = work.exec1 (getUsernameByUid);
 	uu.username = unameRow[0].as <std::string>();
 	uu.permissionLevel = unameRow[1].as <int>();
 	uu.valid = true;
@@ -364,7 +364,7 @@ UsernameUid CheckSessionResource::checkSessionId (std::string sessionId) {
 	work.exec (setLastAccessTimestampSession);
 	work.commit ();
 	return uu;
-}
+}	
 
 
 ApiResponse CheckSessionResource::processRequest (RequestData &rd, nlohmann::json body) {
