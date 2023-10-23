@@ -102,12 +102,18 @@ class UserPublicDataResource: public ApiResource {
 		ApiResponse processRequest (RequestData &rd, nlohmann::json body) override;
 };
 
+struct UsernameUid {
+	std::string username;
+	int uid;
+	bool valid = false;
+};
+
 /*********
  * POST {} -> checks if http-only cookie session_id is set & valid, returns user id, username if true
 */
-class WhoamiResource: public ApiResource {
+class CheckSessionResource: public ApiResource {
 	public:
-		WhoamiResource (mg_context* ctx, std::string uri);
+		CheckSessionResource (mg_context* ctx, std::string uri);
+		static UsernameUid checkSessionId (std::string sessionId);
 		ApiResponse processRequest (RequestData &rd, nlohmann::json body) override;
-
 };

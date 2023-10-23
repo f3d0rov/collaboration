@@ -145,6 +145,7 @@ int main (int argc, const char *argv[]) {
 	UserRegisterResource userRegisterResource (ctx, "api/register");
 	CheckUsernameAvailability checkUsernameAvailability (ctx, "api/check_username");
 	CheckEmailAvailability checkEmailAvailability (ctx, "api/check_email");
+	CheckSessionResource checkSessionResource (ctx, "api/whoami");
 
 	while (1) { // Ждем входящие подключения
 		std::this_thread::sleep_for (std::chrono::seconds (1));

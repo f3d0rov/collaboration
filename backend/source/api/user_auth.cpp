@@ -71,6 +71,8 @@ ApiResponse UserLoginResource::successfulLogin (pqxx::work& work, int uid, std::
 	std::string sessionId = UserLoginResource::authUserWithWork (uid, device_id, work);
 	return ApiResponse ({ {"username", username}, {"uid", uid} }).setCookie (
 		"session_id", sessionId, true, 60*60*24*365
+	).setCookie (
+		"username", username, false, 60*60*24*365
 	);
 }
 
@@ -238,10 +240,6 @@ ApiResponse UserRegisterResource::processRequest (RequestData &rd, nlohmann::jso
 
 	std::string username, email, password, device_id;
 
-	for (auto &i: rd.setCookies) {
-		logger << "Cookie: " << i.first << "=" << i.second << std::endl;
-	}
-
 	try {
 		username = lowercase(body["username"].template get <std::string>());
 		email = lowercase(body["email"].template get <std::string>());
@@ -288,14 +286,48 @@ ApiResponse UserRegisterResource::processRequest (RequestData &rd, nlohmann::jso
 	
 	return ApiResponse ({ {"username", username}, {"uid", uid}, {"status", "success"} }).setCookie (
 		"session_id", sessionId, true, 60*60*24*365 
+	).setCookie (
+		"username", username, false, 60*60*24*365
 	);
 }
 
-WhoamiResource::WhoamiResource (mg_context* ctx, std::string uri):
+CheckSessionResource::CheckSessionResource (mg_context* ctx, std::string uri):
 ApiResource (ctx, uri) {
 
 }
 
-ApiResponse WhoamiResource::processRequest (RequestData &rd, nlohmann::json body) {
+UsernameUid CheckSessionResource::checkSessionId (std::string sessionId) {
+	auto conn = database.connect ();
+	pqxx::work work (*conn.conn);
+
+	UsernameUid uu;
+	uu.valid = false;
+
+	std::string checkSessionIdQuery = std::string ("")
+		+ "SELECT user_uid "
+		+ "FROM user_login "
+		+ "WHERE session_id=" + work.quote (sessionId) + ";";
+
+	pqxx::result res = work.exec (checkSessionIdQuery, "CheckSessionResource::checkSessionId::checkSessionIdQuery");
+
+	if (res.size() == 0) return uu;
+	uu.uid = res[0][0].as <int>();
+	std::string getUsernameByUid = std::string () 
+		+ "SELECT username "
+		+ "FROM users "
+		+ "WHERE uid=" + std::to_string (uu.uid) + ";";
+	
+	pqxx::row unameRow = work.exec1 (getUsernameByUid, "CheckSessionResource::checkSessionId::getUsernameByUid");
+	uu.username = unameRow[0].as <std::string>();
+	uu.valid = true;
+	return uu;
+}
+
+
+ApiResponse CheckSessionResource::processRequest (RequestData &rd, nlohmann::json body) {
 	if (rd.method != "POST") return ApiResponse (405);
+	if (!rd.setCookies.contains ("session_id")) return ApiResponse ({{"status", "unauthorized"}}, 200);
+	UsernameUid uu = CheckSessionResource::checkSessionId (rd.setCookies["session_id"]);
+	if (!uu.valid) return ApiResponse ({{"status", "unauthorized"}}, 200);
+	return ApiResponse ({{"status", "authorized"}, {"username", uu.username}, {"uid", uu.uid}}, 200);
 }
