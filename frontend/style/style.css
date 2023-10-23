@@ -28,11 +28,19 @@ a {
 	text-decoration: none;
 }
 
+.noselect {
+	user-select: none;
+	-moz-user-select: none;
+	-khtml-user-select: none;
+	-webkit-user-select: none;
+	-o-user-select: none;
+}
+
 #headerSearchBox {
 	display: block;
 
 	font-family: 'Oswald', sans-serif;
-	font-size: 30px;
+	font-size: 26px;
 
 	width: 60%;
 	padding: 3px;
@@ -56,7 +64,7 @@ a {
 	border-radius: 3px;
 	
 	text-align: center;
-	font-size: 30px;
+	font-size: 26px;
 
 	padding: 5px;
 	margin: 5px;
@@ -173,9 +181,29 @@ a {
 .userlinks {
 	display: flex;
 	flex-flow: column;
-	flex: 10;
+	flex: 1;
 
 	padding-right: 10px;
+	text-align: right;
+}
+
+.headerLoginButton {
+	padding-right: 10px;
+	transition: color 0.2s ease-in-out;
+}
+
+.headerLoginButton:hover {
+	cursor: pointer;
+	color: red;
+}
+
+
+.loginRegister {
+	display: flex;
+	flex-flow: column;
+	flex: 1;
+
+	justify-content: end;
 	text-align: right;
 }
 
@@ -224,8 +252,149 @@ a {
 	display: none;
 }
 
-.contribCurr {
-	font-family: 'Bebas Neue', sans-serif;
-	transform: rotate(-5deg);
-	font-size: larger;
+.loginRegisterBg {
+	position: fixed;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+
+	margin: 0px;
+	padding: 0px;
+
+	z-index: 600;
+
+	background: rgba(0, 0, 0, 0.0);
+	visibility: hidden;
+	transition: visibility 0s, background-color 0.5s ease-in-out;
+}
+
+.loginRegisterBg.ondisplay {
+	/* display: flex; */
+	visibility: visible;
+	background: rgba(0, 0, 0, 0.5);
+}
+
+.loginRegisterWindow {
+	display: block;
+
+	width: 400px;
+	height: fit-content;
+	padding: 10px;
+
+	background-color: black;
+	box-shadow: #4b1111 0 0 100px;
+	border-radius: 25px;
+	opacity: 0;
+
+	transition: opacity 0.5s ease-in-out;
+}
+
+.ondisplay .loginRegisterWindow {
+	opacity: 1;
+}
+
+.loginRegisterWindowLogoContainer {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	align-content: center;
+	justify-content: center;
+	justify-items: center;
+}
+
+.logoBox {
+	width: fit-content;
+	height: fit-content;
+}
+
+.loginRegisterWindowLogo {
+	font-size: 64px;
+	padding: 0px;
+	padding-top: 35px;
+	margin: 0px;
+}
+
+.loginForm {
+	display: none;
+	flex-flow: column;
+	align-items: center;
+	text-align: left;
+}
+
+.loginForm.ondisplay {
+	display: flex;
+}
+
+.registerForm {
+	display: none;
+	flex-flow: column;
+	align-items: center;
+	text-align: left;
+}
+
+.registerForm.ondisplay {
+	display: flex;
+}
+
+.loginFormLabel {
+	width: 90%;
+	padding-left: 10px;
+	margin-top: 5px;
+	font-size: 26px;
+}
+
+.loginWindowInput {
+	width: 90%;
+
+	background-color: #330b0b;
+	color: white;
+
+	font-size: 30px;
+	font-family: 'Oswald', sans-serif;
+
+	border: none;
+	margin: 3px;
+	padding: 5px;
+
+	border-top-right-radius: 15px;
+	border-bottom-right-radius: 15px;
+}
+
+.loginWindowButton {
+	background-color: #330b0b;
+	width: 40%;
+
+	margin: 5px;
+	margin-top: 15px;
+	margin-bottom: 10px;
+	padding: 10px;
+
+	font-size: 22px;
+
+	border-top-left-radius: 10px;
+	border-bottom-left-radius: 10px;
+
+	text-align: center;
+	transition: background-color 0.2s ease-in-out;
+}
+
+.loginWindowButton:hover {
+	background-color: #4b1111;
+	cursor: pointer;
+}
+
+.noAccountButton {
+	margin-bottom: 10px;
+	color: gray;
+	transition: color 0.2s ease-in-out;
+}
+
+.noAccountButton:hover {
+	color: white;
+	cursor: pointer;
 }

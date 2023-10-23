@@ -132,69 +132,70 @@ function generateEventList (events) {
 	generateConnectors ();
 }
 
+var testData = [
+	{
+		type: 'band_foundation',
+		band: { 
+			name: 'Nine Inch Nails',
+			url: '/b?=12'
+		},
+		date: '1988',
+		collaborators: [],
+		body: "В 1994 году Резнор сказал в интервью, что выбрал для группы название «Nine Inch Nails», потому что оно хорошо звучало и прошло проверку временем (большинство названий спустя какое-то время начинали звучать плохо), а также легко превращалось в аббревиатуру."
+	}, 
+
+	{
+		type: 'single',
+		band: { 
+			name: 'Nine Inch Nails',
+			url: '/b?=12'
+		},
+		song: "Down In It",
+		date: '15.09.1988',
+		collaborators: []
+	},
+
+	{
+		type: 'album',
+		band: { 
+			name: 'Nine Inch Nails',
+			url: '/b?=12'
+		},
+		album: {
+			name: 'Pretty Hate Machine',
+			url: '/a?=12'
+		},
+
+		date: '20.10.1988',
+		collaborators: []
+	},
+	
+	{
+		type: 'single',
+		band: { 
+			name: 'Nine Inch Nails',
+			url: '/b?=12'
+		},
+		song: "Head Like A Hole",
+		date: '22.03.1989',
+		collaborators: []
+	},
+	{
+		type: 'single',
+		band: { 
+			name: 'Nine Inch Nails',
+			url: '/b?=12'
+		},
+		song: 'Sin',
+		date: '10.10.1990',
+		collaborators: []
+	}
+];
+
 function generatePage (ev) {
 	// TODO: pull data from API
-	generateEventList (
-		[
-			{
-				type: 'band_foundation',
-				band: { 
-					name: 'Nine Inch Nails',
-					url: '/b?=12'
-				},
-				date: '1988',
-				collaborators: [],
-				body: "В 1994 году Резнор сказал в интервью, что выбрал для группы название «Nine Inch Nails», потому что оно хорошо звучало и прошло проверку временем (большинство названий спустя какое-то время начинали звучать плохо), а также легко превращалось в аббревиатуру."
-			}, 
+	generateEventList (testData);
 
-			{
-				type: 'single',
-				band: { 
-					name: 'Nine Inch Nails',
-					url: '/b?=12'
-				},
-				song: "Down In It",
-				date: '15.09.1988',
-				collaborators: []
-			},
-
-			{
-				type: 'album',
-				band: { 
-					name: 'Nine Inch Nails',
-					url: '/b?=12'
-				},
-				album: {
-					name: 'Pretty Hate Machine',
-					url: '/a?=12'
-				},
-
-				date: '20.10.1988',
-				collaborators: []
-			},
-			
-			{
-				type: 'single',
-				band: { 
-					name: 'Nine Inch Nails',
-					url: '/b?=12'
-				},
-				song: "Head Like A Hole",
-				date: '22.03.1989',
-				collaborators: []
-			},
-			{
-				type: 'single',
-				band: { 
-					name: 'Nine Inch Nails',
-					url: '/b?=12'
-				},
-				song: 'Sin',
-				date: '10.10.1990',
-				collaborators: []
-			}
-		]
-	);
 }
 
 window.addEventListener ('load', generatePage);
