@@ -20,7 +20,7 @@ std::string UserLoginResource::generateUniqueSessionId (pqxx::work& work) {
 	int iterations = 0;
 
 	do {
-		sid = randomizer.str (SESSION_ID_LEN);
+		sid = randomizer.hex (SESSION_ID_LEN);
 		std::string query = std::string ("SELECT session_id FROM user_login where session_id=") + work.quote (sid) + ";";
 		auto rows = work.exec (query);
 		len = rows.size ();
@@ -69,11 +69,13 @@ std::string UserLoginResource::authUser (int uid, std::string device_id) {
 
 ApiResponse UserLoginResource::successfulLogin (pqxx::work& work, int uid, std::string device_id, std::string username) {
 	std::string sessionId = UserLoginResource::authUserWithWork (uid, device_id, work);
-	return ApiResponse ({ {"session_id", sessionId}, {"username", username}, {"uid", uid} });
+	return ApiResponse ({ {"username", username}, {"uid", uid} }).setCookie (
+		"session_id", sessionId, true, 60*60*24*365
+	);
 }
 
-ApiResponse UserLoginResource::processRequest (std::string method, std::string uri, nlohmann::json body) {
-	if (method != "POST") return ApiResponse (405);
+ApiResponse UserLoginResource::processRequest (RequestData &rd, nlohmann::json body) {
+	if (rd.method != "POST") return ApiResponse (405);
 	bool hasUsername = body.contains ("username"),
 		hasPassword = body.contains ("password"),
 		hasDeviceId = body.contains ("device_id");
@@ -144,8 +146,8 @@ bool CheckUsernameAvailability::isAvailable (std::string username) {
 	return free;
 }
 
-ApiResponse CheckUsernameAvailability::processRequest(std::string method, std::string uri, nlohmann::json body) {
-	if (method != "POST") return ApiResponse (405);
+ApiResponse CheckUsernameAvailability::processRequest(RequestData &rd, nlohmann::json body) {
+	if (rd.method != "POST") return ApiResponse (405);
 
 	std::string username;
 	if (!body.contains ("username")) return ApiResponse (400);
@@ -178,8 +180,8 @@ bool CheckEmailAvailability::isAvailable (std::string email) {
 	return available;
 }
 
-ApiResponse CheckEmailAvailability::processRequest(std::string method, std::string uri, nlohmann::json body) {
-	if (method != "POST") return ApiResponse (405);
+ApiResponse CheckEmailAvailability::processRequest(RequestData &rd, nlohmann::json body) {
+	if (rd.method != "POST") return ApiResponse (405);
 
 	std::string email;
 	if (!body.contains ("email")) return ApiResponse (400);
@@ -229,12 +231,16 @@ std::string UserRegisterResource::generateSalt () {
 	return randomizer.str (SALT_LEN);
 }
 
-ApiResponse UserRegisterResource::processRequest (std::string method, std::string uri, nlohmann::json body){
-	if (method != "POST") return ApiResponse (405);
+ApiResponse UserRegisterResource::processRequest (RequestData &rd, nlohmann::json body){
+	if (rd.method != "POST") return ApiResponse (405);
 	if (!(body.contains ("username") && body.contains ("email") && body.contains ("password") && body.contains ("device_id")))
 		return ApiResponse (400);
 
 	std::string username, email, password, device_id;
+
+	for (auto &i: rd.setCookies) {
+		logger << "Cookie: " << i.first << "=" << i.second << std::endl;
+	}
 
 	try {
 		username = lowercase(body["username"].template get <std::string>());
@@ -280,5 +286,16 @@ ApiResponse UserRegisterResource::processRequest (std::string method, std::strin
 	std::string sessionId = UserLoginResource::authUserWithWork (uid, device_id, work);
 	work.commit();
 	
-	return ApiResponse ({ {"session_id", sessionId}, {"username", username}, {"uid", uid}, {"status", "success"} });
+	return ApiResponse ({ {"username", username}, {"uid", uid}, {"status", "success"} }).setCookie (
+		"session_id", sessionId, true, 60*60*24*365 
+	);
+}
+
+WhoamiResource::WhoamiResource (mg_context* ctx, std::string uri):
+ApiResource (ctx, uri) {
+
+}
+
+ApiResponse WhoamiResource::processRequest (RequestData &rd, nlohmann::json body) {
+	if (rd.method != "POST") return ApiResponse (405);
 }

@@ -30,7 +30,7 @@ std::string WebResource::_getActualCache () {
 	return this->_cached.value();
 }
 
-Response WebResource::processRequest (std::string method, std::string uri, std::string body) {
+Response WebResource::processRequest (RequestData &rd) {
 	return Response (this->_getActualCache(), this->_mime);
 }
 

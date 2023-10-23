@@ -13,6 +13,8 @@ class ApiResource;
 
 
 class ApiResponse {
+	private:
+		std::vector <std::pair <std::string, std::string>> _customHeaders;
 	public:
 		nlohmann::json body;
 		int status = 500;
@@ -22,13 +24,17 @@ class ApiResponse {
 		ApiResponse (nlohmann::json body, int status = 200);
 
 		operator Response ();
+
+		ApiResponse& addHeader (std::string name, std::string value);
+		ApiResponse& setCookie (std::string name, std::string value, bool httpOnly = false, long long maxAge = 60 * 60 * 24 * 7);
+		const std::vector <std::pair<std::string, std::string>> &headers();
 };
 
 
 class ApiResource: public Resource {
 	public:
 		ApiResource (mg_context* ctx, std::string uri);
-		Response processRequest (std::string method, std::string uri, std::string body) final;
+		Response processRequest (RequestData &rd) final;
 
-		virtual ApiResponse processRequest(std::string method, std::string uri, nlohmann::json body) = 0;
+		virtual ApiResponse processRequest(RequestData &rd, nlohmann::json body) = 0;
 };

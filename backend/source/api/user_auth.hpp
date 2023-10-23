@@ -37,7 +37,7 @@ class UserLoginResource: public ApiResource {
 		static std::string authUserWithWork (int uid, std::string device_id, pqxx::work &work);
 		static std::string authUser (int uid, std::string device_id);
 
-		ApiResponse processRequest(std::string method, std::string uri, nlohmann::json body) override;
+		ApiResponse processRequest (RequestData &rd, nlohmann::json body) override;
 };
 
 /*********************
@@ -51,7 +51,7 @@ class CheckUsernameAvailability: public ApiResource {
 		CheckUsernameAvailability (mg_context* ctx, std::string uri);
 		static bool isAvailable (std::string username);
 
-		ApiResponse processRequest(std::string method, std::string uri, nlohmann::json body) override;
+		ApiResponse processRequest (RequestData &rd, nlohmann::json body) override;
 };
 
 
@@ -66,7 +66,7 @@ class CheckEmailAvailability: public ApiResource {
 		CheckEmailAvailability (mg_context* ctx, std::string uri);
 		static bool isAvailable (std::string email);
 
-		ApiResponse processRequest(std::string method, std::string uri, nlohmann::json body) override;
+		ApiResponse processRequest (RequestData &rd, nlohmann::json body) override;
 };
 
 
@@ -89,7 +89,7 @@ class UserRegisterResource: public ApiResource {
 		bool checkEmailFormat (std::string email);
 	public:
 		UserRegisterResource (mg_context* ctx, std::string uri);
-		ApiResponse processRequest(std::string method, std::string uri, nlohmann::json body) override;
+		ApiResponse processRequest (RequestData &rd, nlohmann::json body) override;
 };
 
 
@@ -99,5 +99,15 @@ class UserRegisterResource: public ApiResource {
 class UserPublicDataResource: public ApiResource {
 	public:
 		UserPublicDataResource (mg_context* ctx, std::string uri);
-		ApiResponse processRequest(std::string method, std::string uri, nlohmann::json body) override;
+		ApiResponse processRequest (RequestData &rd, nlohmann::json body) override;
+};
+
+/*********
+ * POST {} -> checks if http-only cookie session_id is set & valid, returns user id, username if true
+*/
+class WhoamiResource: public ApiResource {
+	public:
+		WhoamiResource (mg_context* ctx, std::string uri);
+		ApiResponse processRequest (RequestData &rd, nlohmann::json body) override;
+
 };

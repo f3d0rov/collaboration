@@ -45,6 +45,13 @@ bool isAscii (std::string s) {
 	return true;
 }
 
+std::string trimmed (std::string s) {
+	const std::string whitespaces = " \n\t\r\f\v";
+	auto first = s.find_first_not_of (whitespaces);
+	if (first == s.npos) return "";
+	return s.substr (first, s.find_last_not_of (whitespaces) - first + 1);
+}
+
 std::string sha3_256 (std::string input) {;
 	// const EVP_MD *EVP_sha3_256(void);
 	EVP_MD_CTX *mdctx;

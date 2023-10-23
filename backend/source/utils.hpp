@@ -28,6 +28,7 @@ std::string readFile (std::string path, std::ios_base::openmode mode = std::ios:
 
 std::string lowercase (std::string s);
 bool isAscii (std::string s);
+std::string trimmed (std::string s);
 
 std::string sha3_256 (std::string input);
 

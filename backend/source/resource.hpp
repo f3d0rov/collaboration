@@ -16,12 +16,28 @@ class Response {
 		std::string body = "";
 		std::string mime = "text/html";
 		int status = 200;
+		std::vector <std::pair<std::string, std::string>> _customHeaders;
 
 		Response (int status);
 		Response (std::string body, int status = 200);
 		Response (std::string body, std::string mimeType, int status = 200);
+		Response (std::string body, std::string mimeType, int status, const std::vector<std::pair<std::string, std::string>>& headers);
+
+		Response& addHeader (std::string name, std::string value);
+		Response& setCookie (std::string name, std::string value, bool httpOnly = false, long long maxAge = 60 * 60 * 24 * 7);
+		const std::vector <std::pair<std::string, std::string>> &headers();
 };
 
+
+class RequestData {
+	public:
+		std::string method;
+		std::string uri;
+		std::string body;
+		std::map <std::string, std::string> setCookies;
+
+		void setCookiesFromString (std::string cookies);
+};
 
 class Resource {
 	private:
@@ -34,7 +50,7 @@ class Resource {
 	public:
 		Resource (mg_context *ctx, std::string uri);
 
-		virtual Response processRequest (std::string method, std::string uri, std::string body);
+		virtual Response processRequest (RequestData &rd);
 
 		std::string_view uri ();
 };

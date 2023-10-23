@@ -37,7 +37,7 @@ class WebResource: public Resource {
 
 	public:
 		WebResource (mg_context *ctx, std::string uri, std::string path, std::string mime = "text/html");
-		virtual Response processRequest (std::string method, std::string uri, std::string body) override;
+		virtual Response processRequest (RequestData &rd) override;
 
 		std::string filepath();
 		std::string mime();

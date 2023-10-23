@@ -11,8 +11,8 @@ struct TemporaryRandomSearchPromptOption {
 	std::string text, url;
 };
 
-ApiResponse RandomSearchPromptResource::processRequest(std::string method, std::string uri, nlohmann::json body) {
-	if (method != "GET") return ApiResponse (405);
+ApiResponse RandomSearchPromptResource::processRequest(RequestData &rd, nlohmann::json body) {
+	if (rd.method != "GET") return ApiResponse (405);
 	const std::vector <TemporaryRandomSearchPromptOption> options = {
 		{"Nine Inch Nails", "/b?id=123"},
 		{"Трент Резнор", "/p?id=23"},
