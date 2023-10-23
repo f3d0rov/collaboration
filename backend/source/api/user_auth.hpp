@@ -105,6 +105,7 @@ class UserPublicDataResource: public ApiResource {
 struct UsernameUid {
 	std::string username;
 	int uid;
+	int permissionLevel;
 	bool valid = false;
 };
 

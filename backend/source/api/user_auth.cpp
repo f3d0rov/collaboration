@@ -313,12 +313,13 @@ UsernameUid CheckSessionResource::checkSessionId (std::string sessionId) {
 	if (res.size() == 0) return uu;
 	uu.uid = res[0][0].as <int>();
 	std::string getUsernameByUid = std::string () 
-		+ "SELECT username "
+		+ "SELECT username, permission_level "
 		+ "FROM users "
 		+ "WHERE uid=" + std::to_string (uu.uid) + ";";
 	
 	pqxx::row unameRow = work.exec1 (getUsernameByUid, "CheckSessionResource::checkSessionId::getUsernameByUid");
 	uu.username = unameRow[0].as <std::string>();
+	uu.permissionLevel = unameRow[1].as <int>();
 	uu.valid = true;
 	return uu;
 }
