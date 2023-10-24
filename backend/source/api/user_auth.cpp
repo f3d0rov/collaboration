@@ -240,7 +240,7 @@ bool UserRegisterResource::checkPasswordFormat (std::string password) {
 bool UserRegisterResource::checkUsernameFormat (std::string username) {
 	if (!(isAscii(username) && username.length() < 64)) return false;
 	for (auto &i: username) {
-		if (!std::isalnum (i)) return false; // If not a character or digit
+		if (!(std::isalnum (i) || std::string ("._-").find (i) != std::string::npos)) return false; // If not a character or digit
 	}
 	return true;
 }

@@ -406,3 +406,22 @@ a {
 	color: white;
 	cursor: pointer;
 }
+
+.loginWindowErrorMessage {
+	position: absolute;
+	opacity: 0;
+
+	width: 300px;
+	background-color: rgb(125, 0, 0);
+	box-shadow: #4b1111 0 0 100px;
+	border-top-right-radius: 10px;
+	border-bottom-right-radius: 10px;
+
+	padding: 10px;
+
+	transition: opacity 1s ease-in-out;
+}
+
+.loginWindowErrorMessage.ondisplay {
+	opacity: 1;
+}

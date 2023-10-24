@@ -86,7 +86,7 @@ class CheckEmailAvailability: public ApiResource {
  * POST {username, password, email, device_id} to attempt registration
  * Returns a login cookie on success
  * Possible responses: 
- * { {"session_id": sessionId}, {"username": username}, {"uid": uid}, {"status": "success"} }
+ * { {"username": username}, {"uid": uid}, {"status": "success"} }
  * {"status": "username_taken"}
  * {"status": "email_taken"} 
  * {"status", "incorrect_email_format"}

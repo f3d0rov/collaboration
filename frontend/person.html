@@ -106,10 +106,13 @@
 						Имя пользователя
 					</div>
 					<input class = "loginWindowInput" id = "loginUsername" type="username">
+					<div class = "loginWindowErrorMessage" id = "loginUsernameError"> Пожалуйста, введите корректное имя пользователя. </div>
+
 					<div class = "loginFormLabel">
 						Пароль
 					</div>
 					<input class = "loginWindowInput" id = "loginPassword" type="password">
+					<div class = "loginWindowErrorMessage" id = "loginPasswordError"> Пожалуйста, введите корректный пароль. </div>
 
 					<div class = "loginWindowButton noselect" id="attemptLogin">
 						Войти
@@ -124,16 +127,26 @@
 						Имя пользователя
 					</div>
 					<input class = "loginWindowInput" id = "regUsername" type="username">
+					<div class = "loginWindowErrorMessage" id = "regUsernameError">
+						Имя пользователя должно состоять из латинских букв, цифр. Длина - не меньше трех символов.
+						Допустимы точки, дефисы и нижние подчеркивания.
+					</div>
 					
 					<div class = "loginFormLabel">
 						Адрес почты
 					</div>
 					<input class = "loginWindowInput" id = "regEmail" type="email">
+					<div class = "loginWindowErrorMessage" id = "regEmailError">
+						Введите корректный адрес почты.
+					</div>
 
 					<div class = "loginFormLabel">
 						Пароль
 					</div>
 					<input class = "loginWindowInput" id = "regPassword" type="password">
+					<div class = "loginWindowErrorMessage" id = "regPasswordError">
+						В пароле должно быть не меньше 8 символов.
+					</div>
 
 					<div class = "loginWindowButton noselect" id="attemptRegister">
 						Зарегистрироваться
