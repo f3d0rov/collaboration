@@ -1,17 +1,25 @@
 
 
-function showLoginLayer () {
+function hideLoginLayer (ev) {
 	let layer = document.getElementById ('loginRegisterLayer');
-	layer.classList.add ('ondisplay');
+	if (ev.target == layer) {
+		layer.classList.remove ('ondisplay');
 
-	layer.addEventListener (
-		'click',
-		(ev) => {
-			if (ev.target == layer) {
-				layer.classList.remove ('ondisplay');
-			}
-		}
-	);
+		let errors = [
+			"loginUsernameError", 
+			"loginPasswordError",
+			"regUsernameError",
+			"regPasswordError",
+			"regEmailError"
+		];
+
+		for (let i of errors)
+			document.getElementById (i).classList.remove ('ondisplay');
+	}
+}
+
+function showLoginLayer () {
+	document.getElementById ('loginRegisterLayer').classList.add ('ondisplay');
 }
 
 function showLoginWindow (ev) {
@@ -96,14 +104,17 @@ async function attemptLogin () {
 
 	let fail = false;
 	if (!checkUsernameSanity (username)) {
-		flashInputError ('loginUsername');
+		flashInputError ('loginUsernameError');
 		fail = true;
 	}
 	if (!checkPasswordSanity (password)) {
-		flashInputError ('loginPassword');
+		flashInputError ('loginPasswordError');
 		fail = true;
 	}
 	if (fail) return;
+
+	let spinner = document.getElementById ('loginSpinner');
+	spinner.classList.add ('ondisplay');
 
 	let attempt = await fetch (
 		"/api/u/login",
@@ -115,6 +126,7 @@ async function attemptLogin () {
 	);
 	
 	let response = await attempt.json();
+	spinner.classList.remove ('ondisplay');
 	switch (response.status) {
 		case "success":
 			location.reload ();
@@ -152,21 +164,24 @@ async function attemptRegister () {
 
 	let fail = false;	
 	if (!checkUsernameSanity (username)) {
-		flashInputError ('regUsername');
+		flashInputError ('regUsernameError');
 		fail = true;
 	}
 
 	if (!checkPasswordSanity (password)) {
-		flashInputError ('regPassword');
+		flashInputError ('regPasswordError');
 		fail = true;
 	}
 
 	if (!checkEmailSanity (email)) {
-		flashInputError ('regEmail');
+		flashInputError ('regEmailError');
 		fail = true;
 	}
 
 	if (fail) return;
+
+	let spinner = document.getElementById ('regSpinner');
+	spinner.classList.add ('ondisplay');
 
 	let attempt = await fetch (
 		"/api/u/register",
@@ -178,6 +193,7 @@ async function attemptRegister () {
 	);
 	
 	let response = await attempt.json();
+	spinner.classList.remove ('ondisplay');
 
 	switch (response.status) {
 		case "success":
@@ -264,42 +280,39 @@ function placeErrorMessages () {
 	}
 }
 
+function setupOnClickEvent (elemId, evListener) {
+	let elem = document.getElementById (elemId);
+	elem.addEventListener ('click', evListener);
+}
+
+function setupCheckSanityInputEvent (elemId, checker) {
+	let elem = document.getElementById (elemId);
+	elem.addEventListener ('input', () => {checkElemInput (elemId, checker)});
+}
 
 function setupLoginForm (ev) {
-	let loginButton = document.getElementById ('attemptLogin');
-	let registerButton = document.getElementById ('attemptRegister');
-	let noAccountButton = document.getElementById ('noAccountButton');
-	let haveAccountButton = document.getElementById ('haveAnAccountButton');
+	setupOnClickEvent ('attemptLogin', attemptLogin);
+	setupOnClickEvent ('attemptRegister', attemptRegister);
+	setupOnClickEvent ('noAccountButton', showRegisterWindow);
+	setupOnClickEvent ('haveAnAccountButton', showLoginWindow);
+	setupOnClickEvent ('loginRegisterLayer', hideLoginLayer);
 
-	loginButton.addEventListener ('click', attemptLogin);
-	registerButton.addEventListener ('click', attemptRegister);
-	noAccountButton.addEventListener ('click', showRegisterWindow);
-	haveAccountButton.addEventListener ('click', showLoginWindow);
-
-	let loginUsernameInput = document.getElementById ('loginUsername');
-	let loginPasswordInput = document.getElementById ('loginPassword');
-	let regUsernameInput = document.getElementById ('regUsername');
-	let regPasswordInput = document.getElementById ('regPassword');
-	let regEmailInput = document.getElementById ('regEmail');
-
-	loginUsernameInput.addEventListener ('input', () => {checkElemInput ('loginUsername', checkUsernameSanity)});
-	loginPasswordInput.addEventListener ('input', () => {checkElemInput ('loginPassword', checkPasswordSanity)});
-	regUsernameInput.addEventListener ('input', () => {checkElemInput ('regUsername', checkUsernameSanity)});
-	regEmailInput.addEventListener ('input', () => {checkElemInput ('regEmail', checkEmailSanity)});
-	regPasswordInput.addEventListener ('input', () => {checkElemInput ('regPassword', checkPasswordSanity)});
+	setupCheckSanityInputEvent ('loginUsername', checkUsernameSanity);
+	setupCheckSanityInputEvent ('loginPassword', checkPasswordSanity);
+	
+	setupCheckSanityInputEvent ('regUsername', checkUsernameSanity);
+	setupCheckSanityInputEvent ('regEmail', checkEmailSanity);
+	setupCheckSanityInputEvent ('regPassword', checkPasswordSanity);
 
 	window.addEventListener ('resize', placeErrorMessages);
 }
 
 function setupLoginForms (ev) {
 	checkAuthOnLoad ();
-	let loginButton = document.getElementById ('headerLoginButton');
-	let logoutButton = document.getElementById ('logoutButton');
-	let registerButton = document.getElementById ('headerRegisterButton');
 
-	loginButton.addEventListener ('click', showLoginWindow);
-	logoutButton.addEventListener ('click', logout);
-	registerButton.addEventListener ('click', showRegisterWindow);
+	setupOnClickEvent ('headerLoginButton', showLoginWindow);
+	setupOnClickEvent ('headerRegisterButton', showRegisterWindow);
+	setupOnClickEvent ('logoutButton', logout);
 
 	setupLoginForm ();
 };

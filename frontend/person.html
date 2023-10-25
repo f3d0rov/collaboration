@@ -114,8 +114,12 @@
 					<input class = "loginWindowInput" id = "loginPassword" type="password">
 					<div class = "loginWindowErrorMessage" id = "loginPasswordError"> Пожалуйста, введите корректный пароль. </div>
 
-					<div class = "loginWindowButton noselect" id="attemptLogin">
-						Войти
+					<div class = "loginButtonBox">
+						<img src="/resources/spinner.svg" class="spinnerIcon hidden">
+						<div class = "loginWindowButton noselect" id="attemptLogin">
+							Войти
+						</div>
+						<img src="/resources/spinner.svg" class="spinnerIcon" id = "loginSpinner">
 					</div>
 					<div class = "noAccountButton noselect" id = "noAccountButton">
 						У меня нет аккаунта
@@ -148,12 +152,16 @@
 						В пароле должно быть не меньше 8 символов.
 					</div>
 
-					<div class = "loginWindowButton noselect" id="attemptRegister">
-						Зарегистрироваться
+					<div class = "loginButtonBox">
+						<img src="/resources/spinner.svg" class="spinnerIcon hidden">
+						<div class = "loginWindowButton noselect" id="attemptRegister">
+							Зарегистрироваться
+						</div>
+						<img src="/resources/spinner.svg" class="spinnerIcon" id = "regSpinner">
 					</div>
 
 					<div class = "noAccountButton noselect" id = "haveAnAccountButton">
-						У уже есть аккаунт
+						Уже есть аккаунт
 					</div>
 				</div>
 			</div>

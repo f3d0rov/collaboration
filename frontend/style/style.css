@@ -375,12 +375,12 @@ a {
 
 .loginWindowButton {
 	background-color: #330b0b;
-	width: 40%;
-
-	margin: 5px;
-	margin-top: 15px;
-	margin-bottom: 10px;
 	padding: 10px;
+	padding-left: 20px;
+	padding-right: 20px;
+
+	width: fit-content;
+	flex: auto;
 
 	font-size: 22px;
 
@@ -394,6 +394,32 @@ a {
 .loginWindowButton:hover {
 	background-color: #4b1111;
 	cursor: pointer;
+}
+
+.spinnerIcon {
+	display: block;
+	width: 40px;
+	height: 40px;
+
+	flex: none;
+	padding-left: 15px;
+
+	opacity: 0;
+	transition: opacity 0.2s ease-in-out;
+}
+
+.spinnerIcon.ondisplay {
+	opacity: 1;
+}
+
+.loginButtonBox {
+	display: flex;
+	align-content: center;
+	align-items: center;
+
+	margin: 5px;
+	margin-top: 15px;
+	margin-bottom: 10px;
 }
 
 .noAccountButton {
@@ -424,4 +450,8 @@ a {
 
 .loginWindowErrorMessage.ondisplay {
 	opacity: 1;
+}
+
+.hidden {
+	visibility: hidden;
 }
