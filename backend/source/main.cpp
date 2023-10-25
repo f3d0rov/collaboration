@@ -69,6 +69,25 @@ void setupDatabase () {
 }
 
 
+void clearTimedoutPendingEmailConfirmations () {
+	auto conn = database.connect();
+	pqxx::work work (*conn.conn);
+
+	std::string removeBadUsersQuery = std::string ()
+		+ "DELETE FROM users WHERE uid in "
+			+ "(SELECT uid FROM pending_email_confirmation WHERE valid_until < CURRENT_TIMESTAMP);";
+	auto result = work.exec (removeBadUsersQuery);
+	if (result.affected_rows() > 0) {
+		logger << "Очистил " << result.affected_rows() << " пользователей, не подтвердивших свой адрес почты." << std::endl;
+	}
+	work.commit();
+}
+
+void occasionalTasks () {
+	clearTimedoutPendingEmailConfirmations();
+}
+
+
 int main (int argc, const char *argv[]) {
 	logger.init();
 	logger << std::endl;
@@ -170,7 +189,8 @@ int main (int argc, const char *argv[]) {
 	CheckSessionResource checkSessionResource 			(ctx, "api/u/whoami");
 
 	while (1) { // Ждем входящие подключения
-		std::this_thread::sleep_for (std::chrono::seconds (1));
+		occasionalTasks ();	
+		std::this_thread::sleep_for (std::chrono::minutes (5));
 	}
 
 	mg_stop (ctx); // Останавливаем сервер

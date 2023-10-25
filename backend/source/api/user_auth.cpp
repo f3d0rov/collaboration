@@ -257,6 +257,11 @@ bool UserRegisterResource::checkEmailFormat (std::string email) {
 	int lastDot = email.find_last_of ('.');
 	if (atSymbol == email.npos || lastDot == email.npos) return false;
 	if (email.find ('@', atSymbol + 1) != email.npos) return false; // multiple '@'
+	try {
+		jed_utils::MessageAddress addr (email.c_str());
+	} catch (...) {
+		return false;
+	}
 	return lastDot > atSymbol;
 }
 
