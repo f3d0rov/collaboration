@@ -11,6 +11,12 @@ create table users (
 	permission_level int not null default 0
 );
 
+create table pending_email_confirmation (
+	uid int references users (uid) not null
+	confirmation_id varchar (128) primary key not null
+	valid_until timestamp not null;
+);
+
 create table user_login (
 	session_id varchar (128) primary key not null,
 	user_uid int references users (uid) not null,

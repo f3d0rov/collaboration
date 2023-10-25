@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald&display=swap" rel="stylesheet">
+		
+	</head>
+	<body>
+
+		<style type="text/css">
+			body {
+				background-color: black;
+			}
+
+			#bodybox {
+				display: flex;
+				flex-flow: column;
+				align-items: center;
+				align-content: center;
+			}
+
+			#title {
+				color: white;
+				font-size: 64px;
+				font-family: 'Bebas Neue', Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+				margin-top: 20px;
+				margin-bottom: 20px;
+				transform: rotate(-5deg);
+			}
+
+			#message {
+				display: flex;
+				flex-flow: column;
+				align-items: center;
+				align-content: center;
+
+				background-color: #130d0d;
+				border-radius: 10px;
+				box-shadow: #4b1111 0 0 100px;
+				width: fit-content;
+				height: fit-content;
+
+				padding: 25px;
+
+				color: white;
+				font-family: 'Oswald', 'Gill Sans', 'Gill Sans MT', Tahoma, sans-serif;
+				font-size: 25px;
+			}
+
+			#username {
+				color: red;
+			}
+
+			p {
+				margin: 0;
+				padding: 0;
+			}
+
+			a {
+				text-decoration: none;
+			}
+
+			#button {
+				width: 300px;
+				height: fit-content;
+				padding: 10px;
+				margin-top: 20px;
+				border-radius: 10px;
+				
+				background-color: #330b0b;
+				color: white;
+
+				font-size: 30px;
+				font-family:'Oswald', 'Gill Sans', 'Gill Sans MT', Tahoma, sans-serif;
+				text-align: center;
+			}
+
+			#button:hover {
+				background-color: #4b1111;
+				cursor: pointer;
+			}
+
+			.unimportant {
+				color: grey;
+				font-size: 20px;
+				margin-top: 10px;
+			}
+
+			.unimportantLink {
+				color: grey;
+				font-size: 20px;
+				margin-top: 0px;
+			}
+			
+			.unimportantLink a {
+				color: grey;
+			}
+		</style>
+		<div id = "bodybox">
+			<div id = "title">
+				COLLABORATION.
+			</div>
+			
+			<div id = "message">
+				<p>
+					Привет, <span id="username">{USERNAME}</span>!
+				</p>
+				<p>
+					Для окончания регистрации пройди по ссылке ниже:
+				</p>
+	
+				<a href="{REGISTER_URL}">
+					<div id="button"> Закончить регистрацию </div>
+				</a>
+
+				<p class = "unimportant"> Или воспользуйся данной ссылкой:</p>
+				<p class = "unimportantLink"> <a href="{REGISTER_URL}"> {REGISTER_URL} </a> </p>
+				<p class = "unimportant"> Не регистрировались? Просто удалите это письмо. </p>
+			</div>
+
+		</div>
+	</body>
+</html>

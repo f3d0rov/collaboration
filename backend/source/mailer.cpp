@@ -39,7 +39,7 @@ void Mailer::readConfigFile (std::string jsonConfigPath) {
 	try {
 		json = nlohmann::json::parse (f);
 	} catch (nlohmann::json::exception &e) {
-		throw std::logic_error (std::string("Не получилось обработать файл конфигурации smtp  '") + jsonConfigPath + "': " + e.what());
+		throw std::logic_error (std::string("Не получилось обработать файл конфигурации smtp '") + jsonConfigPath + "': " + e.what());
 	}
 
 	if (!(json.contains ("server") && json.contains ("port")
@@ -52,6 +52,30 @@ void Mailer::readConfigFile (std::string jsonConfigPath) {
 	this->_username = json["username"].get <std::string>();
 	this->_password = json["password"].get <std::string>();
 	this->_displayName = json["display_name"].get <std::string>();
+}
+
+std::string Mailer::openReadSubstitute (std::string path, const std::unordered_map <std::string, std::string>& replace) {
+	std::string raw = readFile (path);
+	for (auto i: replace) {
+		int pos;
+		while ((pos = raw.find (i.first)) != raw.npos) {
+			raw.replace (pos, i.first.length (), i.second);
+		}
+	}
+	return raw;
+}
+
+void Mailer::sendHtmlLetter (std::string destination, std::string subject, std::string path, const std::unordered_map <std::string, std::string>& replace) {
+	std::unique_lock lock (this->_clientMutex);
+	std::string message = this->openReadSubstitute (path, replace);
+	jed_utils::HTMLMessage msg (
+		this->_myAddress.value(),
+		{ jed_utils::MessageAddress (destination.c_str()) },
+		subject.c_str(),
+		message.c_str()
+	);
+
+	this->_client->sendMail (msg);
 }
 
 Mailer mailer;

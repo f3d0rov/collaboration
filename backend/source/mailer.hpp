@@ -1,6 +1,6 @@
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <mutex>
 #include <optional>
 
@@ -11,6 +11,8 @@
 
 #define DEFAULT_SMTP_CONFIG_FILE "smtp-config.json"
 
+
+typedef const std::unordered_map <std::string, std::string>& EmailSubstitutions;
 
 class Mailer {
 	private:
@@ -26,7 +28,8 @@ class Mailer {
 		bool init (std::string jsonConfigPath);
 		void readConfigFile (std::string jsonConfigPath);
 
-		bool sendHtmlFile (std::string path, std::map <std::string, std::string> replace);
+		std::string openReadSubstitute (std::string path, EmailSubstitutions replace);
+		void sendHtmlLetter (std::string destination, std::string subject, std::string path, EmailSubstitutions replace);
 };
 
 extern Mailer mailer;

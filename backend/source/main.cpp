@@ -132,12 +132,14 @@ int main (int argc, const char *argv[]) {
 		resetDatabase ();
 		setupDatabase ();
 	}
+
 	try {
 		mailer.init (argParser.getArgValue ("smtp-config", DEFAULT_SMTP_CONFIG_FILE));
 	} catch (std::exception &e) {
 		logger << "Не удалось подключиться к серверу SMTP: " << e.what() << std::endl;
 		return -1;
 	}
+	
 
 	mg_context* ctx = startCivetweb (argParser);
 	if (ctx == nullptr) {
