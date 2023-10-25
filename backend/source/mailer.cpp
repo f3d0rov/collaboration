@@ -5,7 +5,7 @@ Mailer::Mailer () {
 
 }
 
-bool Mailer::init (std::string jsonConfigPath) { 
+void Mailer::init (std::string jsonConfigPath) { 
 	this->readConfigFile (jsonConfigPath);
 	this->_client.emplace (this->_server, this->_port);
 	this->_client->setCredentials (jed_utils::cpp::Credential (this->_username, this->_password));
@@ -26,8 +26,7 @@ bool Mailer::init (std::string jsonConfigPath) {
 	}
 
 	logger << "Успешно подключился к серверу SMTP " << this->_server << ":" << this->_port << " как " << this->_username << std::endl;
-
-	return false;
+	this->_started = true;
 }
 
 void Mailer::readConfigFile (std::string jsonConfigPath) {
@@ -66,6 +65,7 @@ std::string Mailer::openReadSubstitute (std::string path, const std::unordered_m
 }
 
 void Mailer::sendHtmlLetter (std::string destination, std::string subject, std::string path, const std::unordered_map <std::string, std::string>& replace) {
+	if (!this->_started) return;
 	std::unique_lock lock (this->_clientMutex);
 	std::string message = this->openReadSubstitute (this->_emailTemplatesFolderPath + path, replace);
 	jed_utils::HTMLMessage msg (

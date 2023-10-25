@@ -79,6 +79,7 @@ int main (int argc, const char *argv[]) {
 			{
 				ArgOption ("v", "version", "Вывод версии программы"),
 				ArgOption ("h", "help", "Вывод доступных опций"),
+				ArgOption ("d", "domain", "Адрес сайта", true),
 				ArgOption ("i", "index", "Путь к директории с файлами фронтенда", true),
 				ArgOption ("p", "port", "Порт для входящих запросов", true),
 				ArgOption ("", "request-timeout", "Таймаут запросов", true),
@@ -87,7 +88,7 @@ int main (int argc, const char *argv[]) {
 				ArgOption ("", "db-connections", "Количество одновременных соединений с PostgreSQL", true),
 				ArgOption ("", "remake-db", "Удалить и заново создать базу данных"),
 				ArgOption ("", "smtp-config", "Путь к файлу .json с данными для подключения к SMTP-серверу", true),
-				ArgOption ("d", "domain", "Адрес сайта", true)
+				ArgOption ("", "no-smtp", "Не отправлять письма")
 			}
 		);
 
@@ -136,11 +137,13 @@ int main (int argc, const char *argv[]) {
 		setupDatabase ();
 	}
 
-	try {
-		mailer.init (argParser.getArgValue ("smtp-config", DEFAULT_SMTP_CONFIG_FILE));
-	} catch (std::exception &e) {
-		logger << "Не удалось подключиться к серверу SMTP: " << e.what() << std::endl;
-		return -1;
+	if (!argParser.hasArg ("no-smtp")) {
+		try {
+			mailer.init (argParser.getArgValue ("smtp-config", DEFAULT_SMTP_CONFIG_FILE));
+		} catch (std::exception &e) {
+			logger << "Не удалось подключиться к серверу SMTP: " << e.what() << std::endl;
+			return -1;
+		}
 	}
 	
 

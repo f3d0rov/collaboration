@@ -24,10 +24,12 @@ class Mailer {
 		int _port;
 		std::string _server, _username, _password, _displayName;
 		std::string _emailTemplatesFolderPath = "email-templates/";
+
+		bool _started = false;
 	public:
 		
 		Mailer ();
-		bool init (std::string jsonConfigPath);
+		void init (std::string jsonConfigPath);
 		void readConfigFile (std::string jsonConfigPath);
 
 		std::string openReadSubstitute (std::string path, EmailSubstitutions replace);
