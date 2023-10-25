@@ -455,3 +455,25 @@ a {
 .hidden {
 	visibility: hidden;
 }
+
+.registrationSuccessful {
+	display: none;
+	flex-flow: column;
+	align-items: center;
+	align-content: center;
+
+	padding: 15px;
+
+	font-size: 22px;
+	text-align: justify;
+
+	transition: visibility 0s, opacity 0s;
+}
+
+.registrationSuccessfulMainLine {
+	color: #d00000;
+}
+
+.registrationSuccessful.ondisplay {
+	display: flex;
+}

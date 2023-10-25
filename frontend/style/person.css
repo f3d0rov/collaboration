@@ -75,6 +75,7 @@ body {
 
 .timepointBody {
 	font-size: 26px;
+	padding-right: 10%;
 }
 
 .timelineElemData a:link, a:visited {

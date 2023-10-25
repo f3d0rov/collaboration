@@ -25,9 +25,10 @@ function showLoginLayer () {
 function showLoginWindow (ev) {
 	let loginForm = document.getElementById ('loginForm');
 	let regForm = document.getElementById ('registerForm');
-
+	
 	loginForm.classList.add ('ondisplay');
 	regForm.classList.remove ('ondisplay');
+	document.getElementById ('registrationSuccessful').classList.remove ('ondisplay');
 	showLoginLayer();
 	
 	placeErrorMessages ();
@@ -39,6 +40,7 @@ function showRegisterWindow (ev) {
 	
 	loginForm.classList.remove ('ondisplay');
 	regForm.classList.add ('ondisplay');
+	document.getElementById ('registrationSuccessful').classList.remove ('ondisplay');
 	showLoginLayer();
 
 	placeErrorMessages ();
@@ -197,7 +199,9 @@ async function attemptRegister () {
 
 	switch (response.status) {
 		case "success":
-			location.reload();
+			document.getElementById ('loginForm').classList.remove ('ondisplay');
+			document.getElementById ('registerForm').classList.remove ('ondisplay');
+			document.getElementById ('registrationSuccessful').classList.add ('ondisplay');
 			return;
 		case "username_taken":
 			flashInputError ("regUsernameError", "Выбранное имя занято - выберите другое.");
