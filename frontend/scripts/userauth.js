@@ -55,7 +55,7 @@ function isAlphanumeric (sym) {
 }
 
 function checkPasswordSanity (pass) {
-	return pass.length > 8;
+	return pass.length >= 8;
 }
 
 function checkUsernameSanity (username) {
@@ -229,6 +229,13 @@ function checkElemInput (elemId, checker) {
 	}
 }
 
+function submitOnEnter (ev, func) {
+	if (ev.key == "Enter") { 
+		func ();
+		ev.preventDefault();
+	}
+}
+
 function getCookie (name) { // Mozilla's nice code
 	return document.cookie.split("; ")
 	.find((row) => row.startsWith(name + "="))?.split("=")[1];
@@ -299,10 +306,12 @@ function setupLoginForm (ev) {
 
 	setupCheckSanityInputEvent ('loginUsername', checkUsernameSanity);
 	setupCheckSanityInputEvent ('loginPassword', checkPasswordSanity);
+	document.getElementById ('loginPassword').addEventListener ('keydown', (ev) => {submitOnEnter (ev, attemptLogin);});
 	
 	setupCheckSanityInputEvent ('regUsername', checkUsernameSanity);
 	setupCheckSanityInputEvent ('regEmail', checkEmailSanity);
 	setupCheckSanityInputEvent ('regPassword', checkPasswordSanity);
+	document.getElementById ('regPassword').addEventListener ('keydown', (ev) => {submitOnEnter (ev, attemptRegister);});
 
 	window.addEventListener ('resize', placeErrorMessages);
 }

@@ -234,11 +234,11 @@ ApiResource (ctx, uri) {
 }
 
 bool UserRegisterResource::checkPasswordFormat (std::string password) {
-	return password.length() < 64;
+	return password.length() >= 8 && password.length() < 64;
 }
 
 bool UserRegisterResource::checkUsernameFormat (std::string username) {
-	if (!(isAscii(username) && username.length() < 64)) return false;
+	if (!(isAscii(username) && username.length() < 64 && username.length() >= 3)) return false;
 	for (auto &i: username) {
 		if (!(std::isalnum (i) || std::string ("._-").find (i) != std::string::npos)) return false; // If not a character or digit
 	}
