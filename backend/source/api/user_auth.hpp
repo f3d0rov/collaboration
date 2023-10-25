@@ -1,10 +1,12 @@
 #pragma once
 
 #include "../civetweb/civetweb.h"
+#include "../web_resource.hpp"
 #include "../api_resource.hpp"
 #include "../database.hpp"
 #include "../utils.hpp"
 #include "../randomizer.hpp"
+#include "../mailer.hpp"
 
 #define SESSION_ID_LEN 128
 #define SALT_LEN 64
@@ -14,6 +16,7 @@ class UserLoginResource;
 class CheckUsernameAvailability;
 class CheckEmailAvailability;
 class UserRegisterResource;
+class ConfirmRegistrationResource;
 class UserPublicDataResource;
 struct UsernameUid;
 class CheckSessionResource;
@@ -23,14 +26,14 @@ std::string hashForPassword (std::string password, std::string salt);
 /*********************
  * POST {username, password} to attempt login
  * Returns:
- * Success -> {"username": username, "uid": uid , status: "success"}
+ * Success -> {status: "success"} and a confirmation link is sent to the specified email.
  * No specified user -> {"status": "no_such_user"}
  * Incorrect password -> {"status": "incorrect_password"}
 */
 class UserLoginResource: public ApiResource {
 	private:
 
-		ApiResponse successfulLogin (pqxx::work& work, int uid, std::string device_ip, std::string username);
+		std::unique_ptr<ApiResponse> successfulLogin (pqxx::work& work, int uid, std::string device_ip, std::string username);
 	public:
 		UserLoginResource (mg_context* ctx, std::string uri);
 
@@ -38,7 +41,7 @@ class UserLoginResource: public ApiResource {
 		static std::string authUserWithWork (int uid, std::string device_ip, pqxx::work &work);
 		static std::string authUser (int uid, std::string device_ip);
 
-		ApiResponse processRequest (RequestData &rd, nlohmann::json body) override;
+		std::unique_ptr<ApiResponse> processRequest (RequestData &rd, nlohmann::json body) override;
 };
 
 
@@ -48,7 +51,7 @@ class UserLoginResource: public ApiResource {
 class UserLogoutResource: public ApiResource {
 	public:
 		UserLogoutResource (mg_context* ctx, std::string uri);
-		ApiResponse processRequest (RequestData& rd, nlohmann::json body) override;
+		std::unique_ptr<ApiResponse> processRequest (RequestData& rd, nlohmann::json body) override;
 };
 
 
@@ -63,7 +66,7 @@ class CheckUsernameAvailability: public ApiResource {
 		CheckUsernameAvailability (mg_context* ctx, std::string uri);
 		static bool isAvailable (std::string username);
 
-		ApiResponse processRequest (RequestData &rd, nlohmann::json body) override;
+		std::unique_ptr<ApiResponse> processRequest (RequestData &rd, nlohmann::json body) override;
 };
 
 
@@ -78,7 +81,7 @@ class CheckEmailAvailability: public ApiResource {
 		CheckEmailAvailability (mg_context* ctx, std::string uri);
 		static bool isAvailable (std::string email);
 
-		ApiResponse processRequest (RequestData &rd, nlohmann::json body) override;
+		std::unique_ptr<ApiResponse> processRequest (RequestData &rd, nlohmann::json body) override;
 };
 
 
@@ -101,9 +104,15 @@ class UserRegisterResource: public ApiResource {
 		bool checkEmailFormat (std::string email);
 	public:
 		UserRegisterResource (mg_context* ctx, std::string uri);
-		ApiResponse processRequest (RequestData &rd, nlohmann::json body) override;
+		std::unique_ptr<ApiResponse> processRequest (RequestData &rd, nlohmann::json body) override;
 };
 
+
+class ConfirmRegistrationResource: public Resource {
+	public:
+		ConfirmRegistrationResource (mg_context* ctx, std::string uri);
+		std::unique_ptr<_Response> processRequest (RequestData &rd) override;
+};
 
 /**********
  * GET uid -> user data (contributions, username, etc...)
@@ -111,7 +120,7 @@ class UserRegisterResource: public ApiResource {
 class UserPublicDataResource: public ApiResource {
 	public:
 		UserPublicDataResource (mg_context* ctx, std::string uri);
-		ApiResponse processRequest (RequestData &rd, nlohmann::json body) override;
+		std::unique_ptr<ApiResponse> processRequest (RequestData &rd, nlohmann::json body) override;
 };
 
 
@@ -130,5 +139,5 @@ class CheckSessionResource: public ApiResource {
 	public:
 		CheckSessionResource (mg_context* ctx, std::string uri);
 		static UsernameUid checkSessionId (std::string sessionId);
-		ApiResponse processRequest (RequestData& rd, nlohmann::json body) override;
+		std::unique_ptr<ApiResponse> processRequest (RequestData& rd, nlohmann::json body) override;
 };

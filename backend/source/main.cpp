@@ -86,7 +86,8 @@ int main (int argc, const char *argv[]) {
 				ArgOption ("", "db-config", "Путь к файлу .json с данными для подключения к PostgreSQL", true),
 				ArgOption ("", "db-connections", "Количество одновременных соединений с PostgreSQL", true),
 				ArgOption ("", "remake-db", "Удалить и заново создать базу данных"),
-				ArgOption ("", "smtp-config", "Путь к файлу .json с данными для подключения к SMTP-серверу", true)
+				ArgOption ("", "smtp-config", "Путь к файлу .json с данными для подключения к SMTP-серверу", true),
+				ArgOption ("d", "domain", "Адрес сайта", true)
 			}
 		);
 
@@ -114,6 +115,8 @@ int main (int argc, const char *argv[]) {
 	}
 
 	logger << "Запускаем сервер COLLABORATION. " << std::endl;
+
+	common.domain = argParser.getArgValue ("domain", std::string("localhost:") + argParser.getArgValue ("port", DEFAULT_PORT));
 
 	std::string frontendDir = argParser.getArgValue ("index", DEFAULT_INDEX_DIRECTORY_PATH);
 	if (!argParser.hasArg ("index")) chdirToExecutableDirectory (argv[0]);
@@ -158,6 +161,7 @@ int main (int argc, const char *argv[]) {
 	UserLoginResource userLoginResource 				(ctx, "api/u/login");
 	UserLogoutResource userLogoutResource 				(ctx, "api/u/logout");
 	UserRegisterResource userRegisterResource 			(ctx, "api/u/register");
+	ConfirmRegistrationResource ConfirmRegistrationResource (ctx, "confirm");
 	CheckUsernameAvailability checkUsernameAvailability	(ctx, "api/u/check_username");
 	CheckEmailAvailability checkEmailAvailability 		(ctx, "api/u/check_email");
 	CheckSessionResource checkSessionResource 			(ctx, "api/u/whoami");

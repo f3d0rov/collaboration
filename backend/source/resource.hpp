@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include "civetweb/CivetServer.h"
@@ -8,24 +9,42 @@
 
 #define BUFFER_SIZE 2048
 
+class _Response;
 class Response;
 class Resource;
 
-class Response {
+class _Response {
+	private:
+		std::vector <std::pair<std::string, std::string>> _customHeaders;
+	public:
+		int status = 200;
+
+		_Response ();
+		virtual ~_Response ();
+
+		virtual std::string getBody () = 0;
+		virtual std::string getMime () = 0;
+		
+		_Response& addHeader (std::string name, std::string value);
+		_Response& setCookie (std::string name, std::string value, bool httpOnly = false, long long maxAge = 60 * 60 * 24 * 7);
+		const std::vector <std::pair<std::string, std::string>> &headers();
+		
+		void redirect (std::string address);
+};
+
+class Response: public _Response {
 	public:
 		std::string body = "";
 		std::string mime = "text/html";
 		int status = 200;
-		std::vector <std::pair<std::string, std::string>> _customHeaders;
 
 		Response (int status);
 		Response (std::string body, int status = 200);
 		Response (std::string body, std::string mimeType, int status = 200);
-		Response (std::string body, std::string mimeType, int status, const std::vector<std::pair<std::string, std::string>>& headers);
+		~Response ();
 
-		Response& addHeader (std::string name, std::string value);
-		Response& setCookie (std::string name, std::string value, bool httpOnly = false, long long maxAge = 60 * 60 * 24 * 7);
-		const std::vector <std::pair<std::string, std::string>> &headers();
+		std::string getBody () final;
+		std::string getMime () final;
 };
 
 
@@ -35,9 +54,11 @@ class RequestData {
 		std::string uri;
 		std::string body;
 		std::map <std::string, std::string> setCookies;
+		std::map <std::string, std::string> query;
 		std::string ip;
 
 		void setCookiesFromString (const char* cookies_);
+		void setQueryVariables (const char *query);
 };
 
 class Resource {
@@ -51,7 +72,7 @@ class Resource {
 	public:
 		Resource (mg_context *ctx, std::string uri);
 
-		virtual Response processRequest (RequestData &rd);
+		virtual std::unique_ptr<_Response> processRequest (RequestData &rd);
 
 		std::string_view uri ();
 };

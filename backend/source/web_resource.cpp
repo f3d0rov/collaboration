@@ -30,8 +30,8 @@ std::string WebResource::_getActualCache () {
 	return this->_cached.value();
 }
 
-Response WebResource::processRequest (RequestData &rd) {
-	return Response (this->_getActualCache(), this->_mime);
+std::unique_ptr<_Response> WebResource::processRequest (RequestData &rd) {
+	return std::make_unique<Response> (this->_getActualCache(), this->_mime);
 }
 
 std::string WebResource::filepath () {

@@ -37,6 +37,11 @@ std::string UserLoginResource::generateUniqueSessionId (pqxx::work& work) {
 std::string UserLoginResource::authUserWithWork (int uid, std::string ip, pqxx::work &work) {
 	std::string sessionId = UserLoginResource::generateUniqueSessionId (work);
 
+	std::string checkEmailConfirmed = std::string() 
+		+ "SELECT uid FROM pending_email_confirmation WHERE uid=" + std::to_string (uid) + ";";
+	auto result = work.exec (checkEmailConfirmed);
+	if (result.size() != 0) return "";
+
 	std::string removeOldCookiesOnDevice = std::string ("")
 		+ "DELETE FROM user_login "
 		+ "WHERE user_uid=" + std::to_string(uid)
@@ -67,27 +72,26 @@ std::string UserLoginResource::authUser (int uid, std::string device_ip) {
 	return sessionId;
 }
 
-ApiResponse UserLoginResource::successfulLogin (pqxx::work& work, int uid, std::string device_ip, std::string username) {
+std::unique_ptr<ApiResponse> UserLoginResource::successfulLogin (pqxx::work& work, int uid, std::string device_ip, std::string username) {
 	std::string sessionId = UserLoginResource::authUserWithWork (uid, device_ip, work);
-	return ApiResponse ({ {"username", username}, {"uid", uid}, {"status", "success"}}).setCookie (
-		"session_id", sessionId, true, 60*60*24*365
-	).setCookie (
-		"username", username, false, 60*60*24*365
-	);
+	auto res = std::make_unique<ApiResponse> (nlohmann::json{ {"username", username}, {"uid", uid}, {"status", "success"}}, 200);
+	res->setCookie ("username", username, false, 60*60*24*365);
+	res->setCookie ("session_id", sessionId, true, 60*60*24*365);
+	return res;
 }
 
-ApiResponse UserLoginResource::processRequest (RequestData &rd, nlohmann::json body) {
-	if (rd.method != "POST") return ApiResponse (405);
+std::unique_ptr<ApiResponse> UserLoginResource::processRequest (RequestData &rd, nlohmann::json body) {
+	if (rd.method != "POST") return std::make_unique<ApiResponse> (405);
 	bool hasUsername = body.contains ("username"),
 		hasPassword = body.contains ("password");
-	if (!(hasUsername && hasPassword)) return ApiResponse (400); // Missing crucial data
+	if (!(hasUsername && hasPassword)) return std::make_unique<ApiResponse> (400); // Missing crucial data
 
 	std::string username, password, device_id;
 	try {
 		username = lowercase(body["username"].template get<std::string>());
 		password = lowercase(body["password"].template get<std::string>());
 	} catch (nlohmann::json::exception &e) {
-		return ApiResponse (400);
+		return std::make_unique<ApiResponse> (400);
 	}
 
 	auto conn = database.connect();
@@ -111,22 +115,22 @@ ApiResponse UserLoginResource::processRequest (RequestData &rd, nlohmann::json b
 		uid = row[2].as <int>();
 	} catch (pqxx::unexpected_rows& e) {
 		// pqxx::unexpected_rows не передает количество, предполагаем 0 - пользователь с указанным `username` не существует
-		return ApiResponse ({{"status", "no_such_user"}}, 200);
+		return std::make_unique<ApiResponse> (nlohmann::json{{"status", "no_such_user"}}, 200);
 	} catch (std::exception &e) {
 		logger << "Ошибка UserLoginResource::processRequest() при попытке получения данных пользователя: " << e.what() << std::endl;
-		return ApiResponse (500);
+		return std::make_unique<ApiResponse> (500);
 	}
 
 	std::string attemptHash = hashForPassword (password, pass_salt);
 	if (attemptHash == pass_hash) {
 		// Success!
-		ApiResponse result = this->successfulLogin (work, uid, rd.ip, username);
+		auto result = this->successfulLogin (work, uid, rd.ip, username);
 		work.commit();
 		return result;
 	}
 
 	work.commit ();
-	return ApiResponse ({{"status", "incorrect_password"}}, 200);
+	return std::make_unique<ApiResponse>(nlohmann::json{{"status", "incorrect_password"}}, 200);
 }
 
 
@@ -136,9 +140,9 @@ ApiResource (ctx, uri) {
 
 }
 
-ApiResponse UserLogoutResource::processRequest (RequestData& rd, nlohmann::json body) {
-	if (rd.method != "POST") return 405;
-	if (!rd.setCookies.contains ("session_id")) return ApiResponse (400);
+std::unique_ptr<ApiResponse> UserLogoutResource::processRequest (RequestData& rd, nlohmann::json body) {
+	if (rd.method != "POST") return std::make_unique<ApiResponse>(405);
+	if (!rd.setCookies.contains ("session_id")) return std::make_unique<ApiResponse> (400);
 	std::string session_id = rd.setCookies["session_id"];
 
 	auto conn = database.connect();
@@ -151,7 +155,9 @@ ApiResponse UserLogoutResource::processRequest (RequestData& rd, nlohmann::json 
 	auto res = work.exec (invalidateSessionQuery);
 	work.commit ();
 
-	return ApiResponse (200).setCookie ("session_id", "x", true, 0);
+	auto response = std::make_unique<ApiResponse>(200);
+	response->setCookie ("session_id", "x", true, 0);
+	return response;
 }
 
 
@@ -172,20 +178,20 @@ bool CheckUsernameAvailability::isAvailable (std::string username) {
 	return free;
 }
 
-ApiResponse CheckUsernameAvailability::processRequest(RequestData &rd, nlohmann::json body) {
-	if (rd.method != "POST") return ApiResponse (405);
+std::unique_ptr<ApiResponse> CheckUsernameAvailability::processRequest(RequestData &rd, nlohmann::json body) {
+	if (rd.method != "POST") return std::make_unique<ApiResponse> (405);
 
 	std::string username;
-	if (!body.contains ("username")) return ApiResponse (400);
+	if (!body.contains ("username")) return std::make_unique<ApiResponse> (400);
 	try {
 		username = body["username"].template get<std::string> ();
 	} catch (nlohmann::json::exception& e) {
-		return ApiResponse (400);
+		return std::make_unique<ApiResponse> (400);
 	}
 
-	ApiResponse response (200);
-	response.body["username"] = username;
-	response.body["status"] = CheckUsernameAvailability::isAvailable (username) ? "free" : "taken";
+	auto response = std::make_unique<ApiResponse> (200);
+	response->body["username"] = username;
+	response->body["status"] = CheckUsernameAvailability::isAvailable (username) ? "free" : "taken";
 
 	return response;
 }
@@ -208,20 +214,20 @@ bool CheckEmailAvailability::isAvailable (std::string email) {
 	return available;
 }
 
-ApiResponse CheckEmailAvailability::processRequest(RequestData &rd, nlohmann::json body) {
-	if (rd.method != "POST") return ApiResponse (405);
+std::unique_ptr<ApiResponse> CheckEmailAvailability::processRequest(RequestData &rd, nlohmann::json body) {
+	if (rd.method != "POST") return std::make_unique<ApiResponse> (405);
 
 	std::string email;
-	if (!body.contains ("email")) return ApiResponse (400);
+	if (!body.contains ("email")) return std::make_unique<ApiResponse> (400);
 	try {
 		email = body["email"].template get<std::string> ();
 	} catch (nlohmann::json::exception& e) {
-		return ApiResponse (400);
+		return std::make_unique<ApiResponse> (400);
 	}
 
-	ApiResponse response (200);
-	response.body["email"] = email;
-	response.body["status"] = CheckEmailAvailability::isAvailable (email) ? "free" : "taken";
+	auto response = std::make_unique<ApiResponse> (200);
+	response->body["email"] = email;
+	response->body["status"] = CheckEmailAvailability::isAvailable (email) ? "free" : "taken";
 
 	return response;
 }
@@ -259,10 +265,10 @@ std::string UserRegisterResource::generateSalt () {
 	return randomizer.str (SALT_LEN);
 }
 
-ApiResponse UserRegisterResource::processRequest (RequestData &rd, nlohmann::json body){
-	if (rd.method != "POST") return ApiResponse (405);
+std::unique_ptr<ApiResponse> UserRegisterResource::processRequest (RequestData &rd, nlohmann::json body){
+	if (rd.method != "POST") return std::make_unique<ApiResponse> (405);
 	if (!(body.contains ("username") && body.contains ("email") && body.contains ("password")))
-		return ApiResponse (400);
+		return std::make_unique<ApiResponse> (400);
 
 	std::string username, email, password;
 
@@ -271,18 +277,18 @@ ApiResponse UserRegisterResource::processRequest (RequestData &rd, nlohmann::jso
 		email = lowercase(body["email"].template get <std::string>());
 		password = lowercase(body["password"].template get <std::string>());
 	} catch (nlohmann::json::exception& e) {
-		return ApiResponse (400);
+		return std::make_unique<ApiResponse> (400);
 	}
 
-	if (!this->checkEmailFormat (email)) return ApiResponse ({{"status", "incorrect_email_format"}}, 200);
-	if (!this->checkUsernameFormat (username)) return ApiResponse ({{"status", "incorrect_username_format"}}, 200);
-	if (!this->checkPasswordFormat (password)) return ApiResponse ({{"status", "incorrect_password_format"}}, 200);
+	if (!this->checkEmailFormat (email)) return std::make_unique<ApiResponse> (nlohmann::json{{"status", "incorrect_email_format"}}, 200);
+	if (!this->checkUsernameFormat (username)) return std::make_unique<ApiResponse> (nlohmann::json{{"status", "incorrect_username_format"}}, 200);
+	if (!this->checkPasswordFormat (password)) return std::make_unique<ApiResponse> (nlohmann::json{{"status", "incorrect_password_format"}}, 200);
 
 	if (!CheckEmailAvailability::isAvailable (email))
-		return ApiResponse ({ {"status", "email_taken"} }, 200);
+		return std::make_unique<ApiResponse> (nlohmann::json{ {"status", "email_taken"} }, 200);
 
 	if (!CheckUsernameAvailability::isAvailable (username))
-		return ApiResponse ({ {"status", "username_taken"} }, 200);
+		return std::make_unique<ApiResponse> (nlohmann::json{ {"status", "username_taken"} }, 200);
 
 	std::string pass_salt = UserRegisterResource::generateSalt();
 	std::string pass_hash = hashForPassword (password, pass_salt);
@@ -299,6 +305,7 @@ ApiResponse UserRegisterResource::processRequest (RequestData &rd, nlohmann::jso
 			/* pass_hash */ + work.quote (pass_hash) + ","
 			/* pass_salt */ + work.quote (pass_salt)
 		+ ");";
+	
 	work.exec (createUserQuery);
 
 	std::string getUserIdQuery = std::string ("")
@@ -306,16 +313,77 @@ ApiResponse UserRegisterResource::processRequest (RequestData &rd, nlohmann::jso
 	auto user = work.exec1 (getUserIdQuery);
 	int uid = user[0].as<int>();
 
-	std::string sessionId = UserLoginResource::authUserWithWork (uid, rd.ip, work);
+	std::string confirmationId = randomizer.hex (128);
+	std::string awaitEmailConfirmationQuery = std::string()
+		+ "INSERT INTO pending_email_confirmation "
+		+ "(uid, confirmation_id, valid_until) "
+		+ "VALUES ("
+		+ std::to_string (uid) + ","
+		+ work.quote (confirmationId) + ","
+		+ "CURRENT_TIMESTAMP + interval '2 hours');";
+	work.exec (awaitEmailConfirmationQuery);
 	work.commit();
-	
-	return ApiResponse ({ {"username", username}, {"uid", uid}, {"status", "success"} }).setCookie (
-		"session_id", sessionId, true, 60*60*24*365 
-	).setCookie (
-		"username", username, false, 60*60*24*365
+
+	mailer.sendHtmlLetter (
+		email,
+		"Добро пожаловать в COLLABORATION.",
+		"confirm_email.html",
+		{
+			{ "{USERNAME}", username },
+			{ "{REGISTER_URL}", common.domain + "/confirm?id=" + confirmationId }
+		}
 	);
+	
+	return std::make_unique<ApiResponse> (nlohmann::json{ {"status", "success"} }, 200);
 }
 
+
+
+ConfirmRegistrationResource::ConfirmRegistrationResource (mg_context* ctx, std::string uri):
+Resource (ctx, uri) {
+	logger << "Интерфейс API: \"" + uri + "\"" << std::endl;
+}
+
+std::unique_ptr<_Response> ConfirmRegistrationResource::processRequest (RequestData &rd) {
+	auto response = std::make_unique <Response> (500);
+	response->redirect(common.http + "://" + common.domain + "/");
+	
+	if (!rd.query.contains ("id")) return response;
+
+	std::string id = rd.query["id"];
+
+	auto conn = database.connect();
+	pqxx::work work (*conn.conn);
+
+	std::string checkIdQuery = std::string()
+		+ "SELECT uid "
+		+ "FROM pending_email_confirmation "
+		+ "WHERE confirmation_id=" + work.quote (id)
+		+ " AND valid_until > CURRENT_TIMESTAMP;";
+	auto result = work.exec (checkIdQuery);
+	if (result.size() == 0) return response;
+
+	int uid = result[0].at(0).as <int>();
+	std::string removeId = std::string() 
+		+ "DELETE FROM pending_email_confirmation "
+		+ "WHERE confirmation_id=" + work.quote (id);
+	work.exec (removeId);
+
+	std::string sessionId = UserLoginResource::authUserWithWork (uid, rd.ip, work);
+	
+	std::string getUsernameByUid = std::string () 
+		+ "SELECT username "
+		+ "FROM users "
+		+ "WHERE uid=" + std::to_string (uid) + ";";
+	auto row = work.exec1 (getUsernameByUid);
+	std::string username = row.at(0).as <std::string> ();
+	
+	response->setCookie ("session_id", sessionId, true);
+	response->setCookie ("username", username, false);
+
+	work.commit();
+	return response;
+}
 
 
 
@@ -325,6 +393,12 @@ ApiResource (ctx, uri) {
 }
 
 UsernameUid CheckSessionResource::checkSessionId (std::string sessionId) {
+	if (sessionId == "") {
+		UsernameUid uuf;
+		uuf.valid = false;
+		return uuf;
+	}
+
 	auto conn = database.connect ();
 	pqxx::work work (*conn.conn);
 
@@ -367,10 +441,19 @@ UsernameUid CheckSessionResource::checkSessionId (std::string sessionId) {
 }	
 
 
-ApiResponse CheckSessionResource::processRequest (RequestData &rd, nlohmann::json body) {
-	if (rd.method != "POST") return ApiResponse (405);
-	if (!rd.setCookies.contains ("session_id")) return ApiResponse ({{"status", "unauthorized"}}, 200).setCookie ("session_id", "", true, 0);
+std::unique_ptr<ApiResponse> CheckSessionResource::processRequest (RequestData &rd, nlohmann::json body) {
+	if (rd.method != "POST") return std::make_unique<ApiResponse> (405);
+	if (!rd.setCookies.contains ("session_id")) {
+		auto response = std::make_unique<ApiResponse> (nlohmann::json{{"status", "unauthorized"}}, 200);
+		response->setCookie ("session_id", "", true, 0);
+		return response;
+	}
+
 	UsernameUid uu = CheckSessionResource::checkSessionId (rd.setCookies["session_id"]);
-	if (!uu.valid) return ApiResponse ({{"status", "unauthorized"}}, 200).setCookie ("session_id", "", true, 0);
-	return ApiResponse ({{"status", "authorized"}, {"username", uu.username}, {"uid", uu.uid}}, 200);
+	if (!uu.valid){
+		auto response = std::make_unique<ApiResponse> (nlohmann::json{{"status", "unauthorized"}}, 200);
+		response->setCookie ("session_id", "", true, 0);
+		return response;
+	}
+	return std::make_unique<ApiResponse> (nlohmann::json{{"status", "authorized"}, {"username", uu.username}, {"uid", uu.uid}}, 200);
 }

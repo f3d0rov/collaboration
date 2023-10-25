@@ -15,27 +15,13 @@ body (body), status (status) {
 
 }
 
-ApiResponse::operator Response () {
-	return Response (this->body.dump(), "application/json", this->status, this->_customHeaders);
+std::string ApiResponse::getBody () {
+	return this->body.dump();
 }
 
-ApiResponse& ApiResponse::addHeader (std::string name, std::string value) {
-	this->_customHeaders.push_back (std::make_pair (name, value));
-	return *this;
+std::string ApiResponse::getMime () {
+	return "application/json";
 }
-
-ApiResponse& ApiResponse::setCookie (std::string name, std::string value, bool httpOnly, long long maxAge) {
-	this->addHeader (
-		"Set-Cookie",
-		cookieString (name, value, httpOnly, maxAge)
-	);
-	return *this;
-}
-
-const std::vector <std::pair<std::string, std::string>>& ApiResponse::headers() {
-	return this->_customHeaders;
-}
-
 
 
 ApiResource::ApiResource (mg_context* ctx, std::string uri):
@@ -43,14 +29,13 @@ Resource (ctx, uri) {
 	logger << "Интерфейс API: \"/" << uri << "\"" << std::endl;
 }
 
-
-Response ApiResource::processRequest (RequestData &rd) {
+std::unique_ptr<_Response> ApiResource::processRequest (RequestData &rd) {
 	if (rd.body != "") {
 		nlohmann::json json;
 		try {
 			json = nlohmann::json::parse (rd.body);
 		} catch (nlohmann::json::exception &e) {
-			return Response ("Bad JSON", 400);
+			return std::make_unique<Response> ("Bad JSON", 400);
 		}
 		return this->processRequest (rd, json);
 	}

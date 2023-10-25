@@ -11,8 +11,8 @@ struct TemporaryRandomSearchPromptOption {
 	std::string text, url;
 };
 
-ApiResponse RandomSearchPromptResource::processRequest(RequestData &rd, nlohmann::json body) {
-	if (rd.method != "GET") return ApiResponse (405);
+std::unique_ptr<ApiResponse> RandomSearchPromptResource::processRequest(RequestData &rd, nlohmann::json body) {
+	if (rd.method != "GET") return std::make_unique<ApiResponse> (405);
 	const std::vector <TemporaryRandomSearchPromptOption> options = {
 		{"Nine Inch Nails", "/b?id=123"},
 		{"Трент Резнор", "/p?id=23"},
@@ -20,5 +20,5 @@ ApiResponse RandomSearchPromptResource::processRequest(RequestData &rd, nlohmann
 	};
 	auto option = options [this->randomGenerator() % options.size()];
 	
-	return ApiResponse ({{"text", option.text}, {"url", option.url}});
+	return std::make_unique<ApiResponse> (nlohmann::json{{"text", option.text}, {"url", option.url}}, 200);
 }

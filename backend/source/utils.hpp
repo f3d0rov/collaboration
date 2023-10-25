@@ -34,6 +34,10 @@ std::string trimmed (std::string s);
 
 std::string sha3_256 (std::string input);
 
+class Logger;
+class ScopedProtector;
+class Common;
+
 template <class T> std::chrono::microseconds usElapsedFrom_hiRes (T start) {
     return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
 }
@@ -60,3 +64,11 @@ class ScopedProtector {
 		ScopedProtector (std::function<void()> f);
 		~ScopedProtector ();
 };
+
+class Common {
+	public:
+		std::string domain;
+		std::string http = "http";
+};
+
+extern Common common;

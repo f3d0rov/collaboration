@@ -1,6 +1,42 @@
 
 #include "resource.hpp"
 
+
+_Response::_Response () {
+
+}
+
+_Response::~_Response () {
+
+}
+
+_Response& _Response::addHeader (std::string name, std::string value) {
+	this->_customHeaders.push_back (std::make_pair (name, value));
+	return *this;
+}
+
+_Response& _Response::setCookie (std::string name, std::string value, bool httpOnly, long long maxAge) {
+	this->addHeader (
+		"Set-Cookie",
+		cookieString (name, value, httpOnly, maxAge)
+	);
+	return *this;
+}
+
+const std::vector <std::pair<std::string, std::string>>& _Response::headers() {
+	return this->_customHeaders;
+}
+
+void _Response::redirect (std::string address) {
+	this->addHeader (
+		"Location",
+		address.c_str()
+	);
+	this->status = 303;
+}
+
+
+
 Response::Response (int status):
 status (status) {
 
@@ -16,27 +52,18 @@ body (body), status (status), mime (mimeType) {
 
 }
 
-Response::Response (std::string body, std::string mimeType, int status, const std::vector<std::pair<std::string, std::string>>& headers):
-body (body), status (status), mime (mimeType), _customHeaders (headers) {
+Response::~Response () {
 
 }
 
-Response& Response::addHeader (std::string name, std::string value) {
-	this->_customHeaders.push_back (std::make_pair (name, value));
-	return *this;
+std::string Response::getBody () {
+	return this->body;
 }
 
-Response& Response::setCookie (std::string name, std::string value, bool httpOnly, long long maxAge) {
-	this->addHeader (
-		"Set-Cookie",
-		cookieString (name, value, httpOnly, maxAge)
-	);
-	return *this;
+std::string Response::getMime () {
+	return this->mime;
 }
 
-const std::vector <std::pair<std::string, std::string>>& Response::headers() {
-	return this->_customHeaders;
-}
 
 void RequestData::setCookiesFromString (const char* cookies_) {
 	this->setCookies = std::map <std::string, std::string>();
@@ -58,6 +85,28 @@ void RequestData::setCookiesFromString (const char* cookies_) {
 		this->setCookies [name] = value;
 
 		if (!last) cookies = cookies.substr (nextSemicolon + 1); // Inefficient?
+	} while (!last);
+}
+
+void RequestData::setQueryVariables (const char* queryString) {
+	if (queryString == nullptr) return;
+	std::string queries (queryString);
+
+	bool last = false;
+	do {
+		int nextSemicolon = queries.find_first_of (';');
+
+		if (nextSemicolon == queries.npos) {
+			nextSemicolon = queries.length ();
+			last = true;
+		}
+		std::string nameValuePair = queries.substr (0, nextSemicolon);
+		int eq = nameValuePair.find ('=');
+		std::string name = trimmed(nameValuePair.substr (0, eq));
+		std::string value = trimmed(nameValuePair.substr (eq + 1));
+		this->query [name] = value;
+
+		if (!last) queries = queries.substr (nextSemicolon + 1); // Inefficient?
 	} while (!last);
 }
 
@@ -115,21 +164,23 @@ int Resource::_processRequest (mg_connection* conn) {
 
 		const char *cookie = mg_get_header(conn, "Cookie");
 		rd.setCookiesFromString (cookie);
+		rd.setQueryVariables(ri->query_string);
 		// logger << "Cookie: " << cookie << std::endl;
 
-		Response response = this->processRequest (rd);
+		auto response = this->processRequest (rd);
 		
-		mg_response_header_start(conn, response.status);
-		for (auto &i: response.headers()) {
+		mg_response_header_start(conn, response->status);
+		for (auto &i: response->headers()) {
 			mg_response_header_add (conn, i.first.c_str(), i.second.c_str(), i.second.length());
 		}
 
-		std::string contentType = response.mime + "; charset=utf-8";
+		std::string contentType = response->getMime() + "; charset=utf-8";
 		mg_response_header_add (conn, "Content-Type", contentType.c_str(), contentType.length());
 		mg_response_header_send (conn);
 
-		mg_write (conn, response.body.c_str(), response.body.length());
-		return response.status;
+		std::string respBody = response->getBody();
+		mg_write (conn, respBody.c_str(), respBody.length());
+		return response->status;
 
 	} catch (std::exception& e) {
 		logger << "Internal error while processing request: " << e.what() << std::endl;
@@ -144,8 +195,8 @@ int Resource::_processRequest (mg_connection* conn) {
 	return 0;
 }
 
-Response Resource::processRequest (RequestData &rd) {
-	return Response (404);
+std::unique_ptr<_Response> Resource::processRequest (RequestData &rd) {
+	return std::make_unique<Response> (404);
 }
 
 std::string_view Resource::uri () {

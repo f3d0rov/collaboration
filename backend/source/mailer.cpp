@@ -67,7 +67,7 @@ std::string Mailer::openReadSubstitute (std::string path, const std::unordered_m
 
 void Mailer::sendHtmlLetter (std::string destination, std::string subject, std::string path, const std::unordered_map <std::string, std::string>& replace) {
 	std::unique_lock lock (this->_clientMutex);
-	std::string message = this->openReadSubstitute (path, replace);
+	std::string message = this->openReadSubstitute (this->_emailTemplatesFolderPath + path, replace);
 	jed_utils::HTMLMessage msg (
 		this->_myAddress.value(),
 		{ jed_utils::MessageAddress (destination.c_str()) },

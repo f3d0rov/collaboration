@@ -62,6 +62,7 @@ std::string trimmed (std::string s) {
 	return s.substr (first, s.find_last_not_of (whitespaces) - first + 1);
 }
 
+
 std::string sha3_256 (std::string input) {;
 	// const EVP_MD *EVP_sha3_256(void);
 	EVP_MD_CTX *mdctx;
@@ -135,3 +136,5 @@ ScopedProtector::ScopedProtector (std::function<void()> f) {
 ScopedProtector::~ScopedProtector () {
 	this->_f();
 }
+
+Common common;

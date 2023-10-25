@@ -13,6 +13,6 @@ class RandomSearchPromptResource: public ApiResource {
 	public:
 		RandomSearchPromptResource (mg_context* ctx, std::string uri);
 
-		ApiResponse processRequest (RequestData &rd, nlohmann::json body) final;
+		std::unique_ptr<ApiResponse> processRequest (RequestData &rd, nlohmann::json body) final;
 
 };

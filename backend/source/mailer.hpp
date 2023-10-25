@@ -1,3 +1,4 @@
+#pragma once
 
 #include <string>
 #include <unordered_map>
@@ -22,6 +23,7 @@ class Mailer {
 
 		int _port;
 		std::string _server, _username, _password, _displayName;
+		std::string _emailTemplatesFolderPath = "email-templates/";
 	public:
 		
 		Mailer ();

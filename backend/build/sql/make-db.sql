@@ -12,9 +12,9 @@ create table users (
 );
 
 create table pending_email_confirmation (
-	uid int references users (uid) not null
-	confirmation_id varchar (128) primary key not null
-	valid_until timestamp not null;
+	uid int references users (uid) not null,
+	confirmation_id varchar (128) primary key not null,
+	valid_until timestamp not null
 );
 
 create table user_login (

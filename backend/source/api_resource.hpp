@@ -1,6 +1,7 @@
 #pragma once
 
 #include <initializer_list>
+#include <memory>
 
 #include "civetweb/CivetServer.h"
 #include "nlohmann-json/json.hpp"
@@ -12,9 +13,7 @@ class ApiResponse;
 class ApiResource;
 
 
-class ApiResponse {
-	private:
-		std::vector <std::pair <std::string, std::string>> _customHeaders;
+class ApiResponse: public _Response {
 	public:
 		nlohmann::json body;
 		int status = 500;
@@ -22,19 +21,17 @@ class ApiResponse {
 		ApiResponse ();
 		ApiResponse (int status);
 		ApiResponse (nlohmann::json body, int status = 200);
+		~ApiResponse () = default;
 
-		operator Response ();
-
-		ApiResponse& addHeader (std::string name, std::string value);
-		ApiResponse& setCookie (std::string name, std::string value, bool httpOnly = false, long long maxAge = 60 * 60 * 24 * 7);
-		const std::vector <std::pair<std::string, std::string>> &headers();
+		std::string getBody () final;
+		std::string getMime () final;
 };
 
 
 class ApiResource: public Resource {
 	public:
 		ApiResource (mg_context* ctx, std::string uri);
-		Response processRequest (RequestData &rd) final;
+		std::unique_ptr<_Response> processRequest (RequestData &rd) final;
 
-		virtual ApiResponse processRequest(RequestData &rd, nlohmann::json body) = 0;
+		virtual std::unique_ptr<ApiResponse> processRequest(RequestData &rd, nlohmann::json body) = 0;
 };
