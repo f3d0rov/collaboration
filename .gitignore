@@ -1,5 +1,6 @@
 backend/build/collab-server
 backend/build/db-config.json
+backend/build/smtp-config.json
 backend/obj
 .vscode
 *.log

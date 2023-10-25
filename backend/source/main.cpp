@@ -8,6 +8,8 @@
 #include "args.hpp"
 #include "utils.hpp"
 
+#include "mailer.hpp"
+
 #include "database.hpp"
 #include "resource.hpp"
 #include "web_resource.hpp"
@@ -81,9 +83,10 @@ int main (int argc, const char *argv[]) {
 				ArgOption ("p", "port", "Порт для входящих запросов", true),
 				ArgOption ("", "request-timeout", "Таймаут запросов", true),
 				ArgOption ("", "civetweb-error-log", "Файл для записи ошибок Civetweb", true),
-				ArgOption ("", "dbconfig", "Путь к файлу .json с данными для подключения к PostgreSQL", true),
+				ArgOption ("", "db-config", "Путь к файлу .json с данными для подключения к PostgreSQL", true),
 				ArgOption ("", "db-connections", "Количество одновременных соединений с PostgreSQL", true),
-				ArgOption ("", "remake-db", "Удалить и заново создать базу данных")
+				ArgOption ("", "remake-db", "Удалить и заново создать базу данных"),
+				ArgOption ("", "smtp-config", "Путь к файлу .json с данными для подключения к SMTP-серверу", true)
 			}
 		);
 
@@ -115,9 +118,12 @@ int main (int argc, const char *argv[]) {
 	std::string frontendDir = argParser.getArgValue ("index", DEFAULT_INDEX_DIRECTORY_PATH);
 	if (!argParser.hasArg ("index")) chdirToExecutableDirectory (argv[0]);
 	
-	database.init (argParser.getArgValue ("dbconfig", DEFAULT_DB_CONFIG_FILE), std::stoi(argParser.getArgValue ("db-connections", DEFAULT_DB_CONNECTION_COUNT)));
+	database.init (
+		argParser.getArgValue ("db-config", DEFAULT_DB_CONFIG_FILE),
+		std::stoi(argParser.getArgValue ("db-connections", DEFAULT_DB_CONNECTION_COUNT))
+	);
 	if (!database.started()) {
-		logger << "Failed to establish database connection" << std::endl;
+		logger << "Не удалось подключиться к базе данных" << std::endl;
 		return -1;
 	}
 
@@ -125,6 +131,12 @@ int main (int argc, const char *argv[]) {
 		logger << "Пересоздаем базу данных..." << std::endl;
 		resetDatabase ();
 		setupDatabase ();
+	}
+	try {
+		mailer.init (argParser.getArgValue ("smtp-config", DEFAULT_SMTP_CONFIG_FILE));
+	} catch (std::exception &e) {
+		logger << "Не удалось подключиться к серверу SMTP: " << e.what() << std::endl;
+		return -1;
 	}
 
 	mg_context* ctx = startCivetweb (argParser);

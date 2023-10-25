@@ -1,0 +1,9 @@
+{
+	"server": "<smtp-relay-address>",
+	"port": <smtp-relay-port>,
+
+	"username": "<email-address>",
+	"password": "<password>",
+
+	"display_name": "<display-name>"
+}

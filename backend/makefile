@@ -8,7 +8,7 @@ ODIR = obj
 SOURCE_DIR = source
 INCLUDE = 
 LIB_INCLUDE = 
-LIBS = -lpthread -static-libgcc -ldl -static-libstdc++ -lpqxx -lpq -lcivetweb -lcrypto
+LIBS = -lpthread -static-libgcc -ldl -static-libstdc++ -lpqxx -lpq -lcivetweb -lcrypto -lssl -lsmtpclient
 
 OUT = build/collab-server
 
