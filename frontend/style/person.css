@@ -129,7 +129,7 @@ body {
 	opacity: 0.1;
 }
 
-.timelineInlineButton:hover {
+.timelineElem .timelineInlineButton:hover, .timelineElem:hover .timelineInlineButton:hover {
 	opacity: 1;
 	cursor: pointer;
 }
