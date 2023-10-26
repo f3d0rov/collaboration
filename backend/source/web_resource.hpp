@@ -25,6 +25,7 @@ class SharedDirectory;
 class WebResource: public Resource {
 	private:
 		std::string _filepath, _mime;
+		bool _dontCache = false;
 		std::optional <std::string> _cached;
 		std::chrono::time_point <std::chrono::system_clock> _cacheTime;
 
@@ -36,7 +37,7 @@ class WebResource: public Resource {
 		std::string _getActualCache ();
 
 	public:
-		WebResource (mg_context *ctx, std::string uri, std::string path, std::string mime = "text/html");
+		WebResource (mg_context *ctx, std::string uri, std::string path, bool dontCache = false, std::string mime = "text/html");
 		virtual std::unique_ptr<_Response> processRequest (RequestData &rd) override;
 
 		std::string filepath();
@@ -49,7 +50,7 @@ class SharedDirectory {
 		std::vector < std::unique_ptr <WebResource> > _resources;
 
 	public:
-		SharedDirectory (mg_context *ctx, std::string directoryPath, bool ignoreHtml = true);
+		SharedDirectory (mg_context *ctx, std::string directoryPath, bool ignoreHtml = true, bool dontCache = false);
 
 		size_t size();
 };

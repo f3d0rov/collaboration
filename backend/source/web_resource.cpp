@@ -2,10 +2,11 @@
 #include "web_resource.hpp"
 
 
-WebResource::WebResource (mg_context *ctx, std::string uri, std::string path, std::string mime):
+WebResource::WebResource (mg_context *ctx, std::string uri, std::string path, bool dontCache, std::string mime):
 Resource (ctx, uri) {
 	this->_filepath = path;
 	this->_mime = mime;
+	this->_dontCache = dontCache;
 
 	logger << "Ресурс: \"/" << uri << "\" (" << path << ") [" << std::filesystem::file_size (path) << "B, " << mime << "]" <<  std::endl;
 }
@@ -16,7 +17,11 @@ void WebResource::_cacheFile () {
 }
 
 bool WebResource::_cacheIsInvalid () {
-	return (!this->_cached.has_value()) || (this->_cacheTime + CACHED_FILES_RELOAD_PERIOD <= std::chrono::system_clock::now());
+	return ( // Reload cache if
+		this->_dontCache 				// Always reloading file
+		|| (!this->_cached.has_value()) // Didn't cache before
+		|| ((this->_cacheTime + CACHED_FILES_RELOAD_PERIOD) <= std::chrono::system_clock::now()) // Cache too old
+	);
 }
 
 void WebResource::_loadCacheIfInvalid () {
@@ -44,7 +49,7 @@ std::string WebResource::mime () {
 
 
 
-SharedDirectory::SharedDirectory (mg_context *ctx, std::string directoryPath, bool ignoreHtml) {
+SharedDirectory::SharedDirectory (mg_context *ctx, std::string directoryPath, bool ignoreHtml, bool dontCache) {
 	for (auto& i: std::filesystem::recursive_directory_iterator (directoryPath)) {
 		auto path = i.path();
 		if (!std::filesystem::is_regular_file (path)) continue;
@@ -57,7 +62,7 @@ SharedDirectory::SharedDirectory (mg_context *ctx, std::string directoryPath, bo
 		if (ignoreHtml && (ext == "html" || ext == "htm")) continue;
 		std::string mime = mg_get_builtin_mime_type (uri.c_str());
 
-		this->_resources.emplace_back (std::make_unique <WebResource> (ctx, uri, fullPathStr, mime));
+		this->_resources.emplace_back (std::make_unique <WebResource> (ctx, uri, fullPathStr, dontCache, mime));
 	}
 }
 

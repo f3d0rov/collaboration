@@ -107,7 +107,8 @@ int main (int argc, const char *argv[]) {
 				ArgOption ("", "db-connections", "Количество одновременных соединений с PostgreSQL", true),
 				ArgOption ("", "remake-db", "Удалить и заново создать базу данных"),
 				ArgOption ("", "smtp-config", "Путь к файлу .json с данными для подключения к SMTP-серверу", true),
-				ArgOption ("", "no-smtp", "Не отправлять письма")
+				ArgOption ("", "no-smtp", "Не отправлять письма"),
+				ArgOption ("", "no-cache", "Не кешировать веб-ресурсы")
 			}
 		);
 
@@ -172,10 +173,14 @@ int main (int argc, const char *argv[]) {
 		return -1;
 	}
 
+	bool dontCache = argParser.hasArg ("no-cache");
+	if (dontCache) {
+		logger << "Кэширование файлов и ресурсов отключено." << std::endl;
+	}
 
-	SharedDirectory sharedFiles (ctx, frontendDir, true);
-	WebResource indexPage (ctx, "", frontendDir + "/index.html");
-	WebResource personPage (ctx, "p", frontendDir + "/person.html");
+	SharedDirectory sharedFiles (ctx, frontendDir, true, dontCache);
+	WebResource indexPage (ctx, "", frontendDir + "/index.html", dontCache);
+	WebResource personPage (ctx, "p", frontendDir + "/person.html", dontCache);
 
 	Resource api404 (ctx, "api");
 	RandomSearchPromptResource RandomSearchPromptResource (ctx, "api/rsp");
@@ -190,7 +195,7 @@ int main (int argc, const char *argv[]) {
 
 	while (1) { // Ждем входящие подключения
 		occasionalTasks ();	
-		std::this_thread::sleep_for (std::chrono::minutes (5));
+		std::this_thread::sleep_for (std::chrono::minutes (10));
 	}
 
 	mg_stop (ctx); // Останавливаем сервер
