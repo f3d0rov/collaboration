@@ -253,7 +253,7 @@ async function checkAuthOnLoad () {
 	let unauthedUserCard = document.getElementById ('userCardUnauthed');
 
 	userCard.classList.remove ('hidden');
-	unauthedUserCard.classList.add ('hidden');
+	if (unauthedUserCard) unauthedUserCard.classList.add ('hidden');
 
 	let usernameElem = userCard.querySelector ('#username');
 	usernameElem.innerHTML = username;
@@ -322,12 +322,14 @@ function setupLoginForm (ev) {
 
 function setupLoginForms (ev) {
 	checkAuthOnLoad ();
-
-	setupOnClickEvent ('headerLoginButton', showLoginWindow);
-	setupOnClickEvent ('headerRegisterButton', showRegisterWindow);
 	setupOnClickEvent ('logoutButton', logout);
 
-	setupLoginForm ();
+	if (document.getElementById ("loginRegisterLayer")) {
+		setupOnClickEvent ('headerLoginButton', showLoginWindow);
+		setupOnClickEvent ('headerRegisterButton', showRegisterWindow);
+	
+		setupLoginForm ();
+	}
 };
 
 window.addEventListener (

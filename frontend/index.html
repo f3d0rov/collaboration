@@ -13,6 +13,7 @@
 		<link rel="stylesheet" type="text/css" href="style/style.css">
 		<link rel="stylesheet" type="text/css" href="style/index.css">
 		
+		<script src="/scripts/userauth.js"></script>
 		<script src="/scripts/index.js"></script>
 	</head>	
 	<body>
@@ -28,6 +29,17 @@
 		</div>
 		<div class = "bottomLeftLinks"> 
 			<a href = "https://github.com/f3d0rov/collaboration"> <img src = "./resources/github-mark-white.svg" id = "github-link-image"> </a>
+		</div>
+		<div class = "userCard hidden" id = "userCardAuthed">
+			<div class = "userlinks"> 
+				<div>
+					<a href="/u?=4" class = "username" id = "username"> username </a>
+				</div>
+				<div id = "logoutButton" class = "logoutButton"> Выйти </div>
+			</div>
+			<a href="/u?=4">
+				<img src="/resources/user.svg" class = "userIcon">
+			</a>
 		</div>
 	</body>
 </html>
