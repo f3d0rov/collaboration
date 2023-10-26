@@ -119,10 +119,14 @@ body {
 	margin-top: 4px;
 	margin-left: 7px;
 
-	opacity: 0.1;
+	opacity: 0;
 	transition: opacity 0.2s ease-in-out;
 
 	vertical-align: text-top;
+}
+
+.timelineElem:hover .timelineInlineButton {
+	opacity: 0.1;
 }
 
 .timelineInlineButton:hover {
