@@ -101,3 +101,31 @@ body {
 	left: 0;
 	top: 0;
 }
+
+.timepointTitleBox {
+	display: flex;
+	align-items: center;
+	align-content: center;
+}
+
+.timepointTitle {
+	margin-right: 10px;
+}
+
+.timelineInlineButton {
+	display: inline;
+	width: 26px;
+	height: 26px;
+	margin-top: 4px;
+	margin-left: 7px;
+
+	opacity: 0.1;
+	transition: opacity 0.2s ease-in-out;
+
+	vertical-align: text-top;
+}
+
+.timelineInlineButton:hover {
+	opacity: 1;
+	cursor: pointer;
+}
