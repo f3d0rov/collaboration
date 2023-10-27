@@ -78,14 +78,22 @@ function generateLookupUrl (lookupStr) {
 	return res;
 }
 
-function generateTimepoint (icon, titleHtml, date, body = "", lookupStr = "") {
+function editEvent (id) {
+	console.log ("edit event #" + id);
+}
+
+function reportEvent (id) {
+	console.log ("report event #" + id);
+}
+
+function generateTimepoint (eventId, icon, titleHtml, date, body = "", lookupStr = "") {
 	let template = document.getElementById ('timelineElemTemplate');
 	let clone = template.cloneNode (true);
 	clone.classList.remove ('template');
 	setByClass (clone, 'timepointTitle', titleHtml);
 	setByClass (clone, 'timepoint', date);
 	setByClass (clone, 'timepointBody', body);
-	clone.id = "timepoint_" + Math.floor (Math.random() * 100000000);
+	clone.id = "timepoint_" + eventId;
 	clone.querySelector ('.timelineElemIcon').setAttribute ('src', icon);
 
 	if (lookupStr == "") {
@@ -95,10 +103,20 @@ function generateTimepoint (icon, titleHtml, date, body = "", lookupStr = "") {
 		clone.querySelector ('#lookupEntry').addEventListener (
 			'click',
 			() => {
-				window.open (url);
+				window.open (url,'_blank', 'noopener');
 			}
 		);
 	}
+
+	clone.querySelector ('#editEntry').addEventListener (
+		'click',
+		() => { if (demandAuth()) { editEvent(eventId) } }
+	);
+
+	clone.querySelector ('#reportEntry').addEventListener (
+		'click',
+		() => { if (demandAuth()) { reportEvent(eventId) } }	
+	);
 
 	template.parentElement.insertBefore (clone, template);
 
@@ -111,6 +129,7 @@ function linkToNameUrlObj (obj) {
 
 function generateFoundationTimepoint (event) {
 	generateTimepoint (
+		event.id,
 		'/resources/timeline/band.svg',
 		'Основание группы ' + linkToNameUrlObj (event.band),
 		event.date,
@@ -121,6 +140,7 @@ function generateFoundationTimepoint (event) {
 
 function generateSingleTimepoint (event) {
 	generateTimepoint (
+		event.id,
 		'/resources/timeline/song.svg',
 		'Сингл ' + linkToNameUrlObj (event.band) + ' - ' + event.song,
 		event.date,
@@ -131,6 +151,7 @@ function generateSingleTimepoint (event) {
 
 function generateAlbumTimepoint (event) {
 	generateTimepoint (
+		event.id,
 		'/resources/timeline/album.svg', 
 		'Альбом ' + linkToNameUrlObj (event.band) + ' - ' + linkToNameUrlObj (event.album),
 		event.date,
@@ -159,6 +180,7 @@ function generateEventList (events) {
 
 var testData = [
 	{
+		id: 20,
 		type: 'band_foundation',
 		band: { 
 			name: 'Nine Inch Nails',
@@ -170,6 +192,7 @@ var testData = [
 	}, 
 
 	{
+		id: 21,
 		type: 'single',
 		band: { 
 			name: 'Nine Inch Nails',
@@ -181,6 +204,7 @@ var testData = [
 	},
 
 	{
+		id: 22,
 		type: 'album',
 		band: { 
 			name: 'Nine Inch Nails',
@@ -196,6 +220,7 @@ var testData = [
 	},
 	
 	{
+		id: 23,
 		type: 'single',
 		band: { 
 			name: 'Nine Inch Nails',
@@ -206,6 +231,7 @@ var testData = [
 		collaborators: []
 	},
 	{
+		id: 36,
 		type: 'single',
 		band: { 
 			name: 'Nine Inch Nails',

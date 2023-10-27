@@ -181,6 +181,7 @@ int main (int argc, const char *argv[]) {
 	SharedDirectory sharedFiles (ctx, frontendDir, true, dontCache);
 	WebResource indexPage (ctx, "", frontendDir + "/index.html", dontCache);
 	WebResource personPage (ctx, "p", frontendDir + "/person.html", dontCache);
+	WebResource searchPage (ctx, "search", frontendDir + "/search.html", dontCache);
 
 	Resource api404 (ctx, "api");
 	RandomSearchPromptResource RandomSearchPromptResource (ctx, "api/rsp");

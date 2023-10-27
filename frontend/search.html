@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+
+		<title> Поиск - COLLABORATION. </title>
+		<link rel="icon" type="image/png" href="/resources/favicon.ico">
+
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald&display=swap" rel="stylesheet">
+		
+		<link rel="stylesheet" type="text/css" href="style/style.css">
+		<link rel="stylesheet" type="text/css" href="style/person.css">
+
+		<script src="scripts/userauth.js"></script>
+		<script src="scripts/header.js"></script>
+		<script src="scripts/search.js"></script>
+	</head>
+	<body>
+		<div class = "header">
+			<div class = "headerLogoContainer">
+				<a href="/">
+					<div class = "headerLogo"> 
+					COLLABORATION.
+					</div>
+				</a>
+			</div>
+			<div class = "headerSearch">
+				<input id = "headerSearchBox" placeholder="...">
+				<div id = "headerSearchButton"> <img src="/resources/search-icon.svg" id = "headerSearchIcon"> </div>
+			</div>
+			<div class = "userCard hidden" id = "userCardAuthed">
+				<div class = "userlinks"> 
+					<div>
+						<a href="/u?=4" class = "username" id = "username"> username </a>
+					</div>
+					<div id = "logoutButton" class = "logoutButton"> Выйти </div>
+				</div>
+				<a href="/u?=4">
+					<img src="/resources/user.svg" class = "userIcon">
+				</a>
+			</div>
+			<div class = "loginRegister" id = "userCardUnauthed">
+				<div class = "headerLoginButton" id = "headerLoginButton">
+					Войти
+				</div>
+				<div class = "headerLoginButton" id = "headerRegisterButton">
+					Зарегистрироваться
+				</div>
+			</div>
+		</div>
+
+		<div class = "page">
+		</div>
+	</body>
+</html>

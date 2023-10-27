@@ -336,3 +336,14 @@ window.addEventListener (
 	'load',
 	setupLoginForms
 );
+
+function isAuthorized () {
+	uname = getCookie ('username');
+	return uname != null && uname != undefined;
+}
+
+function demandAuth () {
+	if (isAuthorized()) return true;
+	showLoginWindow ();
+	return false;
+}
