@@ -70,16 +70,37 @@ function setByClass (elem, classname, innerHtml) {
 	sub.innerHTML = innerHtml;
 }
 
-function generateTimepoint (icon, titleHtml, date, body = "") {
+function generateLookupUrl (lookupStr) {
+	let keys = lookupStr.split (' ');
+	if (keys.length == 0) return "https://developer.mozilla.org/en-US/docs/Web/JavaScript";
+	let res = "https://www.google.com/search?q=" + keys[0];
+	for (let i = 1; i < keys.length; i++) res += "+" + keys[i];
+	return res;
+}
+
+function generateTimepoint (icon, titleHtml, date, body = "", lookupStr = "") {
 	let template = document.getElementById ('timelineElemTemplate');
 	let clone = template.cloneNode (true);
 	clone.classList.remove ('template');
 	setByClass (clone, 'timepointTitle', titleHtml);
 	setByClass (clone, 'timepoint', date);
 	setByClass (clone, 'timepointBody', body);
+	clone.id = "timepoint_" + Math.floor (Math.random() * 100000000);
 	clone.querySelector ('.timelineElemIcon').setAttribute ('src', icon);
 
-	template.parentElement.appendChild (clone);
+	if (lookupStr == "") {
+		clone.querySelector("#lookupEntry").classList.add ("hidden");	
+	} else {
+		let url = generateLookupUrl (lookupStr);
+		clone.querySelector ('#lookupEntry').addEventListener (
+			'click',
+			() => {
+				window.open (url);
+			}
+		);
+	}
+
+	template.parentElement.insertBefore (clone, template);
 
 	return clone;
 }
@@ -93,7 +114,8 @@ function generateFoundationTimepoint (event) {
 		'/resources/timeline/band.svg',
 		'Основание группы ' + linkToNameUrlObj (event.band),
 		event.date,
-		'body' in event ? event.body : ""
+		'body' in event ? event.body : "",
+		event.band.name
 	);
 }
 
@@ -102,7 +124,8 @@ function generateSingleTimepoint (event) {
 		'/resources/timeline/song.svg',
 		'Сингл ' + linkToNameUrlObj (event.band) + ' - ' + event.song,
 		event.date,
-		'body' in event ? event.body : ""
+		'body' in event ? event.body : "",
+		event.band.name + " - " + event.song
 	);
 }
 
@@ -111,7 +134,8 @@ function generateAlbumTimepoint (event) {
 		'/resources/timeline/album.svg', 
 		'Альбом ' + linkToNameUrlObj (event.band) + ' - ' + linkToNameUrlObj (event.album),
 		event.date,
-		'body' in event ? event.body : ""
+		'body' in event ? event.body : "",
+		event.band.name + " - " + event.album.name
 	);
 }
 
@@ -126,6 +150,7 @@ function generateEventList (events) {
 		'album': generateAlbumTimepoint
 	};
 	for (let i of events) {
+		console.log (i);
 		if (i.type in timelineElemGenerators) timelineElemGenerators [i.type](i);
 		else defaultTimepointGenerator (i);
 	}

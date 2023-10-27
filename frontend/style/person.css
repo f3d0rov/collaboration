@@ -125,11 +125,43 @@ body {
 	vertical-align: text-top;
 }
 
+.timelineInlineButton.hidden {
+	display: none;
+}
+
 .timelineElem:hover .timelineInlineButton {
 	opacity: 0.1;
 }
 
 .timelineElem .timelineInlineButton:hover, .timelineElem:hover .timelineInlineButton:hover {
+	opacity: 1;
+	cursor: pointer;
+}
+
+.addMissing {
+	display: flex;
+	align-items: center;
+	align-content: center;
+
+	color:  white;
+	margin-left: 120px;
+	width: fit-content;
+
+	opacity: 0.3;
+	transition: opacity 0.2s ease-in-out;
+}
+
+.addMissing img {
+	width: 30px;
+	height: 30px;
+}
+
+.addMissingPrompt {
+	margin-left: 10px;
+	font-size: 26px;
+}
+
+.addMissing:hover {
 	opacity: 1;
 	cursor: pointer;
 }
