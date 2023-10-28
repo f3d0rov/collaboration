@@ -1,4 +1,5 @@
 drop table if exists search_index;
+drop table if exists indexed_resources;
 drop table if exists concerts;
 drop table if exists songs;
 drop table if exists albums;

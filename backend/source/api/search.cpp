@@ -16,6 +16,19 @@ type (type), text (text), url (url), imgPath (imgPath) {
 	
 }
 
+// SQL row constructor, __specifically__ ordered as 'url, title, type, picture_path, value'. `picture_path` may be NULL.
+SearchResult::SearchResult (const pqxx::row& sqlrow) {
+	// This could be implemented without the need for strict order,
+	// but pqxx documentation says that access by column name is slower 
+	// than access by index. Considering that during one search this constructor
+	// might be called dozens of times, optimization is best.
+	this->url = sqlrow[0].as <std::string>();
+	this->text = sqlrow[1].as <std::string>();
+	this->type = sqlrow[2].as <std::string>();
+	this->value = sqlrow[4].as <int>();
+	if (!sqlrow[3].is_null()) this->imgPath = sqlrow[3].as <std::string>();
+}
+
 auto SearchResult::operator <=> (const SearchResult &right) const {
 	return this->value <=> right.value;
 }
@@ -39,8 +52,11 @@ std::set <std::string> SearchResource::getKeywordsFromPrompt (std::string prompt
 	int start = prompt.find_first_not_of (whitespaces);
 	while (start != prompt.npos && start < prompt.length()) {
 		int end = prompt.find_first_of (whitespaces, start + 1);
-		std::string keyword = lowercase (prompt.substr (start, end - start));
+
+		// Should be lowercase() here but it's easier to use sql LOWER() rather than c++ tools
+		std::string keyword = prompt.substr (start, end - start); 
 		result.insert (keyword);
+		
 		// std::cout << keyword << std::endl;
 		if (end == prompt.npos) break;
 		start = prompt.find_first_not_of (whitespaces, end + 1);
@@ -55,7 +71,7 @@ std::string SearchResource::getSqlListOfKeywords (std::set <std::string> &keywor
 	bool notFirst = false;
 	for (auto i: keywords) {
 		if (notFirst) result += ",";
-		result += work.quote (i);
+		result += "LOWER(" + work.quote (i) + ")"; 
 		notFirst = true;
 	}
 
@@ -66,31 +82,21 @@ std::vector <SearchResult> SearchResource::findAllWithWork (std::string prompt, 
 	auto keywords = SearchResource::getKeywordsFromPrompt (prompt);
 	if (keywords.size() == 0) return {};
 	std::string keywordList = SearchResource::getSqlListOfKeywords (keywords, work);
-	std::string searchQuery = std::string ("SELECT url, title, value, type FROM search_index WHERE keyword IN ") + keywordList + ";"; 
+	
+	std::string searchQuery = std::string ()
+		+ "SELECT url, title, type, picture_path, SUM(value) "
+		+ "FROM indexed_resources INNER JOIN search_index ON indexed_resources.id = search_index.resource_id "
+		+ "WHERE keyword IN " + keywordList + " GROUP BY url, title, type, picture_path ORDER BY SUM(value) DESC;";
 
 	auto result = work.exec (searchQuery);
 	if (result.size() == 0) return {};
 
-	std::map <std::string /* url */, SearchResult> urlList;
+	std::vector <SearchResult> results;
 	for (int i = 0; i < result.size(); i++) {
-		auto row = result[i];
-		std::string url = row[0].as <std::string>();
-		std::string title = row[1].as <std::string>();
-		int value = row[2].as <int>();
-		std::string type = row[3].as <std::string>();
-
-		if (!urlList.contains (url)) {
-			urlList [url] = SearchResult (type, title, url);
-		}
-		urlList [url].value += value;
+		results.emplace_back (result[i]);
 	}
 
-	std::set <SearchResult> priorityList;
-	for (const auto &i: urlList) {
-		priorityList.insert (i.second);
-	}
-
-	return std::vector <SearchResult> (priorityList.begin(), priorityList.end());
+	return results;
 }
 
 std::vector <SearchResult> SearchResource::findAll (std::string prompt) {
@@ -102,7 +108,25 @@ std::vector <SearchResult> SearchResource::findAll (std::string prompt) {
 }
 
 std::vector <SearchResult> SearchResource::findByTypeWithWork (std::string prompt, std::string type, pqxx::work &work) {
-	return {};
+	auto keywords = SearchResource::getKeywordsFromPrompt (prompt);
+	if (keywords.size() == 0) return {};
+	std::string keywordList = SearchResource::getSqlListOfKeywords (keywords, work);
+	
+	std::string searchQuery = std::string ()
+		+ "SELECT url, title, type, picture_path, SUM(value) "
+		+ "FROM indexed_resources INNER JOIN search_index ON indexed_resources.id = search_index.resource_id "
+		+ "WHERE keyword IN " + keywordList + " AND type=" + work.quote (type)
+		+" GROUP BY url, title, type, picture_path ORDER BY SUM(value) DESC;";
+
+	auto result = work.exec (searchQuery);
+	if (result.size() == 0) return {};
+
+	std::vector <SearchResult> results;
+	for (int i = 0; i < result.size(); i++) {
+		results.emplace_back (result[i]);
+	}
+
+	return results;
 }
 
 std::vector <SearchResult> SearchResource::findByType (std::string prompt, std::string type) {

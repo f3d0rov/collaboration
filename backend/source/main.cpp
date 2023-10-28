@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <thread>
+#include <locale>
 
 #include <pqxx/pqxx>
 #include "civetweb/CivetServer.h"
@@ -35,6 +36,7 @@ int logCivetwebMessage (const mg_connection *conn, const char *message) {
 }
 
 mg_context *startCivetweb (ArgsParser &argParser) {
+	std::setlocale (LC_CTYPE, "ru_RU.UTF-8");
 	std::string port = argParser.getArgValue ("port", DEFAULT_PORT);
 	std::string requestTimeout = argParser.getArgValue ("request-timeout", DEFAULT_REQUEST_TIMEOUT_TIME_MS);
 	std::string civetwebErrorLogFile = argParser.getArgValue ("civetweb-error-log", DEFAULT_CIVETWEB_ERROR_LOG_FILE);

@@ -168,6 +168,11 @@ void execSqlFile (std::string path) {
 	std::string file = readFile (path);
 	auto conn = database.connect ();
 	pqxx::work work (*conn.conn);
-	work.exec (file);
-	work.commit ();
+	try {
+		work.exec (file);
+		work.commit ();
+	} catch (pqxx::pqxx_exception &e) {
+		logger << "Ошибка при исполнении файла '" + path + "': " + e.base().what() << std::endl;
+		throw;
+	}
 }

@@ -1,9 +1,34 @@
 
-INSERT INTO search_index (
-	keyword, title, url, value, type
+INSERT INTO indexed_resources (
+	url, title, type
 ) VALUES
-	( 'nine', 'Трент Резнор', '/p?id=12', 1, 'person' ),
-	( 'inch', 'Трент Резнор', '/p?id=12', 1, 'person' ),
-	( 'nails', 'Трент Резнор', '/p?id=12', 1, 'person' ),
-	( 'трент', 'Трент Резнор', '/p?id=12', 1, 'person' ),
-	( 'резнор', 'Трент Резнор', '/p?id=12', 1, 'person' );
+	('/p?id=12', 'Трент Резнор', 'person');
+
+
+INSERT INTO search_index (resource_id, keyword, value)
+SELECT id, 'nine', 1
+FROM indexed_resources WHERE url='/p?id=12';
+
+INSERT INTO search_index (resource_id, keyword, value)
+SELECT id, 'inch', 1
+FROM indexed_resources WHERE url='/p?id=12';
+
+INSERT INTO search_index (resource_id, keyword, value)
+SELECT id, 'nails', 1
+FROM indexed_resources WHERE url='/p?id=12';
+
+INSERT INTO search_index (resource_id, keyword, value)
+SELECT id, 'трент', 1
+FROM indexed_resources WHERE url='/p?id=12';
+
+INSERT INTO search_index (resource_id, keyword, value)
+SELECT id, 'резнор', 1
+FROM indexed_resources WHERE url='/p?id=12';
+
+INSERT INTO search_index (resource_id, keyword, value)
+SELECT id, 'trent', 1
+FROM indexed_resources WHERE url='/p?id=12';
+
+INSERT INTO search_index (resource_id, keyword, value)
+SELECT id, 'reznor', 1
+FROM indexed_resources WHERE url='/p?id=12';

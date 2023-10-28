@@ -106,10 +106,21 @@ create table concerts (
 	event_id int references events(id)
 );
 
-create table search_index (
-	keyword text primary key not null,
-	title text not null,
-	url text not null,
-	value int default 1,
-	type text
+CREATE TABLE indexed_resources (
+	id SERIAL NOT NULL PRIMARY KEY,
+	url TEXT NOT NULL UNIQUE,
+	title TEXT NOT NULL,
+	type TEXT NOT NULL,
+	picture_path TEXT
 );
+
+CREATE TABLE search_index (
+	resource_id int REFERENCES indexed_resources (id) ON DELETE CASCADE,
+	keyword TEXT PRIMARY KEY NOT NULL,
+	value INT DEFAULT 1
+);
+
+
+SELECT url, title, type, picture_path, SUM(value)
+FROM indexed_resources INNER JOIN search_index ON indexed_resources.id = search_index.resource_id
+WHERE keyword IN ('trent') GROUP BY url, title, type, picture_path ORDER BY SUM(value);

@@ -25,6 +25,9 @@ class SearchResult {
 		SearchResult ();
 		SearchResult (std::string type, std::string text, std::string url = "");
 		SearchResult (std::string type, std::string text, std::string url, std::string imgPath);
+		
+		// SQL row constructor, __specifically__ ordered as 'url, title, type, picture_path, value'
+		SearchResult (const pqxx::row& sqlrow);
 
 		auto operator <=> (const SearchResult &right) const;
 		operator nlohmann::json () const;
