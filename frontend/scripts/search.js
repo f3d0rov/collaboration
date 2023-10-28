@@ -78,8 +78,6 @@ async function displaySearchResults (ev) {
 	
 	if (obj.results.length != 0) {
 		generateSearchResults (obj.results);
-	} else {
-		document.getElementById ('noSearchResults').classList.add ("ondisplay");
 	}
 	document.getElementById ("searchAwait").classList.remove ("ondisplay");
 }

@@ -12,6 +12,10 @@ body {
 
 	border: solid 1px;
 	border-color: white;
+	border-top-left-radius: 15px;
+	border-bottom-right-radius: 15px;
+	border-top-right-radius: 5px;
+	border-bottom-left-radius: 5px;
 
 	vertical-align: top;
 }
