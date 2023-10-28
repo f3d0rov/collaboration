@@ -171,8 +171,8 @@ void execSqlFile (std::string path) {
 	try {
 		work.exec (file);
 		work.commit ();
-	} catch (pqxx::pqxx_exception &e) {
-		logger << "Ошибка при исполнении файла '" + path + "': " + e.base().what() << std::endl;
+	} catch (std::exception &e) {
+		logger << "Ошибка при исполнении файла '" + path + "': " + e.what() << std::endl;
 		throw;
 	}
 }
