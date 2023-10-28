@@ -134,7 +134,7 @@ function generateFoundationTimepoint (event) {
 		'Основание группы ' + linkToNameUrlObj (event.band),
 		event.date,
 		'body' in event ? event.body : "",
-		event.band.name
+		"Listen to " + event.band.name
 	);
 }
 
@@ -145,7 +145,7 @@ function generateSingleTimepoint (event) {
 		'Сингл ' + linkToNameUrlObj (event.band) + ' - ' + event.song,
 		event.date,
 		'body' in event ? event.body : "",
-		event.band.name + " - " + event.song
+		"Listen to " + event.band.name + " - " + event.song
 	);
 }
 
@@ -156,7 +156,7 @@ function generateAlbumTimepoint (event) {
 		'Альбом ' + linkToNameUrlObj (event.band) + ' - ' + linkToNameUrlObj (event.album),
 		event.date,
 		'body' in event ? event.body : "",
-		event.band.name + " - " + event.album.name
+		"Listen to " + event.band.name + " - " + event.album.name
 	);
 }
 

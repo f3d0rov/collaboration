@@ -16,6 +16,7 @@
 #include "api_resource.hpp"
 
 #include "api/randomSearchPromptResource.hpp"
+#include "api/search.hpp"
 #include "api/user_auth.hpp"
 
 #define DEFAULT_PORT "8080"
@@ -66,6 +67,7 @@ void resetDatabase () {
 
 void setupDatabase () {
 	execSqlFile ("sql/make-db.sql");
+	execSqlFile ("sql/search-index-test.sql");
 }
 
 
@@ -184,15 +186,17 @@ int main (int argc, const char *argv[]) {
 	WebResource searchPage (ctx, "search", frontendDir + "/search.html", dontCache);
 
 	Resource api404 (ctx, "api");
-	RandomSearchPromptResource RandomSearchPromptResource (ctx, "api/rsp");
+	RandomSearchPromptResource randomSearchPromptResource (ctx, "api/rsp");
+	SearchResource searchResource (ctx, "api/search");
 
 	UserLoginResource userLoginResource 				(ctx, "api/u/login");
 	UserLogoutResource userLogoutResource 				(ctx, "api/u/logout");
 	UserRegisterResource userRegisterResource 			(ctx, "api/u/register");
-	ConfirmRegistrationResource ConfirmRegistrationResource (ctx, "confirm");
+	ConfirmRegistrationResource confirmRegistrationResource (ctx, "confirm");
 	CheckUsernameAvailability checkUsernameAvailability	(ctx, "api/u/check_username");
 	CheckEmailAvailability checkEmailAvailability 		(ctx, "api/u/check_email");
 	CheckSessionResource checkSessionResource 			(ctx, "api/u/whoami");
+
 
 	while (1) { // Ждем входящие подключения
 		occasionalTasks ();	

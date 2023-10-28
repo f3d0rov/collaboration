@@ -19,7 +19,7 @@ create table pending_email_confirmation (
 
 create table user_login (
 	session_id varchar (128) primary key not null,
-	user_uid int references users (uid) not null,
+	user_uid int references users (uid) ON DELETE CASCADE NOT NULL,
 	last_access timestamp,
 
 	device_ip inet
@@ -27,7 +27,7 @@ create table user_login (
 
 create table user_contributions (
 	id serial primary key not null,
-	uid int references users(uid) not null,
+	uid int references users(uid) ON DELETE SET NULL NOT NULL,
 	contributed_on date not null,
 	event_id int -- references events(id)
 );
@@ -38,13 +38,13 @@ create table events (
 	event_end_date date,
 	event_type varchar (32) not null,
 
-	contribution int references user_contributions (id)
+	contribution int references user_contributions (id) ON DELETE SET NULL
 );
 
 create table event_reports (
 	id serial primary key not null,
-	event_id int references events(id),
-	reported_by int references users(uid),
+	event_id int references events(id) ON DELETE CASCADE,
+	reported_by int references users(uid) ON DELETE CASCADE,
 	reason_id int not null	
 );
 
@@ -63,8 +63,8 @@ create table personalities (
 );
 
 create table participation (
-	event_id int references events(id),
-	person_id int references personalities(id)
+	event_id int references events(id) ON DELETE CASCADE,
+	person_id int references personalities(id) ON DELETE CASCADE
 );
 
 create table bands (
@@ -83,7 +83,7 @@ create table albums (
 	name varchar (128) not null,
 
 	description text,
-	release int references events(id) not null,
+	release int references events(id) ON DELETE CASCADE NOT NULL,
 
 	awaits_creation boolean default false
 );
@@ -92,10 +92,10 @@ create table songs (
 	id serial primary key not null,
 	name varchar (128) not null,
 
-	release int references events(id) default null, -- null for songs in albums
-	album int references albums(id) default null, -- null for singles
+	release int references events(id) on delete SET NULL default NULL, -- null for songs in albums
+	album int references albums(id) on delete CASCADE default NULL, -- null for singles
 
-	band int references bands (id) default null -- null for songs released by personalities
+	band int references bands (id) on delete SET NULL DEFAULT NULL -- null for songs released by personalities
 );
 
 create table concerts (
@@ -107,7 +107,9 @@ create table concerts (
 );
 
 create table search_index (
-	keyword text,
-	url text,
-	count int
+	keyword text primary key not null,
+	title text not null,
+	url text not null,
+	value int default 1,
+	type text
 );
