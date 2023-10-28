@@ -110,6 +110,7 @@ CREATE TABLE indexed_resources (
 	id SERIAL NOT NULL PRIMARY KEY,
 	url TEXT NOT NULL UNIQUE,
 	title TEXT NOT NULL,
+	description TEXT,
 	type TEXT NOT NULL,
 	picture_path TEXT
 );

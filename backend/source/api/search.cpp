@@ -6,27 +6,28 @@ SearchResult::SearchResult () {
 
 }
 
-SearchResult::SearchResult (std::string type, std::string text, std::string url):
-type (type), text (text), url (url) {
+SearchResult::SearchResult (std::string type, std::string title, std::string url):
+type (type), title (title), url (url) {
 
 }
 
-SearchResult::SearchResult (std::string type, std::string text, std::string url, std::string imgPath):
-type (type), text (text), url (url), imgPath (imgPath) {
+SearchResult::SearchResult (std::string type, std::string title, std::string url, std::string imgPath):
+type (type), title (title), url (url), imgPath (imgPath) {
 	
 }
 
-// SQL row constructor, __specifically__ ordered as 'url, title, type, picture_path, value'. `picture_path` may be NULL.
+// SQL row constructor, __specifically__ ordered as 'url, title, type, picture_path, value, desc'. `picture_path` may be NULL.
 SearchResult::SearchResult (const pqxx::row& sqlrow) {
 	// This could be implemented without the need for strict order,
 	// but pqxx documentation says that access by column name is slower 
 	// than access by index. Considering that during one search this constructor
 	// might be called dozens of times, optimization is best.
 	this->url = sqlrow[0].as <std::string>();
-	this->text = sqlrow[1].as <std::string>();
+	this->title = sqlrow[1].as <std::string>();
 	this->type = sqlrow[2].as <std::string>();
 	this->value = sqlrow[4].as <int>();
 	if (!sqlrow[3].is_null()) this->imgPath = sqlrow[3].as <std::string>();
+	if (!sqlrow[5].is_null()) this->text = sqlrow[5].as <std::string>();
 }
 
 auto SearchResult::operator <=> (const SearchResult &right) const {
@@ -34,7 +35,9 @@ auto SearchResult::operator <=> (const SearchResult &right) const {
 }
 
 void to_json(nlohmann::json& j, const SearchResult& sr) {
-	j = nlohmann::json{{"text", sr.text}, {"url", sr.url}, {"type", sr.type}};
+	j = nlohmann::json{{"title", sr.title}, {"url", sr.url}, {"type", sr.type}};
+	if (sr.imgPath.has_value()) j["picture_path"] = *sr.imgPath;
+	if (sr.text.has_value()) j["text"] = *sr.text;
 }
 
 
@@ -84,9 +87,9 @@ std::vector <SearchResult> SearchResource::findAllWithWork (std::string prompt, 
 	std::string keywordList = SearchResource::getSqlListOfKeywords (keywords, work);
 	
 	std::string searchQuery = std::string ()
-		+ "SELECT url, title, type, picture_path, SUM(value) "
+		+ "SELECT url, title, type, picture_path, SUM(value), description "
 		+ "FROM indexed_resources INNER JOIN search_index ON indexed_resources.id = search_index.resource_id "
-		+ "WHERE keyword IN " + keywordList + " GROUP BY url, title, type, picture_path ORDER BY SUM(value) DESC;";
+		+ "WHERE keyword IN " + keywordList + " GROUP BY url, title, type, picture_path, description ORDER BY SUM(value) DESC;";
 
 	auto result = work.exec (searchQuery);
 	if (result.size() == 0) return {};
@@ -108,15 +111,16 @@ std::vector <SearchResult> SearchResource::findAll (std::string prompt) {
 }
 
 std::vector <SearchResult> SearchResource::findByTypeWithWork (std::string prompt, std::string type, pqxx::work &work) {
+
 	auto keywords = SearchResource::getKeywordsFromPrompt (prompt);
 	if (keywords.size() == 0) return {};
 	std::string keywordList = SearchResource::getSqlListOfKeywords (keywords, work);
 	
 	std::string searchQuery = std::string ()
-		+ "SELECT url, title, type, picture_path, SUM(value) "
+		+ "SELECT url, title, type, picture_path, SUM(value), description "
 		+ "FROM indexed_resources INNER JOIN search_index ON indexed_resources.id = search_index.resource_id "
 		+ "WHERE keyword IN " + keywordList + " AND type=" + work.quote (type)
-		+" GROUP BY url, title, type, picture_path ORDER BY SUM(value) DESC;";
+		+" GROUP BY url, title, type, picture_path, description ORDER BY SUM(value) DESC;";
 
 	auto result = work.exec (searchQuery);
 	if (result.size() == 0) return {};
@@ -148,6 +152,8 @@ std::unique_ptr<ApiResponse> SearchResource::processRequest (RequestData &rd, nl
 		return std::make_unique <ApiResponse> (nlohmann::json {{"error", e.what()}}, 401);
 	}
 
+	auto start = std::chrono::high_resolution_clock::now();
 	auto result = SearchResource::findAll (prompt);
-	return std::make_unique <ApiResponse> (nlohmann::json{{"results", result}}, 200);
+	auto timeToExec = usElapsedFrom_hiRes (start);
+	return std::make_unique <ApiResponse> (nlohmann::json{{"results", result}, {"time", prettyMicroseconds (timeToExec)}}, 200);
 }

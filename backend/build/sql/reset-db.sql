@@ -10,5 +10,5 @@ drop table if exists event_reports;
 drop table if exists events;
 drop table if exists user_contributions;
 drop table if exists user_login;
-drop table if exists pending_email_confirmation; 
+drop table if exists pending_email_confirmation;
 drop table if exists users;

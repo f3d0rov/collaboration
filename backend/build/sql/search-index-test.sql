@@ -1,8 +1,8 @@
 
 INSERT INTO indexed_resources (
-	url, title, type
+	url, title, type, picture_path, description
 ) VALUES
-	('/p?id=12', 'Трент Резнор', 'person');
+	('/p?id=12', 'Трент Резнор', 'person', 'resources/test.jpg', 'Американский музыкант-мультиинструменталист и продюсер.');
 
 
 INSERT INTO search_index (resource_id, keyword, value)

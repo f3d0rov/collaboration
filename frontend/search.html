@@ -11,7 +11,7 @@
 		<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald&display=swap" rel="stylesheet">
 		
 		<link rel="stylesheet" type="text/css" href="style/style.css">
-		<link rel="stylesheet" type="text/css" href="style/person.css">
+		<link rel="stylesheet" type="text/css" href="style/search.css">
 
 		<script src="scripts/userauth.js"></script>
 		<script src="scripts/header.js"></script>
@@ -52,6 +52,25 @@
 		</div>
 
 		<div class = "page">
+			<div class = "searchAwait ondisplay" id = "searchAwait">
+				<img src="resources/spinner.svg">
+				Загружаем результаты запроса...
+			</div>
+			<div class = "searchResults">
+				<div class = "searchMetadata">
+					За <span id="searchTime" class = "data"> 12s </span> <span id = "resultsFound"></span>
+				</div>
+				<div class = "searchResult template" id = "searchResultTemplate">
+					<img src="" class = "resultIcon"/>
+					<div class = "vertResult">
+						<a href = "" class = "resultTitle"> Трент Резнор </a>
+						<div class = "resultDescription">Американский музыкант-мультиинструменталист и продюсер.</div>
+					</div>
+				</div>
+			</div>
+			<div class = "noSearchResults" id = "noSearchResults">
+				По запросу ничего не найдено - хотите <a id="createPage" href="#">создать страницу</a>?
+			</div>
 		</div>
 	</body>
 </html>

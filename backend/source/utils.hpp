@@ -42,6 +42,9 @@ template <class T> std::chrono::microseconds usElapsedFrom_hiRes (T start) {
     return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
 }
 
+std::string floatStr (double x, int precision = 3);
+std::string prettyMicroseconds (std::chrono::microseconds);
+
 
 class Logger: private std::streambuf, public std::ostream {
 		std::ofstream file;

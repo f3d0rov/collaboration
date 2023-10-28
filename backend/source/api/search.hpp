@@ -15,16 +15,17 @@ class SearchResource;
 
 class SearchResult {
 	public:
-		std::string text;
+		std::string title;
 		std::string url;
 		std::optional <std::string> imgPath;
+		std::optional <std::string> text;
 
 		int value = 0;
 		std::string type = "none";
 
 		SearchResult ();
-		SearchResult (std::string type, std::string text, std::string url = "");
-		SearchResult (std::string type, std::string text, std::string url, std::string imgPath);
+		SearchResult (std::string type, std::string title, std::string url = "");
+		SearchResult (std::string type, std::string title, std::string url, std::string imgPath);
 		
 		// SQL row constructor, __specifically__ ordered as 'url, title, type, picture_path, value'
 		SearchResult (const pqxx::row& sqlrow);

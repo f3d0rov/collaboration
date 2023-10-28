@@ -89,6 +89,36 @@ std::string sha3_256 (std::string input) {;
 	return ss.str();
 }
 
+
+std::string floatStr (double x, int precision) {
+	std::stringstream ss;
+	ss << std::fixed << std::setprecision (precision) << x;
+	return ss.str();
+}
+
+std::string prettyMicroseconds (std::chrono::microseconds us) {
+	std::vector<std::pair <std::string, int>> ratios = {
+		{"мкс", 1},
+		{"мс", 1000},
+		{"с", 1000},
+		{"м", 60},
+		{"ч", 60},
+		{"д", 60}
+	};
+
+	int64_t all = us.count();
+	int64_t cum = 1;
+	int i = 1;
+	for (; i < ratios.size(); i++) {
+		if (all < cum * ratios[i].second) break;
+		cum *= ratios[i].second;
+	}
+	
+	return floatStr((double) all / cum) + " " + ratios[i - 1].first;
+}
+
+
+
 Logger::Logger(): std::ostream(this) {
 
 }
