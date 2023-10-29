@@ -69,16 +69,16 @@ std::set <std::string> SearchResource::getKeywordsFromPrompt (std::string prompt
 }
 
 std::string SearchResource::getSqlListOfKeywords (std::set <std::string> &keywords, pqxx::work &work) {
-	std::string result = "(";
+	std::string result;
 
 	bool notFirst = false;
 	for (auto i: keywords) {
-		if (notFirst) result += ",";
-		result += "LOWER(" + work.quote (i) + ")"; 
+		if (notFirst) result += "|";
+		result += i;
 		notFirst = true;
 	}
 
-	return result + ")";
+	return work.quote(result);
 }
 
 std::vector <SearchResult> SearchResource::findAllWithWork (std::string prompt, pqxx::work &work) {
@@ -89,8 +89,9 @@ std::vector <SearchResult> SearchResource::findAllWithWork (std::string prompt, 
 	std::string searchQuery = std::string ()
 		+ "SELECT url, title, type, picture_path, SUM(value), description "
 		+ "FROM indexed_resources INNER JOIN search_index ON indexed_resources.id = search_index.resource_id "
-		+ "WHERE keyword IN " + keywordList + " GROUP BY url, title, type, picture_path, description ORDER BY SUM(value) DESC;";
+		+ "WHERE keyword ~* " + keywordList + " GROUP BY url, title, type, picture_path, description ORDER BY SUM(value) DESC;";
 
+	logger << searchQuery << std::endl;
 	auto result = work.exec (searchQuery);
 	if (result.size() == 0) return {};
 
@@ -119,7 +120,7 @@ std::vector <SearchResult> SearchResource::findByTypeWithWork (std::string promp
 	std::string searchQuery = std::string ()
 		+ "SELECT url, title, type, picture_path, SUM(value), description "
 		+ "FROM indexed_resources INNER JOIN search_index ON indexed_resources.id = search_index.resource_id "
-		+ "WHERE keyword IN " + keywordList + " AND type=" + work.quote (type)
+		+ "WHERE keyword ~* " + keywordList + " AND type=" + work.quote (type)
 		+" GROUP BY url, title, type, picture_path, description ORDER BY SUM(value) DESC;";
 
 	auto result = work.exec (searchQuery);
