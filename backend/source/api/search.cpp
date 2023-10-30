@@ -91,7 +91,7 @@ std::vector <SearchResult> SearchResource::findAllWithWork (std::string prompt, 
 		+ "FROM indexed_resources INNER JOIN search_index ON indexed_resources.id = search_index.resource_id "
 		+ "WHERE keyword ~* " + keywordList + " GROUP BY url, title, type, picture_path, description ORDER BY SUM(value) DESC;";
 
-	logger << searchQuery << std::endl;
+	// logger << searchQuery << std::endl;
 	auto result = work.exec (searchQuery);
 	if (result.size() == 0) return {};
 
