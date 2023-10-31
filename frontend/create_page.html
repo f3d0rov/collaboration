@@ -68,21 +68,27 @@
 					<div class = "imageBox" id = "imageBox">
 						<img src="resources/upload.svg" id = "image" class = "placeholder">
 						<div> Загрузить изображение </div>
-						<input type = "file" id = "imageSelector"/>
+						<input type = "file" id = "imageSelector" accept="image/*"/>
 					</div>
 					<div class = "dataCard">
 						<table class = "dataCardTable">
 							<tr>
 								<td class = "dataType"> Имя </td>
-								<td> <input id = "name"> </td>
+								<td colspan="4"> <input id = "name"> </td>
 							</tr> 
 							<tr>
-								<td class = "dataType"> Дата рождения </td>
+								<td class = "dataType" id = "startDateName"> Дата рождения </td>
 								<td> <input type="date" class = "dateInput"> </td>
+								<td class = "dataType" id = "aliveBox">
+									<input type="checkbox" class = "checkboxInput" id = "alive" checked>
+									<span id = "aliveName"> Жив </span>
+								</td>
+								<td class = "dataType" id = "endDateName"> Дата смерти </td>
+								<td> <input type="date" class = "dateInput" id = "endDate"/> </td>
 							</tr>
 							<tr>
 								<td class = "dataType"> Краткое описание </td>
-								<td>
+								<td colspan="4">
 									<textarea class = "shortDescription" rows="3">  </textarea>
 								</td>
 							</tr>

@@ -62,11 +62,16 @@
 #image {
 	width: 200px;
 	height: 300px;
+
+	margin-left: 50px;
+	margin-right: 50px;
 }
 
 #image.square {
 	width: 300px;
 	height: 300px;
+	margin-left: 0px;
+	margin-right: 0px;
 }
 
 #image.placeholder {
@@ -140,7 +145,7 @@
 input {
 	padding: 4px;
 
-	width: 90%;
+	width: 100%;
 
 	color: white;
 	font-size: 32px;
@@ -158,6 +163,14 @@ input.dateInput {
 	width: fit-content;
 }
 
+input.checkboxInput {
+	display: inline-block;
+	vertical-align: bottom;
+	width: 30px;
+	height: 30px;
+	accent-color: #6e1616;
+}
+
 .photoAndData {
 	display: flex;
 	align-items: flex-start;
@@ -172,6 +185,7 @@ input.dateInput {
 	align-items: center;
 	justify-content: flex-start;
 	padding: 15px;
+	padding-right: 30px;
 	
 }
 
@@ -179,6 +193,27 @@ input.dateInput {
 	padding-right: 10px;
 	padding-top: 5px;
 	vertical-align: top;
+	width: 20%;
+	opacity: 1;
+
+	transition: opacity 0.1s ease-in-out;
+}
+
+.dataType.hidden {
+	opacity: 0;
+}
+
+#endDate {
+	opacity: 1;
+	transition: opacity 0.1s ease-in-out;
+}
+
+#endDate.hidden {
+	opacity: 0;
+}
+
+#aliveBox {
+	width: 150px;
 }
 
 .shortDescription {
@@ -192,7 +227,7 @@ input.dateInput {
 	border-width: 2px;
 	border-radius: 3px;
 
-	width: 90%;
+	width: 100%;
 }
 
 .createPageButton {
