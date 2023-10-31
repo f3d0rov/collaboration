@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8">
 
-		<title> Поиск - COLLABORATION. </title>
+		<title> Новая страница - COLLABORATION. </title>
 		<link rel="icon" type="image/png" href="/resources/favicon.ico">
 
 		<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -56,21 +56,40 @@
 				<div class = "typeSelectorPrompt">
 					Создаем страницу для:
 				</div> 
-				<div class = "typeSelectorButton selected">Личности</div>
-				<div class = "typeSelectorButton">Группы</div>
-				<div class = "typeSelectorButton">Альбома</div>
+				<div class = "typeSelectorButton selected" value = "person"> Личности </div>
+				<div class = "typeSelectorButton" value = "band"> Группы </div>
+				<div class = "typeSelectorButton" value = "album"> Альбома </div>
 			</div>
 		</div>
 
 		<div class = "page">
 			<div>
 				<div class = "photoAndData">
-					<img src="resources/upload.svg" id = "image" class = "placeholder">
+					<div class = "imageBox" id = "imageBox">
+						<img src="resources/upload.svg" id = "image" class = "placeholder">
+						<div> Загрузить изображение </div>
+						<input type = "file" id = "imageSelector"/>
+					</div>
 					<div class = "dataCard">
-						<span id = "personName"> 
-							Имя 
-							<input id = "name">
-						</span>
+						<table class = "dataCardTable">
+							<tr>
+								<td class = "dataType"> Имя </td>
+								<td> <input id = "name"> </td>
+							</tr> 
+							<tr>
+								<td class = "dataType"> Дата рождения </td>
+								<td> <input type="date" class = "dateInput"> </td>
+							</tr>
+							<tr>
+								<td class = "dataType"> Краткое описание </td>
+								<td>
+									<textarea class = "shortDescription" rows="3">  </textarea>
+								</td>
+							</tr>
+						</table>
+						<div class = "createPageButton">
+							Создать страницу
+						</div>
 					</div>
 				</div>
 			</div>

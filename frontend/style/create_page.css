@@ -40,10 +40,36 @@
 }
 
 
-#image.placeholder {
+.imageBox {
+	display: flex;
+	flex-flow: column;
+	justify-content: center;
+	justify-items: center;
+
+	font-size: 20px;
+	text-align: center;
+
+	color: #acacac;
+
+	transition: color 0.2s ease-in-out;
+}
+
+.imageBox:hover {
+	color: white;
+	cursor: pointer;
+}
+
+#image {
 	width: 200px;
 	height: 300px;
+}
 
+#image.square {
+	width: 300px;
+	height: 300px;
+}
+
+#image.placeholder {
 	object-fit: contain;
 
 	border: solid 1px;
@@ -59,13 +85,16 @@
 	transition: opacity 0.2s ease-in-out;
 }
 
-#image.placeholder:hover {
-	cursor: pointer;
+.imageBox:hover #image.placeholder {
 	opacity: 1;
 }
 
 #image {
 	object-fit: cover;
+}
+
+#imageSelector {
+	display: none;
 }
 
 #personCard {
@@ -104,10 +133,14 @@
 	/* padding-left: 50px; */
 }
 
+.dataCardTable {
+	width: 100%;
+}
+
 input {
 	padding: 4px;
 
-	width: 600px;
+	width: 90%;
 
 	color: white;
 	font-size: 32px;
@@ -121,6 +154,10 @@ input {
 	border-radius: 3px;
 }
 
+input.dateInput {
+	width: fit-content;
+}
+
 .photoAndData {
 	display: flex;
 	align-items: flex-start;
@@ -128,10 +165,49 @@ input {
 }
 
 .dataCard {
+	flex: 800px 1;
+
 	display: flex;
 	flex-flow: column;
 	align-items: center;
 	justify-content: flex-start;
 	padding: 15px;
 	
+}
+
+.dataType {
+	padding-right: 10px;
+	padding-top: 5px;
+	vertical-align: top;
+}
+
+.shortDescription {
+	background-color: #330b0b;
+
+	color: white;
+	font-size: 32px;
+	font-family: 'Oswald', sans-serif;
+
+	border-color: #210808;
+	border-width: 2px;
+	border-radius: 3px;
+
+	width: 90%;
+}
+
+.createPageButton {
+	background-color: #370e0e;
+	color: #acacac;
+
+	padding: 7px;
+	border-radius: 3px;
+
+	transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.createPageButton:hover {
+	background-color: #591212;
+	color: white;
+	cursor: pointer;
+
 }
