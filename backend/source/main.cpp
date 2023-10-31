@@ -186,6 +186,7 @@ int main (int argc, const char *argv[]) {
 	WebResource indexPage (ctx, "", frontendDir + "/index.html", dontCache);
 	WebResource personPage (ctx, "p", frontendDir + "/person.html", dontCache);
 	WebResource searchPage (ctx, "search", frontendDir + "/search.html", dontCache);
+	WebResource createPage (ctx, "create", frontendDir + "/create_page.html", dontCache);
 
 	Resource api404 (ctx, "api");
 	RandomSearchPromptResource randomSearchPromptResource (ctx, "api/rsp");

@@ -59,6 +59,15 @@ async function displaySearchResults (ev) {
 	let prompt = params.get ("q");
 	document.getElementById ('headerSearchBox').value = prompt;
 
+	document.getElementById ("createPageResult").addEventListener (
+		'click',
+		() => {
+			if (demandAuth()) {
+				window.location.href = "/create?" + params.toString();
+			}
+		}
+	);
+	
 	let resp = await fetch (
 		"/api/search",
 		{

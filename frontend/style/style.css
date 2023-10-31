@@ -8,6 +8,7 @@ html {
 
 body {
 	padding: 0;
+	padding-top: 50px;
 	margin: 0;
 
 	width: 100%;
@@ -236,6 +237,8 @@ a {
 
 	top: 0px;
 	left: 0px;
+
+	z-index: 500;
 }
 
 .page {
@@ -245,10 +248,10 @@ a {
 	
 	background-color: #130d0d;
 
-	margin-top: 100px;
+	margin-top: 50px;
 	margin-left: auto;
 	margin-right: auto;
-	margin-bottom: 40px;
+	margin-bottom: 10px;
 	padding: 10px;
 
 	border-radius: 10px;

@@ -11,11 +11,11 @@
 		<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald&display=swap" rel="stylesheet">
 		
 		<link rel="stylesheet" type="text/css" href="style/style.css">
-		<link rel="stylesheet" type="text/css" href="style/search.css">
+		<link rel="stylesheet" type="text/css" href="style/create_page.css">
 
 		<script src="scripts/userauth.js"></script>
 		<script src="scripts/header.js"></script>
-		<script src="scripts/search.js"></script>
+		<script src="scripts/create_page.js"></script>
 	</head>
 	<body>
 		<div class = "header">
@@ -52,26 +52,25 @@
 		</div>
 
 		<div class = "page">
-			<div class = "searchAwait ondisplay" id = "searchAwait">
-				<img src="resources/spinner.svg">
-				Загружаем результаты запроса...
+			<div class = "typeSelector">
+				<div class = "typeSelectorPrompt">
+					Создаем страницу для:
+				</div> 
+				<div class = "typeSelectorButton selected">Личности</div>
+				<div class = "typeSelectorButton">Группы</div>
+				<div class = "typeSelectorButton">Альбома</div>
 			</div>
-			<div class = "searchResults">
-				<div class = "searchMetadata">
-					За <span id="searchTime" class = "data"> 12s </span> <span id = "resultsFound"></span>
-				</div>
-				<div class = "searchResult template" id = "searchResultTemplate">
-					<img src="" class = "resultIcon"/>
-					<div class = "vertResult">
-						<a href = "" class = "resultTitle"> Трент Резнор </a>
-						<div class = "resultDescription">Американский музыкант-мультиинструменталист и продюсер.</div>
-					</div>
-				</div>
+		</div>
 
-				<div class = "searchResult" id = "createPageResult">
-					<img src="resources/add.svg" class = "addIcon"/>
-					<div class = "vertResult">
-						<a href = "" class = "resultTitle"> Не нашел? Создай страницу сам! </a>
+		<div class = "page">
+			<div>
+				<div class = "photoAndData">
+					<img src="resources/upload.svg" id = "image" class = "placeholder">
+					<div class = "dataCard">
+						<span id = "personName"> 
+							Имя 
+							<input id = "name">
+						</span>
 					</div>
 				</div>
 			</div>

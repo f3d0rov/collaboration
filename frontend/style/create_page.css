@@ -1,0 +1,137 @@
+
+.typeSelector {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.typeSelectorPrompt {
+	margin-right: 10px;
+}
+
+.typeSelectorButton {
+	width: fit-content;
+	border-radius: 5px;
+	background-color: #591212;
+	color: #acacac;
+	padding: 3px;
+	padding-left: 7px;
+	padding-right: 7px;
+
+	margin-left: 5px;
+	margin-right: 5px;
+
+	transition: color 0.1s ease-in-out, background-color 0.1s ease-in-out, scale 0.1s ease-in-out, margin 0.1s ease-in-out;
+}
+
+.typeSelectorButton:hover {
+	color: white;
+	background-color: #6e1616;
+	cursor: pointer;
+}
+
+.typeSelectorButton.selected {
+	color: white;
+	background-color: #370e0e;
+	scale: 1.2;
+
+	margin-left: 10px;
+	margin-right: 10px;
+}
+
+
+#image.placeholder {
+	width: 200px;
+	height: 300px;
+
+	object-fit: contain;
+
+	border: solid 1px;
+	border-color: white;
+	border-top-left-radius: 15px;
+	border-bottom-right-radius: 15px;
+	border-top-right-radius: 5px;
+	border-bottom-left-radius: 5px;
+
+	vertical-align: top;
+
+	opacity: 0.5;
+	transition: opacity 0.2s ease-in-out;
+}
+
+#image.placeholder:hover {
+	cursor: pointer;
+	opacity: 1;
+}
+
+#image {
+	object-fit: cover;
+}
+
+#personCard {
+	padding: 10px;
+	vertical-align: top;
+	padding-left: 50px;
+}
+
+#personHeader {
+	font-family: 'Oswald', sans-serif;
+	font-size: 64px;
+	line-height: 64px;
+}
+
+#personHeader p {
+	margin: 0px;
+	line-height: 40px;
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
+
+#personOriginalName {
+	font-size: 40px;
+	color: grey;
+
+	line-height: 40px;
+}
+
+#personLifetime {
+	font-size: 40px;
+	color: grey;
+}
+
+#personBio {
+	padding-right: 50px;
+	/* padding-left: 50px; */
+}
+
+input {
+	padding: 4px;
+
+	width: 600px;
+
+	color: white;
+	font-size: 32px;
+	font-family: 'Oswald', sans-serif;
+
+
+	background-color: #330b0b;
+
+	border-color: #210808;
+	border-width: 2px;
+	border-radius: 3px;
+}
+
+.photoAndData {
+	display: flex;
+	align-items: flex-start;
+	/* justify-items: start; */
+}
+
+.dataCard {
+	display: flex;
+	flex-flow: column;
+	align-items: center;
+	justify-content: flex-start;
+	padding: 15px;
+	
+}
