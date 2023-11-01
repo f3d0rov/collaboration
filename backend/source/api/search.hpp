@@ -10,6 +10,7 @@
 
 
 class SearchResult;
+class PromptToken;
 class SearchResource;
 
 
@@ -35,6 +36,15 @@ class SearchResult {
 };
 
 
+class PromptToken {
+	public:
+		std::string keyword;
+		int value;
+
+		PromptToken (std::string keyword);
+};
+
+
 // POST {"prompt": str-prompt} -> {"results": [ {"text": text, "url": url, "type": type }, {}]}
 class SearchResource: public ApiResource {
 	private:
@@ -47,6 +57,9 @@ class SearchResource: public ApiResource {
 		static std::vector <SearchResult> findAllWithWork (std::string prompt, pqxx::work &work);
 		static std::vector <SearchResult> findByTypeWithWork (std::string prompt, std::string type, pqxx::work &work);
 		static std::vector <SearchResult> findByType (std::string prompt, std::string type);
+
+		static std::map <std::string, PromptToken> analysePrompt (std::string prompt);
+		static void indexWithWork (pqxx::work &work, std::string type, std::string url, std::string prompt, std::string name, std::string desc, std::string imgPath);
 
 		static nlohmann::json sliceOfSearchResultVector (const std::vector <SearchResult> &vec, int start, int end);
 		std::unique_ptr<ApiResponse> processRequest (RequestData &rd, nlohmann::json body) override;

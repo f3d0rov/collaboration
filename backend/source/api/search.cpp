@@ -43,6 +43,14 @@ void to_json(nlohmann::json& j, const SearchResult& sr) {
 
 
 
+PromptToken::PromptToken (std::string keyword):
+keyword (keyword), value (1) {
+
+}
+
+
+
+
 SearchResource::SearchResource (mg_context *ctx, std::string uri):
 ApiResource (ctx, uri) {
 
@@ -141,6 +149,63 @@ std::vector <SearchResult> SearchResource::findByType (std::string prompt, std::
 	work.commit ();
 	return result;
 }
+
+
+std::map <std::string, PromptToken> SearchResource::analysePrompt (std::string prompt) {
+	std::map <std::string, PromptToken> result;
+	const std::string whitespaces = " \n\t\v";
+
+	int start = prompt.find_first_not_of (whitespaces);
+	while (start != prompt.npos && start < prompt.length()) {
+		int end = prompt.find_first_of (whitespaces, start + 1);
+
+		// Should be lowercase() here but it's easier to use sql LOWER() rather than c++ tools
+		std::string keyword = prompt.substr (start, end - start); 
+		if (!result.contains (keyword)) {
+			result.emplace (std::make_pair (keyword, PromptToken (keyword)));
+		} else {
+			++result.at(keyword).value;
+		}
+		
+		// std::cout << keyword << std::endl;
+		if (end == prompt.npos) break;
+		start = prompt.find_first_not_of (whitespaces, end + 1);
+	}
+
+	return result;
+}
+
+
+void SearchResource::indexWithWork (pqxx::work &work, std::string type, std::string url, std::string prompt, std::string name, std::string desc, std::string imgPath) {
+	auto keywords = SearchResource::analysePrompt (prompt);
+	std::string insertIndexedRes = std::string() 
+		+ "INSERT INTO indexed_resources (url, title, description, type, picture_path)"
+		+ "VALUES ("
+		+ /* url*/ 		work.quote (url) + ","
+		+ /* title */ 	work.quote (name) + ","
+		+ /* desc */	work.quote (desc) + ","
+		+ /* type */	work.quote (type) + ","
+		+ /* imgPath */ ((imgPath == "") ? "NULL" : imgPath)
+		+ ") RETURNING id;";
+	pqxx::row insertedResource = work.exec1 (insertIndexedRes);
+	int indexedResId = insertedResource[0].as <int>();
+	std::string indexedResIdAsString = std::to_string (indexedResId);
+
+	std::string insertKeywordsQuery = "INSERT INTO search_index (resource_id, keyword, value) VALUES";
+	bool notFirst = false;
+	for (const auto &i: keywords) {
+		if (notFirst) insertKeywordsQuery += ",";
+		insertKeywordsQuery += "("
+			+ /* resource_id */ indexedResIdAsString + ","
+			+ /* keyword */ 	work.quote (i.second.keyword) + ","
+			+ /* value */		std::to_string (i.second.value) + ")";
+		notFirst = true;
+	}
+	insertKeywordsQuery += ";";
+
+	work.exec (insertKeywordsQuery);
+}
+
 
 std::unique_ptr<ApiResponse> SearchResource::processRequest (RequestData &rd, nlohmann::json body) {
 	if (rd.method != "POST") return std::make_unique <ApiResponse> (405);

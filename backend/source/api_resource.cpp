@@ -5,13 +5,16 @@ ApiResponse::ApiResponse () {
 
 }
 
-ApiResponse::ApiResponse (int status):
-status (status) {
-
+ApiResponse::ApiResponse (int status) {
+	this->status = status;
 }
 
 ApiResponse::ApiResponse (nlohmann::json body, int status):
-body (body), status (status) {
+body (body) {
+	this->status = status;
+}
+
+ApiResponse::~ApiResponse () {
 
 }
 

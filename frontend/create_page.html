@@ -78,22 +78,22 @@
 							</tr> 
 							<tr>
 								<td class = "dataType" id = "startDateName"> Дата рождения </td>
-								<td> <input type="date" class = "dateInput"> </td>
+								<td> <input type="date" class = "dateInput" id = "startDate"> </td>
 								<td class = "dataType" id = "aliveBox">
 									<input type="checkbox" class = "checkboxInput" id = "alive" checked>
 									<span id = "aliveName"> Жив </span>
 								</td>
-								<td class = "dataType" id = "endDateName"> Дата смерти </td>
+								<td class = "dataType" id = "endDateName" id = "endDate"> Дата смерти </td>
 								<td> <input type="date" class = "dateInput" id = "endDate"/> </td>
 							</tr>
 							<tr>
 								<td class = "dataType"> Краткое описание </td>
 								<td colspan="4">
-									<textarea class = "shortDescription" rows="3">  </textarea>
+									<textarea class = "shortDescription" id = "description" rows="3">  </textarea>
 								</td>
 							</tr>
 						</table>
-						<div class = "createPageButton">
+						<div class = "createPageButton" id = "createPageButton">
 							Создать страницу
 						</div>
 					</div>

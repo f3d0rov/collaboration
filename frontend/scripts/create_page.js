@@ -1,5 +1,39 @@
 
 
+async function tryCreatePage (ev) {
+	let type = document.querySelector (".typeSelectorButton.selected").getAttribute ("value");
+	let name = document.getElementById ("name").value;
+	let desc = document.getElementById ("description").value;
+	let startDate = document.getElementById ("startDate").value;
+	let alive = document.getElementById ("alive").checked;
+	let endDate = document.getElementById ("endDate").value;
+
+	let body = {
+		"type": type,
+		"name": name,
+		"description": desc,
+		"start_date": startDate
+	};
+	if (!alive) body["endDate"] = endDate;
+
+	console.log (body);
+	let resp = await fetch (
+		"/api/create",
+		{
+			"method": "POST",
+			"body": JSON.stringify(body),
+			"credentials": "same-origin"
+		}
+	);
+
+	console.log (resp);
+	let respBody = await resp.json ();
+	console.log ("" + respBody.status);
+	console.log (respBody);
+	if (respBody["status"] == "success")
+		window.location.href = respBody.url;
+}
+
 function processTypeSwitch (newType) {
 	console.log (newType);
 
@@ -72,6 +106,8 @@ function setupDataInput () {
 		}
 	);
 	aliveCheckbox.dispatchEvent (new Event('change'));
+
+	document.getElementById ("createPageButton").addEventListener ('click', tryCreatePage);
 }
 
 function setupPage () {

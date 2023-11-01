@@ -16,12 +16,11 @@ class ApiResource;
 class ApiResponse: public _Response {
 	public:
 		nlohmann::json body;
-		int status = 500;
 
 		ApiResponse ();
 		ApiResponse (int status);
 		ApiResponse (nlohmann::json body, int status = 200);
-		~ApiResponse () = default;
+		~ApiResponse ();
 
 		std::string getBody () final;
 		std::string getMime () final;

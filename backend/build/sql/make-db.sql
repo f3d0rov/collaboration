@@ -45,47 +45,50 @@ create table event_reports (
 	id serial primary key not null,
 	event_id int references events(id) ON DELETE CASCADE,
 	reported_by int references users(uid) ON DELETE CASCADE,
-	reason_id int not null	
+	reason_id int not null
 );
+
+CREATE TABLE entities (
+	id SERIAL PRIMARY KEY NOT NULL,
+	type VARCHAR (16) NOT NULL,
+
+	name VARCHAR (128) NOT NULL,
+	description TEXT NOT NULL,
+	start_date DATE NOT NULL,
+	end_date DATE,
+
+	picture_path VARCHAR (256),
+	awaits_creation BOOLEAN DEFAULT TRUE,
+	created_by INT REFERENCES users (uid),
+	created_on DATE
+);
+
+CREATE TABLE entity_reports (
+	id SERIAL PRIMARY KEY NOT NULL,
+	event_id INT REFERENCES events(id) ON DELETE CASCADE,
+	reported_by INT REFERENCES users(uid) ON DELETE CASCADE,
+	reason_id INT NOT NULL	
+);
+
 
 create table personalities (
 	id serial primary key not null,
-
-	ru_name varchar (128) not null,
-	native_name varchar (128) not null,
-
-	description text,
-	birthday date,
-	deathday date,
-	picture_path varchar (256),
-
-	awaits_creation boolean default false
+	entity_id INT REFERENCES entities(id) ON DELETE CASCADE
 );
 
 create table participation (
 	event_id int references events(id) ON DELETE CASCADE,
-	person_id int references personalities(id) ON DELETE CASCADE
+	person_id INT REFERENCES personalities(id) ON DELETE CASCADE
 );
 
 create table bands (
 	id serial primary key not null,
-
-	name varchar (128) not null,
-	description text,
-	establishment int references events(id) not null, 
-	picture_path varchar (256),
-
-	awaits_creation boolean default false
+	entity_id INT REFERENCES entities (id) ON DELETE CASCADE
 );
 
 create table albums (
 	id serial primary key not null,
-	name varchar (128) not null,
-
-	description text,
-	release int references events(id) ON DELETE CASCADE NOT NULL,
-
-	awaits_creation boolean default false
+	entity_id INT REFERENCES entities (id) ON DELETE CASCADE
 );
 
 create table songs (
@@ -117,7 +120,7 @@ CREATE TABLE indexed_resources (
 
 CREATE TABLE search_index (
 	resource_id int REFERENCES indexed_resources (id) ON DELETE CASCADE,
-	keyword TEXT PRIMARY KEY NOT NULL,
+	keyword TEXT NOT NULL,
 	value INT DEFAULT 1
 );
 

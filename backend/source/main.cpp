@@ -19,6 +19,7 @@
 #include "api/randomSearchPromptResource.hpp"
 #include "api/search.hpp"
 #include "api/user_auth.hpp"
+#include "api/page.hpp"
 
 #define DEFAULT_PORT "8080"
 #define DEFAULT_REQUEST_TIMEOUT_TIME_MS "10000"
@@ -199,6 +200,7 @@ int main (int argc, const char *argv[]) {
 	CheckUsernameAvailability checkUsernameAvailability	(ctx, "api/u/check_username");
 	CheckEmailAvailability checkEmailAvailability 		(ctx, "api/u/check_email");
 	CheckSessionResource checkSessionResource 			(ctx, "api/u/whoami");
+	CreatePageResource createPageApiResource 			(ctx, "api/create");
 
 
 	while (1) { // Ждем входящие подключения

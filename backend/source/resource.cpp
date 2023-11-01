@@ -168,8 +168,9 @@ int Resource::_processRequest (mg_connection* conn) {
 		// logger << "Cookie: " << cookie << std::endl;
 
 		auto response = this->processRequest (rd);
+		logger << "Ответ: " << response->status << std::endl;
 		
-		mg_response_header_start(conn, response->status);
+		mg_response_header_start (conn, response->status);
 		for (auto &i: response->headers()) {
 			mg_response_header_add (conn, i.first.c_str(), i.second.c_str(), i.second.length());
 		}
