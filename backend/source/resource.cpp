@@ -37,19 +37,18 @@ void _Response::redirect (std::string address) {
 
 
 
-Response::Response (int status):
-status (status) {
-
+Response::Response (int status) {
+	this->status = status;
 }
 
 Response::Response (std::string body, int status):
-body (body), status (status) {
-
+body (body) {
+	this->status = status;
 }
 
 Response::Response (std::string body, std::string mimeType, int status):
-body (body), status (status), mime (mimeType) {
-
+body (body), mime (mimeType) {
+	this->status = status;
 }
 
 Response::~Response () {
@@ -154,7 +153,7 @@ int Resource::_processRequest (mg_connection* conn) {
 		std::string body = this->_readRequestBody (conn);
 
 		// Report incoming connection
-		logger << method << " " << uri << " from " << ri->remote_addr << ":" << ri->remote_port << ", body: " << body.length() << " bytes" << std::endl;
+		logger << method << " " << uri << " -> " << this->_uri << " from " << ri->remote_addr << ":" << ri->remote_port << ", body: " << body.length() << " bytes" << std::endl;
 		
 		RequestData rd;
 		rd.body = body;

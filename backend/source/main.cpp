@@ -202,6 +202,10 @@ int main (int argc, const char *argv[]) {
 	CheckSessionResource checkSessionResource 			(ctx, "api/u/whoami");
 	CreatePageResource createPageApiResource 			(ctx, "api/create");
 
+	EntityDataResource personDataApiResource 			(ctx, "api/p", "personalities");
+	EntityDataResource bandDataApiResource 				(ctx, "api/b", "bands");
+	EntityDataResource albumDataApiResource 			(ctx, "api/a", "albums");
+
 
 	while (1) { // Ждем входящие подключения
 		occasionalTasks ();	

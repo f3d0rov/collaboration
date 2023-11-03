@@ -24,7 +24,7 @@ class CreatePageResource: public ApiResource {
 		int createTypedEntity (pqxx::work &work, int entityId, std::string type);
 
 		static std::string pageUrlForTypedEntity (std::string type, int id);
-		std::unique_ptr <ApiResponse> processRequest (RequestData &rd, nlohmann::json body);
+		std::unique_ptr <ApiResponse> processRequest (RequestData &rd, nlohmann::json body) override;
 };
 
 #if 0
@@ -35,3 +35,11 @@ class UploadPictureResource: public Resource {
 };
 
 #endif
+
+class EntityDataResource: public ApiResource {
+	private:
+		std::string _table;
+	public:
+		EntityDataResource (mg_context *ctx, std::string uri, std::string entityTable);
+		std::unique_ptr <ApiResponse> processRequest (RequestData &rd, nlohmann::json body) override;
+};

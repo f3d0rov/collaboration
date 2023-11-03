@@ -93,5 +93,5 @@ async function displaySearchResults (ev) {
 
 window.addEventListener (
 	'load',
-	displaySearchResults	
+	displaySearchResults
 );

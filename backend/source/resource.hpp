@@ -36,7 +36,6 @@ class Response: public _Response {
 	public:
 		std::string body = "";
 		std::string mime = "text/html";
-		int status = 200;
 
 		Response (int status);
 		Response (std::string body, int status = 200);

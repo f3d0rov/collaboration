@@ -14,7 +14,7 @@ async function tryCreatePage (ev) {
 		"description": desc,
 		"start_date": startDate
 	};
-	if (!alive) body["endDate"] = endDate;
+	if (!alive) body["end_date"] = endDate;
 
 	console.log (body);
 	let resp = await fetch (

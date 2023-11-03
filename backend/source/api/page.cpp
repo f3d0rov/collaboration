@@ -28,8 +28,8 @@ int CreatePageResource::createEntity (pqxx::work &work, std::string type, std::s
 			+ "awaits_creation=FALSE,"
 			+ "created_by=" + std::to_string (uid) + ","
 			+ "created_on=CURRENT_DATE,"
-			+ "start_date=" + work.quote (startDate) 
-			+ ((endDate == "") ? "" : ",end_date=" + work.quote(endDate))
+			+ "start_date=" + work.quote (startDate) + ","
+			+ "endDate=" + ((endDate == "") ? "NULL" : work.quote(endDate)) 
 			+ "WHERE id=" + std::to_string (id) + ";";
 		work.exec (updateEntityQuery);
 		return id;
@@ -38,7 +38,7 @@ int CreatePageResource::createEntity (pqxx::work &work, std::string type, std::s
 		logger << "NEW" << std::endl;
 		std::string insertEntityQuery = 
 			std::string("INSERT INTO entities (")
-			+ "type, name, description, awaits_creation, created_by, created_on, start_date" + ((endDate == "") ? "" : ",end_date")
+			+ "type, name, description, awaits_creation, created_by, created_on, start_date, end_date"
 			+ ") VALUES ("
 			+ /* type */ 		work.quote (type) + ","
 			+ /* name */		work.quote (name) + ","
@@ -46,8 +46,8 @@ int CreatePageResource::createEntity (pqxx::work &work, std::string type, std::s
 			+ /* awaits_creat*/ "FALSE,"
 			+ /* created_by */ 	std::to_string (uid) + ","
 			+ /* created_on */  "CURRENT_DATE,"
-			+ /* start_date */	work.quote (startDate)
-			+ /* end_date */ ((endDate == "") ? "" : "," + work.quote(endDate))
+			+ /* start_date */	work.quote (startDate) + ","
+			+ /* end_date */ ((endDate == "") ? "NULL" : work.quote(endDate))
 			+ ") RETURNING id;";
 		auto insertion = work.exec (insertEntityQuery);
 		return insertion[0][0].as <int> ();
@@ -135,5 +135,56 @@ std::unique_ptr<ApiResponse> CreatePageResource::processRequest (RequestData &rd
 		},
 		200
 	);
+	return response;
+}
+
+EntityDataResource::EntityDataResource (mg_context *ctx, std::string uri, std::string entityTable):
+ApiResource (ctx, uri), _table (entityTable) {
+
+}
+
+std::unique_ptr <ApiResponse> EntityDataResource::processRequest (RequestData &rd, nlohmann::json body) {
+	if (rd.method != "POST") return std::make_unique <ApiResponse> (nlohmann::json{}, 405);
+	if (!body.contains ("id")) return std::make_unique <ApiResponse> (nlohmann::json{}, 400);
+
+	int id;
+	try {
+		id = body["id"].get <int>();
+	} catch (nlohmann::json::exception &e) {
+		return std::make_unique <ApiResponse> (nlohmann::json{}, 400);
+	}
+
+	std::string getEntityDataQuery = std::string()
+		+ "SELECT entities.id, name, description, start_date, end_date, picture_path, awaits_creation, created_by "
+		+ "FROM entities INNER JOIN " + this->_table + " on entities.id = " + this->_table + ".entity_id "
+		+ "WHERE " + this->_table + ".id=" + std::to_string (id) + ";";
+
+	auto conn = database.connect();
+	pqxx::work work (*conn.conn);
+
+	pqxx::result result = work.exec (getEntityDataQuery);
+	if (result.size() == 0) return std::make_unique <ApiResponse> (nlohmann::json {{"status", "not_found"}}, 404);
+	if (result.size() > 1) throw std::logic_error ("EntityDataResource::processRequest found duplicate ids");
+	
+	pqxx::row row = result[0];
+	auto response = std::make_unique <ApiResponse> ();
+	// bool awaitsCreation = row ["awaits_creation"].as <bool>();
+	
+	// for (int i = 0; i < row.size(); i++) {
+	// 	logger << "'" << row[i].name() << "': " << row[i].c_str() << std::endl;
+	// }
+
+	response->body ["entity_id"] = row ["id"].as <std::string>();
+	// response->body ["awaits_creation"] = awaitsCreation;
+	response->body ["name"] = row ["name"].as <std::string>();
+
+	// if (awaitsCreation) return response;
+
+	response->body ["description"] = row ["description"].as <std::string>();
+	response->body ["start_date"] = row ["start_date"].as <std::string>();
+	if (!row ["end_date"].is_null()) response->body ["end_date"] = row ["end_date"].as <std::string>();
+	if (!row ["picture_path"].is_null()) response->body ["picture_path"] = row ["picture_path"].as <std::string>();
+	response->body ["created_by"] = row ["created_by"].as <int>();
+
 	return response;
 }

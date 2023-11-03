@@ -243,8 +243,46 @@ var testData = [
 	}
 ];
 
+function generate404page () {
+	console.log (404);
+}
+
+async function pullPersonData () {
+	const params = new URLSearchParams (window.location.search);
+	let id = params.get ("id");
+	let apiEndpoint = "/api/p";
+	let apiReqBody = {
+		"id": parseInt(id)
+	};
+	
+	let req = await fetch (
+		apiEndpoint,
+		{
+			"method": "POST",
+			"body": JSON.stringify(apiReqBody)
+		}
+	);
+
+	if (req.status == 404) {
+		generate404page();
+	} else {
+		let resp = await req.json ();
+		document.getElementById ("personName").innerHTML = resp.name;
+		document.getElementById ("personLifetime").innerHTML = 
+			"(" + dateToString(resp.start_date) + ('end_date' in resp ? " - " + dateToString(resp.end_date) : "") + ")";
+		document.getElementById ("personBio").innerHTML = resp.description;
+		if ("picture_path" in resp) document.getElementById ("personImage").setAttribute ("src", resp.picture_path);
+	}
+}
+
+function dateToString (date) {
+	abc = date.split ("-");
+	return abc[2] + "." + abc[1] + "." + abc[0];
+}
+
 function generatePage (ev) {
-	// TODO: pull data from API
+	pullPersonData ();
+	// TODO: pull event data from API
 	generateEventList (testData);
 
 }

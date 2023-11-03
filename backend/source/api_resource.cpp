@@ -33,15 +33,16 @@ Resource (ctx, uri) {
 }
 
 std::unique_ptr<_Response> ApiResource::processRequest (RequestData &rd) {
+	nlohmann::json json{};
 	if (rd.body != "") {
-		nlohmann::json json;
 		try {
 			json = nlohmann::json::parse (rd.body);
 		} catch (nlohmann::json::exception &e) {
+			logger << this->uri() << ": Bad JSON" << std::endl;
 			return std::make_unique<Response> ("Bad JSON", 400);
 		}
-		return this->processRequest (rd, json);
 	}
-	return this->processRequest (rd, nlohmann::json{});
-
+	auto resp = this->processRequest (rd, json);
+	logger << this->uri() << ": " << resp->getBody() << std::endl;
+	return resp;
 }
