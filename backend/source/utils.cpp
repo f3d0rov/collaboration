@@ -156,7 +156,22 @@ void Logger::log(char c) {
 	}
 }
 
-Logger logger;
+Logger _logger;
+
+
+LoggerLock::LoggerLock ():
+_lock (_logger.mutex) {
+	// std::cout << "Created" << std::endl;
+}
+
+LoggerLock::~LoggerLock() {
+	// std::cout << "Destroyed" << std::endl;
+}
+
+LoggerLock &LoggerLock::operator<< (std::ostream  &(*x)(std::ostream&)) {
+	_logger << x;
+	return *this;
+}
 
 
 ScopedProtector::ScopedProtector (std::function<void()> f) {

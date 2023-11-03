@@ -72,6 +72,7 @@ mg_context *startCivetweb (ArgsParser &argParser) {
 
 	if (argParser.hasArg ("https")) {
 		civetwebOptions = httpsCivetwebOptions;
+		common.http = "https";
 	} else {
 		civetwebOptions = httpCivetwebOptions;
 	}
@@ -125,7 +126,7 @@ void occasionalTasks () {
 
 
 int main (int argc, const char *argv[]) {
-	logger.init();
+	_logger.init();
 	logger << std::endl;
 	ArgsParser argParser;
 	

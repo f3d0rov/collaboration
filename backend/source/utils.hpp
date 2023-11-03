@@ -15,6 +15,8 @@
 #include <unistd.h>
 
 #include <functional>
+#include <thread>
+#include <mutex>
 
 #include <openssl/evp.h>
 #include <openssl/sha.h>
@@ -34,10 +36,6 @@ std::string trimmed (std::string s);
 
 std::string sha3_256 (std::string input);
 
-class Logger;
-class ScopedProtector;
-class Common;
-
 template <class T> std::chrono::microseconds usElapsedFrom_hiRes (T start) {
     return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
 }
@@ -46,10 +44,17 @@ std::string floatStr (double x, int precision = 3);
 std::string prettyMicroseconds (std::chrono::microseconds);
 
 
+class Logger;
+class ScopedProtector;
+class Common;
+
+
 class Logger: private std::streambuf, public std::ostream {
 		std::ofstream file;
 		bool newline = true;
 	public:
+		std::mutex mutex;
+
 		Logger();
 		~Logger();
 
@@ -58,7 +63,25 @@ class Logger: private std::streambuf, public std::ostream {
 		void log(char c);
 };
 
-extern Logger logger;
+extern Logger _logger;
+
+class LoggerLock {
+	private:
+		std::unique_lock <std::mutex> _lock;
+	public:
+		LoggerLock ();
+		~LoggerLock ();
+
+		template <class T>
+		LoggerLock &operator<< (const T &x) {
+			_logger << x;
+			return *this;
+		}
+
+		LoggerLock &operator<< (std::ostream  &(*x)(std::ostream&));
+};
+
+#define logger (LoggerLock())
 
 class ScopedProtector {
 	private:
