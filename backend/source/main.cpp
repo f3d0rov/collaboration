@@ -22,6 +22,7 @@
 #include "api/page.hpp"
 
 #define DEFAULT_PORT "8080"
+#define DEFAULT_HTTPS_PORT "443"
 #define DEFAULT_REQUEST_TIMEOUT_TIME_MS "10000"
 #define DEFAULT_CIVETWEB_ERROR_LOG_FILE "civetweb-errors.log"
 
@@ -36,24 +37,55 @@ int logCivetwebMessage (const mg_connection *conn, const char *message) {
 	return 1;
 }
 
+int initSSL (void *ssl_ctx, void *user_data) {
+	ssl_ctx_st *ctx = static_cast <ssl_ctx_st *> (ssl_ctx);
+	return 0;
+}
+
 mg_context *startCivetweb (ArgsParser &argParser) {
 	std::setlocale (LC_CTYPE, "ru_RU.UTF-8");
 	std::string port = argParser.getArgValue ("port", DEFAULT_PORT);
+	std::string securePort = argParser.getArgValue ("secure-port", DEFAULT_HTTPS_PORT);
 	std::string requestTimeout = argParser.getArgValue ("request-timeout", DEFAULT_REQUEST_TIMEOUT_TIME_MS);
 	std::string civetwebErrorLogFile = argParser.getArgValue ("civetweb-error-log", DEFAULT_CIVETWEB_ERROR_LOG_FILE);
 
-	const char* civetwebOptions[] = {
+	const char **civetwebOptions = nullptr;
+
+	const char *httpCivetwebOptions[] = {
 		"listening_ports", port.c_str(),
 		"request_timeout_ms", requestTimeout.c_str(),
 		"error_log_file", civetwebErrorLogFile.c_str(),
 		0
 	};
 
-	logger << "Запускаем CivetWeb на порте " << port << ", таймаут запроса: " << requestTimeout << " мс" << std::endl;
+	std::string ports = port + "," + securePort + "s";
+
+	const char *httpsCivetwebOptions[] = {
+		"listening_ports", ports.c_str(),
+		"request_timeout_ms", requestTimeout.c_str(),
+		"error_log_file", civetwebErrorLogFile.c_str(),
+		"ssl_certificate", "./server.pem",
+		"ssl_protocol_version", "3",
+		"ssl_cipher_list", "DES-CBC3-SHA:AES128-SHA:AES128-GCM-SHA256",
+		0
+	};
+
+	if (argParser.hasArg ("https")) {
+		civetwebOptions = httpsCivetwebOptions;
+	} else {
+		civetwebOptions = httpCivetwebOptions;
+	}
+	
+	if (!mg_check_feature(2)) {
+		logger << "Библиотека Civetweb была собрана без поддержки SSL" << std::endl;
+	}
+
+	logger << "Запускаем CivetWeb на порте " << civetwebOptions[1] << ", таймаут запроса: " << requestTimeout << " мс" << std::endl;
 
 	mg_callbacks callbacks;
 	memset(&callbacks, 0, sizeof (callbacks)); // Clear the created object
 	callbacks.log_message = logCivetwebMessage;
+	callbacks.init_ssl = initSSL;
 
 	mg_context *ctx = nullptr;
 	int err = 0;
@@ -103,8 +135,10 @@ int main (int argc, const char *argv[]) {
 				ArgOption ("v", "version", "Вывод версии программы"),
 				ArgOption ("h", "help", "Вывод доступных опций"),
 				ArgOption ("d", "domain", "Адрес сайта", true),
+				ArgOption ("s", "https", "Использовать https"),
 				ArgOption ("i", "index", "Путь к директории с файлами фронтенда", true),
 				ArgOption ("p", "port", "Порт для входящих запросов", true),
+				ArgOption ("", "secure-port", "Порт для входящих запросов через HTTPS", true),
 				ArgOption ("", "request-timeout", "Таймаут запросов", true),
 				ArgOption ("", "civetweb-error-log", "Файл для записи ошибок Civetweb", true),
 				ArgOption ("", "db-config", "Путь к файлу .json с данными для подключения к PostgreSQL", true),

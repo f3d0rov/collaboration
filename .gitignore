@@ -4,3 +4,8 @@ backend/build/smtp-config.json
 backend/obj
 .vscode
 *.log
+*.crt
+*.csr
+*.key.orig
+*.key
+*.pem
