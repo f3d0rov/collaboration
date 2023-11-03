@@ -5,7 +5,9 @@
 #include <vector>
 
 #include "../api_resource.hpp"
+#include "../database.hpp"
 
+#include "page.hpp"
 
 class RandomSearchPromptResource: public ApiResource {
 	private:

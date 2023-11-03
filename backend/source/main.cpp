@@ -70,7 +70,6 @@ void resetDatabase () {
 
 void setupDatabase () {
 	execSqlFile ("sql/make-db.sql");
-	execSqlFile ("sql/search-index-test.sql");
 }
 
 
