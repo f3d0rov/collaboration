@@ -51,7 +51,20 @@ class SharedDirectory {
 
 	public:
 		SharedDirectory (mg_context *ctx, std::string directoryPath, bool ignoreHtml = true, bool dontCache = false);
-
+		void shareFile (std::string path);
+		void refreshFiles ();
 		size_t size();
 };
- 
+
+
+class DynamicDirectory: public Resource {
+	private:
+		std::filesystem::path _dir;
+	public:
+		DynamicDirectory (mg_context *ctx, std::string uri, std::filesystem::path dir);
+
+		std::filesystem::path pathFromUri (std::string uri);
+
+		std::unique_ptr <_Response> processRequest (RequestData &rd) override;
+
+};

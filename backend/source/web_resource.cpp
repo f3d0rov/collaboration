@@ -69,3 +69,27 @@ SharedDirectory::SharedDirectory (mg_context *ctx, std::string directoryPath, bo
 size_t SharedDirectory::size() {
 	return this->_resources.size();
 }
+
+
+DynamicDirectory::DynamicDirectory (mg_context *ctx, std::string uri, std::filesystem::path dir):
+Resource (ctx, uri), _dir (dir) {
+
+}
+
+std::filesystem::path DynamicDirectory::pathFromUri (std::string uri) {
+	int start = uri.find (this->uri());
+	std::string path = uri.substr (start + this->uri().length());
+	if (path.length() == 0) return this->_dir; // will return 404 because of is_regular_file check
+	if (path[0] == '/') path = path.substr (1);
+	return this->_dir / std::filesystem::path (path);
+}
+
+std::unique_ptr <_Response> DynamicDirectory::processRequest (RequestData &rd) {
+	// Civetweb resolves .. paths so no need to worry about accidentally exposing other files
+	std::filesystem::path path = this->pathFromUri (rd.uri);
+	logger << path << std::endl;
+	if (!(std::filesystem::exists (path) && std::filesystem::is_regular_file (path)))
+		return std::make_unique <Response> ("not found", 404);
+	logger << "Serving " << path << std::endl;
+	return std::make_unique <Response> (readFile (path, std::ios::binary), mg_get_builtin_mime_type (path.c_str()), 200);
+}

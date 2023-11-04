@@ -9,3 +9,4 @@ backend/obj
 *.key.orig
 *.key
 *.pem
+build/user/*

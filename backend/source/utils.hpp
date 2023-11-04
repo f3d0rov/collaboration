@@ -91,10 +91,12 @@ class ScopedProtector {
 		~ScopedProtector ();
 };
 
+
 class Common {
 	public:
 		std::string domain;
 		std::string http = "http";
+		std::string frontendDir;
 };
 
 extern Common common;

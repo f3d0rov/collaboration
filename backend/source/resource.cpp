@@ -64,6 +64,8 @@ std::string Response::getMime () {
 }
 
 
+
+
 void RequestData::setCookiesFromString (const char* cookies_) {
 	this->setCookies = std::map <std::string, std::string>();
 	if (cookies_ == nullptr) return;
@@ -109,6 +111,16 @@ void RequestData::setQueryVariables (const char* queryString) {
 	} while (!last);
 }
 
+
+
+RequestTooBigException::RequestTooBigException (std::string w):
+std::runtime_error (w) {
+
+}
+
+
+
+
 Resource::Resource (mg_context* ctx, std::string uri):
 _uri (uri) {
 	mg_set_request_handler (
@@ -132,6 +144,7 @@ std::string Resource::_readRequestBody (mg_connection* conn) {
 	do {
 		dlen = mg_read (conn, buffer, BUFFER_SIZE);
 		body += std::string (buffer, dlen);
+		if (body.length() > MAX_BODY_SIZE) throw RequestTooBigException{};
 	} while (dlen == BUFFER_SIZE); // Read full buffer, means more to come
  
 	delete[] buffer;
@@ -178,7 +191,12 @@ int Resource::_processRequest (mg_connection* conn) {
 		mg_response_header_add (conn, "Content-Type", contentType.c_str(), contentType.length());
 		mg_response_header_send (conn);
 
-		std::string respBody = response->getBody();
+		std::string respBody;
+		try {
+			respBody = response->getBody();
+		} catch (RequestTooBigException &e) {
+			return 413; // Content too large
+		}
 		mg_write (conn, respBody.c_str(), respBody.length());
 		return response->status;
 

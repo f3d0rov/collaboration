@@ -7,6 +7,7 @@ drop table if exists bands;
 drop table if exists participation;
 drop table if exists personalities;
 drop table if exists entity_reports;
+drop table if exists entity_photo_upload_links;
 drop table if exists entities;
 drop table if exists event_reports;
 drop table if exists events;

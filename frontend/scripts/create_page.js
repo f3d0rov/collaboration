@@ -1,6 +1,7 @@
 
 
 async function tryCreatePage (ev) {
+
 	let type = document.querySelector (".typeSelectorButton.selected").getAttribute ("value");
 	let name = document.getElementById ("name").value;
 	let desc = document.getElementById ("description").value;
@@ -30,8 +31,38 @@ async function tryCreatePage (ev) {
 	let respBody = await resp.json ();
 	console.log ("" + respBody.status);
 	console.log (respBody);
-	if (respBody["status"] == "success")
+	if (respBody["status"] == "success") {
+		let imageSelector = document.getElementById ("imageSelector");
+		if (imageSelector.value != 0) await uploadImage(respBody.entity);
 		window.location.href = respBody.url;
+	}
+}
+
+async function uploadImage (entityId) {
+	let imageSelector = document.getElementById ("imageSelector");
+	let file = imageSelector.files[0];
+	if (checkImage (file) == false) return;
+
+	let getUploadUrlFetch = await fetch (
+		"/api/askchangepic",
+		{
+			"method": "POST",
+			"body": JSON.stringify ({ "entity_id": entityId })
+		}
+	);
+
+	let uploadUrl = await getUploadUrlFetch.json();
+	
+	let imageBox = document.getElementById ('image');
+	
+	let resp = await fetch (
+		uploadUrl.url,
+		{
+			"method": "PUT",
+			"body": imageBox.getAttribute ("src")
+		}
+	);
+	console.log (resp.status);
 }
 
 function processTypeSwitch (newType) {
@@ -77,11 +108,45 @@ function setupPageTypeSelector () {
 	}
 }
 
+function checkImage (file) {
+	if (!file.type.startsWith ("image/")) { // Wrong type
+		return false;
+	}
+	if (file.size > 4 * 1024 * 1024) { // 4 mb - too big
+		return false;
+	}
+	return true;
+}
+
 function setupImageInput () { 
+	let imageSelector = document.getElementById ('imageSelector');
+	imageSelector.addEventListener (
+		'change',
+		() => {
+			let imageSelector = document.getElementById ('imageSelector');
+			let file = imageSelector.files[0];
+
+			if (!checkImage (file)) {
+				imageSelector.value = "";
+				return;
+			}
+			
+			let imageBox = document.getElementById ('image');
+			imageBox.file = file;
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				imageBox.setAttribute('src', e.target.result);
+				imageBox.classList.remove ('placeholder');
+			};
+			reader.readAsDataURL (file);
+		}
+	);
+
 	document.getElementById ('imageBox').addEventListener (
 		'click',
 		(ev) => {
-			document.getElementById ('imageSelector').click();
+			let imageSelector = document.getElementById ('imageSelector');
+			imageSelector.click();
 		}
 	)
 }
@@ -90,6 +155,7 @@ function setupDataInput () {
 	let params = new URLSearchParams (window.location.search);
 	if (params.has ("q")) {
 		document.getElementById ("name").value = params.get ("q");
+
 	}
 
 	let aliveCheckbox = document.getElementById ('alive');

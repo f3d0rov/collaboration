@@ -179,6 +179,7 @@ int main (int argc, const char *argv[]) {
 	common.domain = argParser.getArgValue ("domain", std::string("localhost:") + argParser.getArgValue ("port", DEFAULT_PORT));
 
 	std::string frontendDir = argParser.getArgValue ("index", DEFAULT_INDEX_DIRECTORY_PATH);
+	common.frontendDir = frontendDir;
 	if (!argParser.hasArg ("index")) chdirToExecutableDirectory (argv[0]);
 	
 	database.init (
@@ -217,6 +218,8 @@ int main (int argc, const char *argv[]) {
 		logger << "Кэширование файлов и ресурсов отключено." << std::endl;
 	}
 
+	std::filesystem::path entityPics = "./user/";
+
 	SharedDirectory sharedFiles (ctx, frontendDir, true, dontCache);
 	WebResource indexPage (ctx, "", frontendDir + "/index.html", dontCache);
 	WebResource personPage (ctx, "p", frontendDir + "/person.html", dontCache);
@@ -234,11 +237,17 @@ int main (int argc, const char *argv[]) {
 	CheckUsernameAvailability checkUsernameAvailability	(ctx, "api/u/check_username");
 	CheckEmailAvailability checkEmailAvailability 		(ctx, "api/u/check_email");
 	CheckSessionResource checkSessionResource 			(ctx, "api/u/whoami");
-	CreatePageResource createPageApiResource 			(ctx, "api/create");
 
-	EntityDataResource personDataApiResource 			(ctx, "api/p", "personalities");
-	EntityDataResource bandDataApiResource 				(ctx, "api/b", "bands");
-	EntityDataResource albumDataApiResource 			(ctx, "api/a", "albums");
+	CreatePageResource createPageApiResource 			(ctx, "api/create");
+	UploadPictureResource setEntityPictureResource 		(ctx, "api/entitypic", entityPics);
+	RequestPictureChangeResource requestPicChange 		(ctx, "api/askchangepic", std::string(setEntityPictureResource.uri()));
+
+	DynamicDirectory userPics 							(ctx, "imgs", "./user/");
+
+	EntityDataResource personDataApiResource 			(ctx, "api/p", "personalities", std::string(userPics.uri()));
+	EntityDataResource bandDataApiResource 				(ctx, "api/b", "bands", std::string(userPics.uri()));
+	EntityDataResource albumDataApiResource 			(ctx, "api/a", "albums", std::string(userPics.uri()));
+
 
 
 	while (1) { // Ждем входящие подключения

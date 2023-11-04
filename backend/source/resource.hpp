@@ -7,7 +7,8 @@
 
 #include "utils.hpp"
 
-#define BUFFER_SIZE 2048
+#define BUFFER_SIZE (16 * 1024) /* 16 Kb */
+#define MAX_BODY_SIZE (16 * 1024 * 1024) /* 16 Mb */
 
 class _Response;
 class Response;
@@ -59,6 +60,13 @@ class RequestData {
 		void setCookiesFromString (const char* cookies_);
 		void setQueryVariables (const char *query);
 };
+
+
+class RequestTooBigException: public std::runtime_error {
+	public:
+		RequestTooBigException (std::string w = "Принятый запрос превышает допустимый размер");
+};
+
 
 class Resource {
 	private:

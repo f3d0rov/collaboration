@@ -35,7 +35,6 @@ int CreatePageResource::createEntity (pqxx::work &work, std::string type, std::s
 		return id;
 
 	} else /* result.size() == 0 */ {
-		logger << "NEW" << std::endl;
 		std::string insertEntityQuery = 
 			std::string("INSERT INTO entities (")
 			+ "type, name, description, awaits_creation, created_by, created_on, start_date, end_date"
@@ -131,6 +130,7 @@ std::unique_ptr<ApiResponse> CreatePageResource::processRequest (RequestData &rd
 	auto response = std::make_unique <ApiResponse> (
 		nlohmann::json {
 			{"status", "success"},
+			{"entity", entityId},
 			{"url", url}
 		},
 		200
@@ -138,9 +138,140 @@ std::unique_ptr<ApiResponse> CreatePageResource::processRequest (RequestData &rd
 	return response;
 }
 
-EntityDataResource::EntityDataResource (mg_context *ctx, std::string uri, std::string entityTable):
-ApiResource (ctx, uri), _table (entityTable) {
 
+
+RequestPictureChangeResource::RequestPictureChangeResource (mg_context *ctx, std::string uri, std::string uploadUrl):
+ApiResource (ctx, uri), _uploadUrl (uploadUrl) {
+
+}
+
+std::unique_ptr <ApiResponse> RequestPictureChangeResource::processRequest (RequestData &rd, nlohmann::json body) {
+	if (rd.method != "POST") return std::make_unique <ApiResponse> (405);
+	if (!body.contains ("entity_id")) return std::make_unique <ApiResponse> (400);
+	if (!rd.setCookies.contains ("session_id")) return std::make_unique <ApiResponse> (401);
+
+	auto user = CheckSessionResource::checkSessionId (rd.setCookies ["session_id"]);
+	if (!user.valid) return std::make_unique <ApiResponse> (401);
+
+	int entityId;
+	try {
+		entityId = body ["entity_id"].get <int> ();
+	} catch (nlohmann::json::exception &e) {
+		return std::make_unique <ApiResponse> (400);
+	}
+
+	// Check that entity exists
+	if (!EntityDataResource::entityCreated (entityId))
+		return std::make_unique <ApiResponse> (nlohmann::json{{"status", "entity_not_found"}}, 404);
+
+	std::string id = randomizer.hex (128);
+	
+	auto conn = database.connect();
+	pqxx::work work (*conn.conn);
+
+	std::string createRequest = std::string("INSERT INTO entity_photo_upload_links (id, entity_id, valid_until) ")
+		+ "VALUES ("
+			/* id */ 			+ work.quote (id) + ","
+			/* entity_id */		+ work.quote (entityId) + ","
+			/* valid_until */	+ "CURRENT_TIMESTAMP + INTERVAL '5 minutes');";
+	auto result = work.exec (createRequest);
+	work.commit();
+	return std::make_unique <ApiResponse> (nlohmann::json {{"url", "/" + this->_uploadUrl + "?id=" + id}});
+}
+
+
+
+UploadPictureResource::UploadPictureResource (mg_context *ctx, std::string uri, std::filesystem::path savePath):
+Resource (ctx, uri), _savePath (savePath) {
+
+}
+
+void UploadPictureResource::setEntityPicture (pqxx::work &work, int entityId, std::string path) {
+	std::string checkForPic = std::string ()
+		+ "SELECT picture_path FROM entities WHERE id=" + std::to_string (entityId) + ";";
+	auto res = work.exec1 (checkForPic);
+	if (!res[0].is_null()) {
+		std::filesystem::path oldPath = this->_savePath / std::filesystem::path(res[0].as <std::string>());
+		std::error_code ec;
+		std::filesystem::remove (oldPath, ec);
+		if (ec) {
+			logger << "Ошибка при попытке удалить файл: '" << oldPath << "' #" << ec << std::endl;
+		}
+	}
+	std::string setPicPath = std::string()
+		+ "UPDATE entities SET picture_path=" + work.quote (path) + " WHERE id=" + std::to_string (entityId) + ";";
+	auto updateRes = work.exec (setPicPath);
+	if (updateRes.affected_rows() != 1) throw std::runtime_error ("UploadPictureResource::setEntityPicture::updateRes.affected_rows() != 1");
+}
+
+std::unique_ptr <_Response> UploadPictureResource::processRequest (RequestData &rd) {
+	if (rd.method != "PUT") return std::make_unique <Response> (405);
+	if (rd.body.length() > 8 * 1024 * 1024) return std::make_unique <Response> (400);
+	if (!rd.setCookies.contains ("session_id")) return std::make_unique <Response> (401);
+
+	auto user = CheckSessionResource::checkSessionId (rd.setCookies ["session_id"]);
+	if (!user.valid) return std::make_unique <Response> (401);
+
+	auto conn = database.connect();
+	pqxx::work work (*conn.conn);
+
+	std::string id = rd.query ["id"];
+	std::string checkRequest = std::string ()
+		+ "SELECT entity_id FROM entity_photo_upload_links "
+			"WHERE id=" + work.quote (id) + " AND valid_until > CURRENT_TIMESTAMP;";
+	auto result = work.exec (checkRequest);
+
+	if (result.size() == 0) return std::make_unique <ApiResponse> (404);
+	int entityId = result[0][0].as <int>();
+
+
+	std::string headerEnd = ";base64,";
+	int origin = rd.body.find (headerEnd) + headerEnd.length();
+	logger << "pos: " << origin << std::endl;
+
+	int mimeStart = rd.body.find ("data:");
+	std::string mime = rd.body.substr (mimeStart + 5, rd.body.find (";", mimeStart + 5) - mimeStart - 5);
+	logger << mime << std::endl;
+	
+	size_t decodedLen = rd.body.length() * 3 / 4;
+	unsigned char *buffer = new unsigned char[decodedLen];
+	if (-1 != mg_base64_decode (rd.body.c_str() + origin, rd.body.length() - origin, buffer, &decodedLen)) {
+		logger << "UploadPictureResource::processRequest не смог декодировать данные в формате Base64" << std::endl;
+		return std::make_unique <Response> (500);
+	}
+
+	std::filesystem::path filename = std::filesystem::path (randomizer.hex(64) + ".png");
+	std::ofstream of (this->_savePath / filename, std::ios::binary | std::ios::out);
+	if (!of.is_open()) {
+		logger << "Не смог открыть файл для записи: " << filename << std::endl;
+		return std::make_unique <Response> (500);
+	}
+
+	of.write ((const char *) buffer, decodedLen);
+	of.close();
+	delete[] buffer;
+
+	logger << "Фото сущности сохранено в: " << filename << std::endl;
+	this->setEntityPicture (work, entityId, filename);
+	work.commit();
+
+	return std::make_unique <Response> (200);
+}
+
+
+
+
+EntityDataResource::EntityDataResource (mg_context *ctx, std::string uri, std::string entityTable, std::string picsUri):
+ApiResource (ctx, uri), _table (entityTable), _pics (picsUri) {
+
+}
+
+bool EntityDataResource::entityCreated (int id) {
+	std::string query = "SELECT 1 FROM entities WHERE awaits_creation=FALSE AND id=" + std::to_string (id) + ";";
+	auto conn = database.connect();
+	pqxx::work work (*conn.conn);
+	auto res = work.exec (query);
+	return res.size() > 0;
 }
 
 std::unique_ptr <ApiResponse> EntityDataResource::processRequest (RequestData &rd, nlohmann::json body) {
@@ -183,7 +314,7 @@ std::unique_ptr <ApiResponse> EntityDataResource::processRequest (RequestData &r
 	response->body ["description"] = row ["description"].as <std::string>();
 	response->body ["start_date"] = row ["start_date"].as <std::string>();
 	if (!row ["end_date"].is_null()) response->body ["end_date"] = row ["end_date"].as <std::string>();
-	if (!row ["picture_path"].is_null()) response->body ["picture_path"] = row ["picture_path"].as <std::string>();
+	if (!row ["picture_path"].is_null()) response->body ["picture_path"] = this->_pics + "/" + row ["picture_path"].as <std::string>();
 	response->body ["created_by"] = row ["created_by"].as <int>();
 
 	return response;

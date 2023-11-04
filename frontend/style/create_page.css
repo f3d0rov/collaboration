@@ -65,6 +65,17 @@
 
 	margin-left: 50px;
 	margin-right: 50px;
+
+	object-fit: contain;
+
+	border: solid 1px;
+	border-color: white;
+	border-top-left-radius: 15px;
+	border-bottom-right-radius: 15px;
+	border-top-right-radius: 5px;
+	border-bottom-left-radius: 5px;
+
+	vertical-align: top;
 }
 
 #image.square {
@@ -76,15 +87,6 @@
 
 #image.placeholder {
 	object-fit: contain;
-
-	border: solid 1px;
-	border-color: white;
-	border-top-left-radius: 15px;
-	border-bottom-right-radius: 15px;
-	border-top-right-radius: 5px;
-	border-bottom-left-radius: 5px;
-
-	vertical-align: top;
 
 	opacity: 0.5;
 	transition: opacity 0.2s ease-in-out;
@@ -220,7 +222,7 @@ input.checkboxInput {
 	background-color: #330b0b;
 
 	color: white;
-	font-size: 32px;
+	font-size: 22px;
 	font-family: 'Oswald', sans-serif;
 
 	border-color: #210808;

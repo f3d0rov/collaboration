@@ -63,6 +63,12 @@ CREATE TABLE entities (
 	created_on DATE
 );
 
+CREATE TABLE entity_photo_upload_links (
+	id VARCHAR (128) PRIMARY KEY NOT NULL,
+	entity_id INT REFERENCES entities (id),
+	valid_until timestamp not null
+);
+
 CREATE TABLE entity_reports (
 	id SERIAL PRIMARY KEY NOT NULL,
 	event_id INT REFERENCES events(id) ON DELETE CASCADE,
