@@ -23,8 +23,8 @@ int CreatePageResource::createEntity (pqxx::work &work, std::string type, std::s
 		if (!awaitsCreation) return -1;
 		std::string updateEntityQuery = std::string ("UPDATE entities ")
 			+ "SET type=" + work.quote (type) + ","
-			+ "name=" + work.quote (name) + ","
-			+ "description=" + work.quote (desc) + ","
+			+ "name=" + work.quote (escapeHTML(name)) + ","
+			+ "description=" + work.quote (escapeHTML(desc)) + ","
 			+ "awaits_creation=FALSE,"
 			+ "created_by=" + std::to_string (uid) + ","
 			+ "created_on=CURRENT_DATE,"
@@ -40,8 +40,8 @@ int CreatePageResource::createEntity (pqxx::work &work, std::string type, std::s
 			+ "type, name, description, awaits_creation, created_by, created_on, start_date, end_date"
 			+ ") VALUES ("
 			+ /* type */ 		work.quote (type) + ","
-			+ /* name */		work.quote (name) + ","
-			+ /* desc */		work.quote (desc) + ","
+			+ /* name */		work.quote (escapeHTML(name)) + ","
+			+ /* desc */		work.quote (escapeHTML(desc)) + ","
 			+ /* awaits_creat*/ "FALSE,"
 			+ /* created_by */ 	std::to_string (uid) + ","
 			+ /* created_on */  "CURRENT_DATE,"

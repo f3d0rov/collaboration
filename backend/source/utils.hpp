@@ -33,6 +33,7 @@ std::string cookieString (std::string name, std::string value, bool httpOnly, lo
 std::string lowercase (std::string s);
 bool isAscii (std::string s);
 std::string trimmed (std::string s);
+std::string escapeHTML (std::string s);
 
 std::string sha3_256 (std::string input);
 

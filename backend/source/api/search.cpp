@@ -182,8 +182,8 @@ void SearchResource::indexWithWork (pqxx::work &work, std::string type, std::str
 		+ "INSERT INTO indexed_resources (url, title, description, type, picture_path)"
 		+ "VALUES ("
 		+ /* url*/ 		work.quote (url) + ","
-		+ /* title */ 	work.quote (name) + ","
-		+ /* desc */	work.quote (desc) + ","
+		+ /* title */ 	work.quote (escapeHTML(name)) + ","
+		+ /* desc */	work.quote (escapeHTML(desc)) + ","
 		+ /* type */	work.quote (type) + ","
 		+ /* imgPath */ ((imgPath == "") ? "NULL" : imgPath)
 		+ ") RETURNING id;";

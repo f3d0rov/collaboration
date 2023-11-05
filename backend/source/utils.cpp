@@ -62,6 +62,34 @@ std::string trimmed (std::string s) {
 	return s.substr (first, s.find_last_not_of (whitespaces) - first + 1);
 }
 
+std::string escapeHTML (std::string s) {
+	const std::map <char, std::string> dict = {
+		{'<', "&lt;"},
+		{'>', "&gt;"},
+		{'"', "&quot;"},
+		{'\'', "&#39;"}
+	};
+
+	int pos = 0;
+	while (pos != s.npos && pos < s.length()) {
+		pos = s.find ('&', pos);
+		if (pos == s.npos) break;
+		s.replace (pos, 1, "&amp;");
+		pos += std::string ("&amp;").length();
+	}
+
+	pos = 0;
+	while (pos != s.npos && pos < s.length()) {
+		pos = s.find_first_of ("<>\"'", pos);
+		if (pos == s.npos) break;
+		std::string repl = dict.at(s[pos]);
+		s.replace (pos, 1, repl);
+		pos += repl.length();
+	}
+
+	return s;
+}
+
 
 std::string sha3_256 (std::string input) {;
 	// const EVP_MD *EVP_sha3_256(void);

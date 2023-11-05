@@ -305,7 +305,7 @@ std::unique_ptr<ApiResponse> UserRegisterResource::processRequest (RequestData &
 		+ "INSERT INTO users "
 		+ "(username, email, pass_hash, pass_salt) "
 		+ "VALUES ("
-			/* username */	+ work.quote (username) + ","
+			/* username */	+ work.quote (escapeHTML(username)) + ","
 			/* email */		+ work.quote (email) + ","
 			/* pass_hash */ + work.quote (pass_hash) + ","
 			/* pass_salt */ + work.quote (pass_salt)
