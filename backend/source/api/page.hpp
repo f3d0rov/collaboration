@@ -9,6 +9,12 @@
 #include "search.hpp"
 
 
+class CreatePageResource;
+class RequestPictureChangeResource;
+class UploadPictureResource;
+class EntityDataResource;
+
+
 /***********
  * POST { 
  * 		"type": "person|band|album", 
