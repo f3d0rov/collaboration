@@ -43,6 +43,6 @@ std::unique_ptr<_Response> ApiResource::processRequest (RequestData &rd) {
 		}
 	}
 	auto resp = this->processRequest (rd, json);
-	logger << this->uri() << ": " << resp->getBody() << std::endl;
+	// logger << this->uri() << ": " << resp->getBody() << std::endl;
 	return resp;
 }

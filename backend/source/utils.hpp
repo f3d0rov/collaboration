@@ -23,6 +23,9 @@
 
 #define LOG_FILE_PATH "collab-server.log"
 
+using namespace std::literals::string_literals; // "123"s <=> std::string("123")
+
+
 std::string getCurrentTimeString();
 void chdirToExecutableDirectory (std::string progPath);
 std::string getFileExtension (std::string path);

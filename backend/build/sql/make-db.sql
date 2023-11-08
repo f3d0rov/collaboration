@@ -25,20 +25,21 @@ create table user_login (
 	device_ip inet
 );
 
-create table user_contributions (
-	id serial primary key not null,
-	uid int references users(uid) ON DELETE SET NULL NOT NULL,
-	contributed_on date not null,
-	event_id int -- references events(id)
-);
-
 create table events (
 	id serial primary key not null,
-	event_date date not null,
-	event_end_date date,
-	event_type varchar (32) not null,
+	start_date date not null,
+	end_date date,
+	type varchar (32) not null,
 
-	contribution int references user_contributions (id) ON DELETE SET NULL
+	name varchar (128) not null,
+	description varchar (512) not null
+);
+
+create table user_event_contributions (
+	id serial primary key not null,
+	user_id int references users(uid) ON DELETE SET NULL NOT NULL,
+	contributed_on date not null,
+	event_id int references events(id) ON DELETE CASCADE
 );
 
 create table event_reports (
@@ -50,11 +51,11 @@ create table event_reports (
 
 CREATE TABLE entities (
 	id SERIAL PRIMARY KEY NOT NULL,
-	type VARCHAR (16) NOT NULL,
+	type VARCHAR (16) NOT NULL DEFAULT '',
 
 	name VARCHAR (128) NOT NULL,
-	description TEXT NOT NULL,
-	start_date DATE NOT NULL,
+	description TEXT NOT NULL DEFAULT '',
+	start_date DATE NOT NULL DEFAULT '01-01-1970',
 	end_date DATE,
 
 	picture_path VARCHAR (256),
@@ -71,7 +72,7 @@ CREATE TABLE entity_photo_upload_links (
 
 CREATE TABLE entity_reports (
 	id SERIAL PRIMARY KEY NOT NULL,
-	event_id INT REFERENCES events(id) ON DELETE CASCADE,
+	entity_id INT REFERENCES entities(id) ON DELETE CASCADE,
 	reported_by INT REFERENCES users(uid) ON DELETE CASCADE,
 	reason_id INT NOT NULL	
 );
@@ -84,7 +85,7 @@ create table personalities (
 
 create table participation (
 	event_id int references events(id) ON DELETE CASCADE,
-	person_id INT REFERENCES personalities(id) ON DELETE CASCADE
+	entity_id INT REFERENCES entities(id) ON DELETE CASCADE
 );
 
 create table bands (

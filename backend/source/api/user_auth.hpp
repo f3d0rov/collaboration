@@ -139,5 +139,7 @@ class CheckSessionResource: public ApiResource {
 	public:
 		CheckSessionResource (mg_context* ctx, std::string uri);
 		static UsernameUid checkSessionId (std::string sessionId);
+		static UsernameUid checkSessionId (RequestData &rd);
+		static bool isLoggedIn (RequestData &rd, int minPermissionLevel = 0);
 		std::unique_ptr<ApiResponse> processRequest (RequestData& rd, nlohmann::json body) override;
 };

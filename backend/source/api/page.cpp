@@ -53,6 +53,12 @@ int CreatePageResource::createEntity (pqxx::work &work, std::string type, std::s
 	}
 }
 
+int CreatePageResource::createEmptyEntityWithWork (pqxx::work &work, const std::string &name) {
+	std::string insertEmptyEntityQuery = "INSERT INTO entities (name) VALUES (" + work.quote (name) + ") RETURNING id;";
+	auto res = work.exec1 (insertEmptyEntityQuery);
+	return res[0].as <int>();
+}
+
 int CreatePageResource::createTypedEntity (pqxx::work &work, int entityId, std::string type) {
 	const std::map <std::string /* type */, std::string /* table */> typeToTableName = {
 		{"person", "personalities"},
@@ -272,6 +278,48 @@ bool EntityDataResource::entityCreated (int id) {
 	pqxx::work work (*conn.conn);
 	auto res = work.exec (query);
 	return res.size() > 0;
+}
+
+int EntityDataResource::getEntityByNameWithWork (pqxx::work &work, const std::string &name) {
+	std::string checkEntityExistenceQuery = "SELECT id FROM entities WHERE name="s + work.quote (name) + ";";
+	auto checkRes = work.exec (checkEntityExistenceQuery);
+	if (checkRes.size() == 0) return CreatePageResource::createEmptyEntityWithWork (work, name);
+	return checkRes[0][0].as <int> ();
+}
+
+EntityData EntityDataResource::getEntityDataByIdWithWork (pqxx::work &work, int id) {
+	EntityData ed;
+	std::string getEntityDataByIdQuery = 
+		"SELECT name, description, type, start_date, end_date, picture_path, awaits_creation, created_by, created_on FROM entities WHERE id="s + std::to_string (id) + ";";
+	auto result = work.exec (getEntityDataByIdQuery);
+	if (result.size() == 0) {
+		ed.valid = false;
+		return ed;
+	} else {
+		auto row = result[0];
+
+		ed.id = id;
+		ed.name = row ["name"].as <std::string>();
+		ed.description = row ["description"].as <std::string>();
+		ed.type = row ["type"].as <std::string>();
+
+		ed.startDate = row ["start_date"].as <std::string>();
+		if (!row["end_date"].is_null()) ed.endDate = row["end_date"].as <std::string>();
+		
+		ed.created = !(row["awaits_creation"].as <bool>());
+
+		if (!row["picture_path"].is_null()) ed.picturePath = row["picture_path"].as <std::string>();
+		if (!row["created_by"].is_null()) ed.createdBy = row["created_by"].as <int>();
+		if (!row["created_on"].is_null()) ed.createdOn = row["created_on"].as <std::string>();
+
+		return ed;
+	}
+}
+
+EntityData EntityDataResource::getEntityDataById (int id) {
+	auto conn = database.connect();
+	pqxx::work work (*conn.conn);
+	return EntityDataResource::getEntityDataByIdWithWork (work, id);
 }
 
 std::unique_ptr <ApiResponse> EntityDataResource::processRequest (RequestData &rd, nlohmann::json body) {

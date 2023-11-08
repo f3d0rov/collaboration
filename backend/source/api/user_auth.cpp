@@ -445,6 +445,24 @@ UsernameUid CheckSessionResource::checkSessionId (std::string sessionId) {
 	return uu;
 }	
 
+UsernameUid CheckSessionResource::checkSessionId (RequestData &rd) {
+	UsernameUid uu;
+	if (!rd.setCookies.contains ("session_id")) {
+		uu.valid = false;
+		return uu;
+	} else {
+		return CheckSessionResource::checkSessionId (rd.setCookies["session_id"]);
+	}
+}
+
+bool CheckSessionResource::isLoggedIn (RequestData &rd, int minPermissionLevel) {
+	if (!rd.setCookies.contains ("session_id")) return false;
+	std::string sessionId = rd.setCookies ["session_id"];
+	UsernameUid user = CheckSessionResource::checkSessionId (sessionId);
+	return user.valid && (user.permissionLevel >= minPermissionLevel);
+}
+
+
 
 std::unique_ptr<ApiResponse> CheckSessionResource::processRequest (RequestData &rd, nlohmann::json body) {
 	if (rd.method != "POST") return std::make_unique<ApiResponse> (405);

@@ -20,6 +20,8 @@
 #include "api/search.hpp"
 #include "api/user_auth.hpp"
 #include "api/page.hpp"
+#include "api/events.hpp"
+
 
 #define DEFAULT_PORT "8080"
 #define DEFAULT_HTTPS_PORT "443"
@@ -249,6 +251,8 @@ int main (int argc, const char *argv[]) {
 	EntityDataResource albumDataApiResource 			(ctx, "api/a", "albums", std::string(userPics.uri()));
 
 
+	CreateEntityEventResource createEntityEventResource	(ctx, "api/events/create");
+	GetEntityEventsResource GetEntityEventsResource		(ctx, "api/events/get");
 
 	while (1) { // Ждем входящие подключения
 		occasionalTasks ();	

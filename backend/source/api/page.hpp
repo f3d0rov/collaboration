@@ -9,10 +9,32 @@
 #include "search.hpp"
 
 
+class EntityData;
 class CreatePageResource;
 class RequestPictureChangeResource;
 class UploadPictureResource;
 class EntityDataResource;
+
+
+class EntityData {
+	public:
+		bool valid = false;
+
+		int id;
+		std::string name;
+		std::string description;
+		std::string type;
+
+		std::string startDate;
+		std::optional <std::string> endDate;
+
+		bool created = false;
+
+		std::optional <int> createdBy;
+		std::optional <std::string> createdOn;
+
+		std::optional <std::string> picturePath;
+};
 
 
 /***********
@@ -28,6 +50,7 @@ class CreatePageResource: public ApiResource {
 	public:
 		CreatePageResource (mg_context *ctx, std::string uri);
 		int createEntity (pqxx::work &work, std::string type, std::string name, std::string desc, std::string startDate, std::string endDate, int uid);
+		static int createEmptyEntityWithWork (pqxx::work &work, const std::string &name);
 		int createTypedEntity (pqxx::work &work, int entityId, std::string type);
 
 		static std::string pageUrlForTypedEntity (std::string type, int id);
@@ -73,5 +96,8 @@ class EntityDataResource: public ApiResource {
 	public:
 		EntityDataResource (mg_context *ctx, std::string uri, std::string entityTable, std::string picsUri);
 		static bool entityCreated (int id);
+		static int getEntityByNameWithWork (pqxx::work &work, const std::string &name);
+		static EntityData getEntityDataByIdWithWork (pqxx::work &work, int id);
+		static EntityData getEntityDataById (int id);
 		std::unique_ptr <ApiResponse> processRequest (RequestData &rd, nlohmann::json body) override;
 };

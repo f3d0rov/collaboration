@@ -26,11 +26,18 @@ class ApiResponse: public _Response {
 		std::string getMime () final;
 };
 
+typedef std::unique_ptr <ApiResponse> ApiResponsePtr;
+
+template <class ...Args>
+ApiResponsePtr makeApiResponse (Args ...args) {
+	return std::unique_ptr <ApiResponse> (new ApiResponse (args...));
+}
+
 
 class ApiResource: public Resource {
 	public:
 		ApiResource (mg_context* ctx, std::string uri);
 		std::unique_ptr<_Response> processRequest (RequestData &rd) final;
 
-		virtual std::unique_ptr<ApiResponse> processRequest(RequestData &rd, nlohmann::json body) = 0;
+		virtual ApiResponsePtr processRequest(RequestData &rd, nlohmann::json body) = 0;
 };
