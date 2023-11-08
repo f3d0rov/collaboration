@@ -40,5 +40,5 @@ std::unique_ptr<ApiResponse> RandomSearchPromptResource::processRequest(RequestD
 		return std::make_unique<ApiResponse> (nlohmann::json{{"text", result[0][1].c_str()}, {"url", url}}, 200);
 	}
 	
-	return std::make_unique <ApiResponse> (nlohmann::json {{"text", "создай страницу сам!"}, {"url", "/create"}});
+	return std::make_unique <ApiResponse> (nlohmann::json {{"text", "посмотри исходный код проекта на Github"}, {"url", "https://github.com/f3d0rov/collaboration"}});
 }
