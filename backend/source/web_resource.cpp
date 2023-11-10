@@ -87,9 +87,9 @@ std::filesystem::path DynamicDirectory::pathFromUri (std::string uri) {
 std::unique_ptr <_Response> DynamicDirectory::processRequest (RequestData &rd) {
 	// Civetweb resolves .. paths so no need to worry about accidentally exposing other files
 	std::filesystem::path path = this->pathFromUri (rd.uri);
-	logger << path << std::endl;
+	// logger << path << std::endl;
 	if (!(std::filesystem::exists (path) && std::filesystem::is_regular_file (path)))
 		return std::make_unique <Response> ("not found", 404);
-	logger << "Serving " << path << std::endl;
+	logger << "Возвращаем " << path << std::endl;
 	return std::make_unique <Response> (readFile (path, std::ios::binary), mg_get_builtin_mime_type (path.c_str()), 200);
 }
