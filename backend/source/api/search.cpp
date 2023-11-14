@@ -1,6 +1,15 @@
 
 #include "search.hpp"
 
+PrimitiveSearchResult::PrimitiveSearchResult (std::string title, std::string type, int id):
+title (title), type (type), id (id) {
+
+}
+
+void to_json(nlohmann::json& j, const PrimitiveSearchResult& sr) {
+	j = nlohmann::json{{"title", sr.title}, {"id", sr.id}, {"type", sr.type}};
+}
+
 
 SearchResult::SearchResult () {
 
@@ -50,13 +59,7 @@ keyword (keyword), value (1) {
 
 
 
-
-SearchResource::SearchResource (mg_context *ctx, std::string uri):
-ApiResource (ctx, uri) {
-
-}
-
-std::set <std::string> SearchResource::getKeywordsFromPrompt (std::string prompt) {
+std::set <std::string> Searcher::getKeywordsFromPrompt (std::string prompt) {
 	std::set <std::string> result;
 	const std::string whitespaces = " \n\t\v";
 
@@ -76,7 +79,7 @@ std::set <std::string> SearchResource::getKeywordsFromPrompt (std::string prompt
 	return result;
 }
 
-std::string SearchResource::getSqlListOfKeywords (std::set <std::string> &keywords, pqxx::work &work) {
+std::string Searcher::getSqlListOfKeywords (std::set <std::string> &keywords, pqxx::work &work) {
 	std::string result;
 
 	bool notFirst = false;
@@ -89,10 +92,10 @@ std::string SearchResource::getSqlListOfKeywords (std::set <std::string> &keywor
 	return work.quote(result);
 }
 
-std::vector <SearchResult> SearchResource::findAllWithWork (std::string prompt, pqxx::work &work) {
-	auto keywords = SearchResource::getKeywordsFromPrompt (prompt);
+std::vector <SearchResult> Searcher::findAllWithWork (std::string prompt, pqxx::work &work) {
+	auto keywords = Searcher::getKeywordsFromPrompt (prompt);
 	if (keywords.size() == 0) return {};
-	std::string keywordList = SearchResource::getSqlListOfKeywords (keywords, work);
+	std::string keywordList = Searcher::getSqlListOfKeywords (keywords, work);
 	
 	std::string searchQuery = std::string ()
 		+ "SELECT url, title, type, picture_path, SUM(value), description "
@@ -111,19 +114,50 @@ std::vector <SearchResult> SearchResource::findAllWithWork (std::string prompt, 
 	return results;
 }
 
-std::vector <SearchResult> SearchResource::findAll (std::string prompt) {
+std::vector <SearchResult> Searcher::findAll (std::string prompt) {
 	auto conn = database.connect();
 	pqxx::work work (*conn.conn);
-	auto result = SearchResource::findAllWithWork (prompt, work);
+	auto result = Searcher::findAllWithWork (prompt, work);
 	work.commit ();
 	return result;
 }
 
-std::vector <SearchResult> SearchResource::findByTypeWithWork (std::string prompt, std::string type, pqxx::work &work) {
 
-	auto keywords = SearchResource::getKeywordsFromPrompt (prompt);
+std::vector <PrimitiveSearchResult> Searcher::findEntities (std::string prompt) {
+	auto conn = database.connect();
+	pqxx::work work (*conn.conn);
+	auto result = Searcher::findEntitiesWithWork (prompt, work);
+	work.commit ();
+	return result;
+}
+
+std::vector <PrimitiveSearchResult> Searcher::findEntitiesWithWork (std::string prompt, pqxx::work &work) {
+	auto keywords = Searcher::getKeywordsFromPrompt (prompt);
 	if (keywords.size() == 0) return {};
-	std::string keywordList = SearchResource::getSqlListOfKeywords (keywords, work);
+	std::string keywordList = Searcher::getSqlListOfKeywords (keywords, work);
+	
+	std::string searchQuery = std::string ()
+		+ "SELECT name, type, id "
+		"FROM entities "
+		"WHERE name ~* " + keywordList + " ";
+
+	// logger << searchQuery << std::endl;
+	auto result = work.exec (searchQuery);
+	if (result.size() == 0) return {};
+
+	std::vector <PrimitiveSearchResult> results;
+	for (int i = 0; i < result.size(); i++) {
+		results.emplace_back (result[i][0].as <std::string>(), result[i][1].as <std::string>(), result[i][2].as <int>());
+	}
+
+	return results;
+}
+
+std::vector <SearchResult> Searcher::findByTypeWithWork (std::string prompt, std::string type, pqxx::work &work) {
+
+	auto keywords = Searcher::getKeywordsFromPrompt (prompt);
+	if (keywords.size() == 0) return {};
+	std::string keywordList = Searcher::getSqlListOfKeywords (keywords, work);
 	
 	std::string searchQuery = std::string ()
 		+ "SELECT url, title, type, picture_path, SUM(value), description "
@@ -142,16 +176,16 @@ std::vector <SearchResult> SearchResource::findByTypeWithWork (std::string promp
 	return results;
 }
 
-std::vector <SearchResult> SearchResource::findByType (std::string prompt, std::string type) {
+std::vector <SearchResult> Searcher::findByType (std::string prompt, std::string type) {
 	auto conn = database.connect();
 	pqxx::work work (*conn.conn);
-	auto result = SearchResource::findByTypeWithWork (prompt, type, work);
+	auto result = Searcher::findByTypeWithWork (prompt, type, work);
 	work.commit ();
 	return result;
 }
 
 
-std::map <std::string, PromptToken> SearchResource::analysePrompt (std::string prompt) {
+std::map <std::string, PromptToken> Searcher::analysePrompt (std::string prompt) {
 	std::map <std::string, PromptToken> result;
 	const std::string whitespaces = " \n\t\v";
 
@@ -176,8 +210,8 @@ std::map <std::string, PromptToken> SearchResource::analysePrompt (std::string p
 }
 
 
-void SearchResource::indexWithWork (pqxx::work &work, std::string type, std::string url, std::string prompt, std::string name, std::string desc, std::string imgPath) {
-	auto keywords = SearchResource::analysePrompt (prompt);
+void Searcher::indexWithWork (pqxx::work &work, std::string type, std::string url, std::string prompt, std::string name, std::string desc, std::string imgPath) {
+	auto keywords = Searcher::analysePrompt (prompt);
 	std::string insertIndexedRes = std::string() 
 		+ "INSERT INTO indexed_resources (url, title, description, type, picture_path)"
 		+ "VALUES ("
@@ -207,6 +241,14 @@ void SearchResource::indexWithWork (pqxx::work &work, std::string type, std::str
 }
 
 
+
+
+
+SearchResource::SearchResource (mg_context *ctx, std::string uri):
+ApiResource (ctx, uri) {
+
+}
+
 std::unique_ptr<ApiResponse> SearchResource::processRequest (RequestData &rd, nlohmann::json body) {
 	if (rd.method != "POST") return std::make_unique <ApiResponse> (405);
 	if (!body.contains ("prompt")) return std::make_unique <ApiResponse> (401);
@@ -219,7 +261,60 @@ std::unique_ptr<ApiResponse> SearchResource::processRequest (RequestData &rd, nl
 	}
 
 	auto start = std::chrono::high_resolution_clock::now();
-	auto result = SearchResource::findAll (prompt);
+	auto result = Searcher::findAll (prompt);
 	auto timeToExec = usElapsedFrom_hiRes (start);
 	return std::make_unique <ApiResponse> (nlohmann::json{{"results", result}, {"time", prettyMicroseconds (timeToExec)}}, 200);
 }
+
+
+
+
+
+EntitySearchResource::EntitySearchResource (mg_context *ctx, std::string uri):
+ApiResource (ctx, uri) {
+
+}
+
+ApiResponsePtr EntitySearchResource::processRequest (RequestData &rd, nlohmann::json body) {
+	if (rd.method != "POST") return makeApiResponse (405);
+	if (!body.contains ("prompt")) return makeApiResponse (401);
+	std::string prompt;
+
+	try {
+		prompt = body ["prompt"].get <std::string> ();
+	} catch (nlohmann::json::exception &e) {
+		return makeApiResponse (nlohmann::json {{"error", e.what()}}, 401);
+	}
+
+	auto start = std::chrono::high_resolution_clock::now();
+	auto result = Searcher::findEntities (prompt);
+	auto timeToExec = usElapsedFrom_hiRes (start);
+	return makeApiResponse (nlohmann::json{{"results", result}, {"time", prettyMicroseconds (timeToExec)}}, 200);
+}
+
+
+
+
+TypedSearchResource::TypedSearchResource (mg_context *ctx, std::string uri, std::string type):
+ApiResource (ctx, uri), _type (type) {
+
+}
+
+ApiResponsePtr TypedSearchResource::processRequest (RequestData &rd, nlohmann::json body) {
+	if (rd.method != "POST") return makeApiResponse (405);
+	if (!body.contains ("prompt")) return makeApiResponse (401);
+	std::string prompt;
+
+	try {
+		prompt = body ["prompt"].get <std::string> ();
+	} catch (nlohmann::json::exception &e) {
+		return makeApiResponse (nlohmann::json {{"error", e.what()}}, 401);
+	}
+
+	auto start = std::chrono::high_resolution_clock::now();
+	auto result = Searcher::findByType (prompt, this->_type);
+	auto timeToExec = usElapsedFrom_hiRes (start);
+	return makeApiResponse (nlohmann::json{{"results", result}, {"time", prettyMicroseconds (timeToExec)}}, 200);
+}
+
+

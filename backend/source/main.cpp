@@ -229,8 +229,13 @@ int main (int argc, const char *argv[]) {
 	WebResource createPage (ctx, "create", frontendDir + "/create_page.html", dontCache);
 
 	Resource api404 (ctx, "api");
+
 	RandomSearchPromptResource randomSearchPromptResource (ctx, "api/rsp");
-	SearchResource searchResource (ctx, "api/search");
+	SearchResource searchResource 						(ctx, "api/search");
+	
+	TypedSearchResource bandSearchResource				(ctx, "api/search/b", "band");
+	TypedSearchResource personSearchResource			(ctx, "api/search/p", "person");
+	EntitySearchResource EntitySearchResource			(ctx, "api/search/entities");
 
 	UserLoginResource userLoginResource 				(ctx, "api/u/login");
 	UserLogoutResource userLogoutResource 				(ctx, "api/u/logout");

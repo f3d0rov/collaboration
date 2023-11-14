@@ -129,7 +129,7 @@ std::unique_ptr<ApiResponse> CreatePageResource::processRequest (RequestData &rd
 
 	std::string url = CreatePageResource::pageUrlForTypedEntity (type, pageId);
 	// Index created page
-	SearchResource::indexWithWork (work, type, url, name + " " + description, name, description, "");
+	Searcher::indexWithWork (work, type, url, name + " " + description, name, description, "");
 
 	work.commit ();
 	logger << "Создана страница '" << name << "'" << std::endl;
