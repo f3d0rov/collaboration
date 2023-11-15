@@ -92,6 +92,16 @@ std::string Searcher::getSqlListOfKeywords (std::set <std::string> &keywords, pq
 	return work.quote(result);
 }
 
+std::string Searcher::getTableForType (std::string type) {
+	const std::map <std::string /* type */, std::string /* table */> typeToTableName = {
+		{"person", "personalities"},
+		{"band", "bands"},
+		{"album", "albums"}
+	};
+	return typeToTableName.at (type);
+}
+
+
 std::vector <SearchResult> Searcher::findAllWithWork (std::string prompt, pqxx::work &work) {
 	auto keywords = Searcher::getKeywordsFromPrompt (prompt);
 	if (keywords.size() == 0) return {};
@@ -153,30 +163,30 @@ std::vector <PrimitiveSearchResult> Searcher::findEntitiesWithWork (std::string 
 	return results;
 }
 
-std::vector <SearchResult> Searcher::findByTypeWithWork (std::string prompt, std::string type, pqxx::work &work) {
+std::vector <PrimitiveSearchResult> Searcher::findByTypeWithWork (std::string prompt, std::string type, pqxx::work &work) {
 
 	auto keywords = Searcher::getKeywordsFromPrompt (prompt);
 	if (keywords.size() == 0) return {};
 	std::string keywordList = Searcher::getSqlListOfKeywords (keywords, work);
+	std::string table = Searcher::getTableForType (type);
 	
 	std::string searchQuery = std::string ()
-		+ "SELECT url, title, type, picture_path, SUM(value), description "
-		+ "FROM indexed_resources INNER JOIN search_index ON indexed_resources.id = search_index.resource_id "
-		+ "WHERE keyword ~* " + keywordList + " AND type=" + work.quote (type)
-		+" GROUP BY url, title, type, picture_path, description ORDER BY SUM(value) DESC;";
+		+ "SELECT entities.id, name, type "
+		+ "FROM entities INNER JOIN " + table + " ON " + table + ".entity_id = entities.id "
+		+ "WHERE name ~* " + keywordList + ";";
 
 	auto result = work.exec (searchQuery);
 	if (result.size() == 0) return {};
 
-	std::vector <SearchResult> results;
+	std::vector <PrimitiveSearchResult> results;
 	for (int i = 0; i < result.size(); i++) {
-		results.emplace_back (result[i]);
+		results.emplace_back (result[i][1].as <std::string>(), result[i][2].as <std::string>(), result[i][0].as <int>());
 	}
 
 	return results;
 }
 
-std::vector <SearchResult> Searcher::findByType (std::string prompt, std::string type) {
+std::vector <PrimitiveSearchResult> Searcher::findByType (std::string prompt, std::string type) {
 	auto conn = database.connect();
 	pqxx::work work (*conn.conn);
 	auto result = Searcher::findByTypeWithWork (prompt, type, work);

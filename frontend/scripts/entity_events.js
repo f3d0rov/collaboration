@@ -180,6 +180,253 @@ function generateEventList (events) {
 }
 
 
+class PrimitiveInput {
+	constructor (inpData, templates) {
+		this.id = inpData.id;
+		this.elem = templates.input.cloneNode (true);
+		this.elem.id = this.id + "_cont";
+
+		this.elem.classList.remove ('template');
+		this.inputElem = this.elem.querySelector ('input');
+		
+		this.elem.querySelector (templates.labelSelector).innerHTML = inpData.prompt;
+		this.inputElem.setAttribute ('type', inpData.type);
+		this.inputElem.id = inpData.id;
+		
+		templates.input.parentElement.insertBefore (this.elem, templates.input);
+	}
+
+	getValue () {
+		return this.inputElem.value;
+	}
+
+	getId () {
+		return this.id;
+	}
+
+	getElem () {
+		return this.elem;
+	}
+}
+
+class BandSearchSuggestions {
+	constructor (parent) {
+		this.parent = parent;
+		this.cache = {};
+		this.currentOption = null;
+		this.elem = null;
+
+		window.addEventListener ('resize', () => {this.setupSuggestionListPosition();});
+	}
+
+	setupSuggestionListPosition () {
+		let box = this.parent.getBoundingClientRect();
+		this.elem.style.top = (box.bottom + window.scrollY) + "px";
+		this.elem.style.left = (box.left + window.scrollX) + "px";
+		this.elem.style.width = box.width + "px";
+	}
+
+	createSearchSuggestion (optTemplate, elem, opt, index) {
+		let clone = optTemplate.cloneNode (true);
+		
+		clone.innerHTML = opt.title;
+		clone.classList.remove ("template");
+		clone.id = elem.id + "_ss_" + index;
+
+		clone.addEventListener ('click', (ev) => { this.selectOpt (ev.target, elem, opt); });
+
+		return clone;
+	}
+
+	constuctList () {
+		this.elem?.remove();
+		this.elem = this.parent.templates.suggestionList.cloneNode (true);
+		this.elem.classList.remove ('template');
+
+		this.parent.templates.suggestionList.parentElement.insertBefore (this.elem, this.parent.templates.suggestionList);
+	}
+
+	clearList () {
+		if (this.elem == null) return;
+		for (let i = this.elem.childElementCount - 1; i >= 0; i--) {
+			this.elem.children[i].remove();
+		}
+	}
+
+	addSuggestion (s) {
+		let clone = this.parent.templates.suggestion.cloneNode (true);
+		clone.classList.remove ('template');
+		clone.innerHTML = s.title;
+		clone.addEventListener ('click', (ev) => { this.pickOption (s) });
+		this.elem.appendChild (clone);
+	}
+
+	buildList (results) {
+		if (this.elem == null) this.constuctList();
+		else this.clearList();
+
+		for (let i of results) {
+			this.addSuggestion (i);
+		}
+	}
+
+	suggestFor (results) {
+		this.buildList (results);
+	}
+
+	pickOption (option) {
+		this.parent.selectItem (option);
+		this.hide();
+	}
+
+	hide () {
+		this.clearList();
+		this.elem?.remove();
+	}
+};
+
+class BandInput {
+	constructor (inpData, templates) {
+		this.id = inpData.id;
+
+		this.elem = templates.input.cloneNode (true);
+		this.elem.id = inpData.id + "_cont";
+		this.elem.classList.remove ('template');
+		this.inputElem = this.elem.querySelector ('input');
+		
+		this.elem.querySelector (templates.labelSelector).innerHTML = inpData.prompt;
+	
+		this.inputElem.setAttribute ('type', 'text');
+		this.inputElem.addEventListener ('input', (ev) => { this.checkBandInput(ev);} );
+	
+		this.inputElem.id = inpData.id;
+		
+		templates.input.parentElement.insertBefore (this.elem, templates.input);
+
+		this.selectedItem = null;
+		this.suggestions = new BandSearchSuggestions (this); 
+		this.bandSearchCache = {};
+
+		this.templates = templates;
+	}
+
+	selectItem (item) {
+		this.selectedItem = item;
+		this.inputElem.value = item.title;
+	}
+
+	checkBandInput (ev) {
+		this.selectedItem = null;
+		
+		let checkId =  Math.floor (10000000 * Math.random ());
+		this.latestCheckId = checkId;
+		let value = this.inputElem.value.trim();
+
+		if (value in this.bandSearchCache) {
+			this.suggestions.suggestFor (this.bandSearchCache[value]);
+			return;
+		}
+		
+		let body = {
+			"prompt": ev.target.value
+		};
+
+
+		fetch (
+			'/api/search/b',
+			{
+				"method": 'POST',
+				"body": JSON.stringify (body)
+			}
+		).then (async (resp) => {
+			if (checkId != this.latestCheckId) return;
+			let res = await resp.json();
+			console.log ("checkBandInput::res:");
+			console.log (res);
+			this.bandSearchCache [value] = res.results;
+			this.suggestions.suggestFor (res.results);
+		}, /* on rejection */(resp) => {
+			if (checkId != this.latestCheckId) return;
+		});
+	}
+
+	getValue () {
+		let ret = {
+			created: (this.selectedItem != null),
+			name: this.inputElem.value
+		};
+		if (ret.created) ret.entity_id = this.selectedItem.id; 
+		return ret;
+	}
+
+	getId () {
+		return this.id;
+	}
+
+	getElem () {
+		return this.elem;
+	}
+}
+
+class TextareaInput {
+	constructor (inpData, templates) {
+		this.id = inpData.id;
+		this.elem = templates.input.cloneNode (true);
+		this.elem.id = this.id + "_cont";
+
+		this.elem.classList.remove ('template');
+		this.inputElem = this.elem.querySelector ('input');
+		let newInput = document.createElement ('textarea');
+		newInput.classList = this.inputElem.classList;
+		this.inputElem.parentElement.insertBefore (newInput, this.inputElem);
+		this.inputElem.remove();
+		this.inputElem = newInput;
+		
+		this.elem.querySelector (templates.labelSelector).innerHTML = inpData.prompt;
+		this.inputElem.setAttribute ('type', inpData.type);
+		this.inputElem.id = inpData.id;
+		
+		templates.input.parentElement.insertBefore (this.elem, templates.input);
+	}
+
+	getValue () {
+		return this.inputElem.value;
+	}
+
+	getId () {
+		return this.id;
+	}
+
+	getElem () {
+		return this.elem;
+	}
+}
+
+
+class InputFactory {
+	constructor () {
+		this.inputTypes = {
+			"primitive": PrimitiveInput,
+			"textarea": TextareaInput,
+			"band": BandInput
+		};
+
+		this.templates = {
+			input: document.getElementById ('createTimelineElemInputTemplate'),
+			suggestionList: document.getElementById ("creationInputSuggestionListTemplate"),
+			suggestion: document.getElementById ("creationInputSuggestionTemplate"),
+			labelSelector: '.creationInputLabel' 
+		}
+	}
+
+	constructInput (inpData) {
+		let type = inpData.type;
+		if (type in this.inputTypes == false) return new this.inputTypes ['primitive'] (inpData, this.templates);
+		return new this.inputTypes [type] (inpData, this.templates);
+	}
+}
+
+
 class EventCreateForm {
 	constructor () {
 		// TODO: get this from server
@@ -222,7 +469,7 @@ class EventCreateForm {
 				"applicable": new Set([ "person" ]),
 				"inputs": [
 					{
-						"id": "band_id",
+						"id": "band",
 						"type": "band",
 						"prompt": "Группа"
 					}, 
@@ -239,7 +486,7 @@ class EventCreateForm {
 				"applicable": new Set([ "person" ]),
 				"inputs": [
 					{
-						"id": "band_id",
+						"id": "band",
 						"type": "band",
 						"prompt": "Группа"
 					}, 
@@ -256,7 +503,7 @@ class EventCreateForm {
 				"applicable": new Set([ "person" ]),
 				"inputs": [
 					{
-						"id": "band_id",
+						"id": "band",
 						"type": "band",
 						"prompt": "Группа"
 					}, 
@@ -269,147 +516,21 @@ class EventCreateForm {
 				]
 			}
 		};
+		
+		this.inputFactory = new InputFactory;
+
 
 		this.currentInputs = {};
 		this.currentOption = 'album';
-		this.bandSearchCache = {};
 		this.generatePrompt (this.currentOption);
+		
 	}
 
 	clearInputs () {
 		for (let i in this.currentInputs) {
-			this.currentInputs[i].remove();
+			this.currentInputs[i].getElem().remove();
 		}
 		this.currentInputs = {};
-	}
-
-	setupSuggestionListPosition (list, parent) {
-		let box = parent.getBoundingClientRect();
-		list.style.top = (box.bottom + window.scrollY) + "px";
-		list.style.left = (box.left + window.scrollX) + "px";
-		list.style.width = box.width + "px";
-	}
-
-	updatePositionOfSuggestions () {
-		let all = document.querySelectorAll ('.creationInputSuggestionList');
-		for (let i of all) {
-			if (i.classList.contains ('template') == false) {
-				let elem = document.getElementById (i.id.slice (0, i.id.length - 3)); // Remove "_ss";
-				this.setupSuggestionListPosition (i, elem);
-			}
-		}
-	}
-
-	selectOpt (me, parent, opt) {
-		let list = document.getElementById (parent.id + "_ss");
-		list.remove();
-		parent.value = opt.title;
-
-	}
-
-	createSearchSuggestion (optTemplate, elem, opt, index) {
-		let clone = optTemplate.cloneNode (true);
-		
-		clone.innerHTML = opt.title;
-		clone.classList.remove ("template");
-		clone.id = elem.id + "_ss_" + index;
-
-		clone.addEventListener ('click', (ev) => { this.selectOpt (ev.target, elem, opt); });
-
-		return clone;
-	}
-
-	constructBandSearchSuggestions (elem, bands) {
-		// TODO
-		console.log ("x" + bands.length);
-		for (let i of bands) {
-			console.log (i.title);
-		}
-
-		let oldSuggestions = document.getElementById (elem.id + "_ss");
-		let hadOld = oldSuggestions != undefined && oldSuggestions != null;
-		let listTemplate = document.getElementById ("creationInputSuggestionListTemplate");
-		let optTemplate = document.getElementById ("creationInputSuggestionTemplate");
-
-		let newSuggestions;
-		if (hadOld) {
-			newSuggestions = oldSuggestions;
-			newSuggestions.innerHTML = "";
-		} else {
-			newSuggestions = listTemplate.cloneNode (true);
-			newSuggestions.id = elem.id + "_ss";
-			newSuggestions.classList.remove ("template");
-			this.setupSuggestionListPosition (newSuggestions, elem);
-			listTemplate.parentElement.insertBefore (newSuggestions, listTemplate);
-		}
-
-		for (let i = 0; i < bands.length; i++) {
-			let clone = this.createSearchSuggestion (optTemplate, elem, bands[i], i);
-			newSuggestions.appendChild (clone);
-		}
-
-	}
-
-	async checkBandInput (ev) {
-		let checkId =  Math.floor (10000000 * Math.random ());
-		this.latestCheckId = checkId;
-		let value = ev.target.value.trim();
-
-		if (value in this.bandSearchCache) {
-			this.constructBandSearchSuggestions (ev.target, this.bandSearchCache[value]);
-			return;
-		}
-		
-		let body = {
-			"prompt": ev.target.value
-		};
-
-
-		fetch (
-			'/api/search/b',
-			{
-				"method": 'POST',
-				"body": JSON.stringify (body)
-			}
-		).then (async (resp) => {
-			if (checkId != this.latestCheckId) return;
-			let res = await resp.json();
-			console.log (res);
-			this.bandSearchCache [value] = res.results;
-			this.constructBandSearchSuggestions (ev.target, res.results);
-		}, /* on rejection */(resp) => {
-			if (checkId != this.latestCheckId) return;
-		});
-	}
-	
-
-	generateInput (input) {
-		console.log (input);
-
-		let template = document.getElementById ('createTimelineElemInputTemplate');
-		let clone = template.cloneNode (true);
-		clone.id = input.id + "_cont";
-		clone.classList.remove ('template');
-		let inputElem = clone.querySelector ('input');
-		
-		clone.querySelector ('.creationInputLabel').innerHTML = input.prompt;
-		
-		if (input.type != 'band') {
-			if (input.type == 'textarea') {
-				let textArea = document.createElement ('textarea');
-				textArea.className = inputElem.className;
-				inputElem.replaceWith (textArea);
-			} else {
-				inputElem.setAttribute ('type', input.type);
-			}
-		} else {
-			inputElem.setAttribute ('type', 'text');
-			inputElem.addEventListener ('input', (ev) => { this.checkBandInput(ev);} );
-		}
-		inputElem.id = input.id;
-		
-		template.parentElement.insertBefore (clone, template);
-		this.currentInputs [input.id] = clone;
 	}
 
 	generatePrompt (option) {
@@ -420,10 +541,19 @@ class EventCreateForm {
 		this.clearInputs();
 
 		for (let i of newOption.inputs) {
-			this.generateInput (i);
+			this.currentInputs[i.id] = this.inputFactory.constructInput (i);
 		}
 
 		this.currentOption = option;
+	}
+
+	getEventData () {
+		let res = {};
+		for (let i in this.currentInputs) {
+			let inp = this.currentInputs [i];
+			res [inp.getId()] = inp.getValue();
+		}
+		return res;
 	}
 }
 
@@ -704,6 +834,8 @@ var participantList = null;
 
 function tryUploadEvent () {
 	console.log (participantList?.getParticipantsArray());
+	console.log (eventCreateForm?.getEventData());
+
 }
 
 function switchClicked (ev) {
@@ -729,9 +861,3 @@ function setupTimelineElementCreator () {
 window.addEventListener (
 	'load', setupTimelineElementCreator
 );
-
-window.addEventListener (
-	'resize', () => {
-		eventCreateForm?.updatePositionOfSuggestions();
-	}
-)
