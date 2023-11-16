@@ -20,7 +20,7 @@
 #include "api/search.hpp"
 #include "api/user_auth.hpp"
 #include "api/page.hpp"
-#include "api/events.hpp"
+#include "api/eventResources.hpp"
 
 
 #define DEFAULT_PORT "8080"

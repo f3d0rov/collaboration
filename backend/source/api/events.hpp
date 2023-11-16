@@ -1,135 +1,141 @@
+
 #pragma once
 
-#include "../api_resource.hpp"
+#include <map>
+#include <vector>
 
-#include "user_auth.hpp"
+#include "../nlohmann-json/json.hpp"
+
 #include "page.hpp"
+#include "../database.hpp"
 
 
-struct ParticipantEntity;
-class EventData;
+class UserSideEventException;
+class ParticipantEntity;
+class EventType;
+class EventManager;
 
-class CreateEntityEventResource;
-class GetEntityEventsResource;
-class UpdateEntityEventResource;
-class DeleteEntityEventResource;
+class BandFoundationEventType;
 
-class ReportEntityEventResource;
-class GetEntityEventReportListResource;
 
+class UserSideEventException: public std::runtime_error {
+	public:
+		UserSideEventException (std::string w);
+};
 
 
 struct ParticipantEntity {
 	bool created = false;
 	int entityId;
 	std::string name;
+
+	void updateId ();
 };
 
 void to_json (nlohmann::json &j, const ParticipantEntity &pe);
 void from_json (const nlohmann::json &j, ParticipantEntity &pe);
 
 
-class EventData {
-	public:
-		int id;
-		std::string name, desc, type, startDate;
-		std::optional <std::string> endDate;
-		std::vector <ParticipantEntity> participants;
+struct InputTypeDescriptor {
+	std::string id;
+	std::string prompt;
+	std::string type;
+	bool optional = false;
+
+	InputTypeDescriptor ();
+	InputTypeDescriptor (std::string id, std::string prompt, std::string type, bool optional = false);
+
+	operator nlohmann::json ();
 };
 
-void to_json (nlohmann::json &j, const EventData &pe);
+class EventType {
+	protected:
+		template <class T>
+		T getParameter (std::string name, nlohmann::json &data);
+		std::vector <ParticipantEntity> getParticipants (nlohmann::json &data);
 
-
-
-/******
- * POST {
- * 		"name": name,
- * 		"desc": description,
- * 		"type": type,
- * 		"start_date": date,
- * 		"end_date": date (optional),
- * 		"participants": [
- * 			{
- * 				"created": true,
- * 				"entity_id": entity id (int)
- * 			},
- * 			{
- * 				"created": false,
- * 				"name": band/person name (string)
- * 			}
- * 		]
- * } ->
- * {
- * 		"status": "success",
- * 		"event_id": created event id
- * }
-*/
-class CreateEntityEventResource: public ApiResource {
 	public:
-		CreateEntityEventResource (mg_context *ctx, std::string uri);
-		static void addUserContributionWithWork (pqxx::work &work, const UsernameUid &user, int eventId);
-		static void addParticipantWithWork (pqxx::work &work, const ParticipantEntity &pe, int eventId);
-		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
+		virtual std::string getTypeName () const = 0;
+		virtual std::vector <InputTypeDescriptor> getInputs () const = 0;
+		virtual std::vector <std::string> getApplicableEntityTypes () const = 0;
+
+		virtual nlohmann::json getEventDescriptor ();
+
+		virtual int createEvent (nlohmann::json &data) = 0;
+		virtual nlohmann::json getEvent (int id) = 0;
+		virtual void updateEvent (nlohmann::json &data) = 0;
+		virtual void deleteEvent (int id) = 0;
 };
 
 
-/***********
- * POST {
- * 		"entity_id": entity id
- * } -> {
- * 		"events": [
- * 			{
- * 				"name": name,
- * 				"desc": desc,
- * 				"type": type,	
- * 				"start_date": start_date,
- * 				"end_date" (if has): end_date,
- * 				"participants": [
- * 					{
- * 						"created": true,
- * 						"entity_id": id,
- * 						"name": name
- * 					},
- * 					{
- * 						"created": false,
- * 						"name": name
- * 					}
- * 				]	
- * 			}
- * 		]
- * }
-*/
-class GetEntityEventsResource: public ApiResource {
+class EventManager {
+	private:
+		static EventManager *_obj;
+		EventManager ();
+	
+		std::map <std::string, std::shared_ptr <EventType>> _types;
 	public:
-		GetEntityEventsResource (mg_context *ctx, std::string uri);
-		static std::vector <ParticipantEntity> getEventParticipantsWithWork (pqxx::work &work, int eventId);
-		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
+		static EventManager &getManager ();
+	
+		void registerEventType (std::shared_ptr <EventType> et);
+
+		std::shared_ptr <EventType> getEventTypeByName (std::string typeName);
+		std::shared_ptr <EventType> getEventTypeFromJson (nlohmann::json &data);
+		std::shared_ptr <EventType> getEventTypeById (int eventId);
+
+		// returns event id
+		int createEvent (nlohmann::json &data, int byUser);
+		nlohmann::json getEvent (int eventId);
+		void updateEvent (nlohmann::json &data, int byUser);
+		void deleteEvent (int eventId, int byUser);
+
+		// Data fields to create different event types
+		nlohmann::json getAvailableEventDescriptors ();
 };
 
 
-class UpdateEntityEventResource: public ApiResource {
+class BandFoundationEventType: public EventType {
+	private:
+		struct Data {
+			std::string date;
+			ParticipantEntity band;
+			std::string description;
+		};
+		
+		friend void from_json (const nlohmann::json &j, BandFoundationEventType::Data &d);
+		friend void to_json (nlohmann::json &j, const BandFoundationEventType::Data &d);
 	public:
-		UpdateEntityEventResource (mg_context *ctx, std::string uri);
-		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
+		std::string getTypeName () const override;
+		std::vector <InputTypeDescriptor> getInputs () const;
+		std::vector <std::string> getApplicableEntityTypes () const;
+		
+		nlohmann::json getEventDescriptor () override;
+
+		int createEvent (nlohmann::json &data) override;
+		nlohmann::json getEvent (int id) override;
+		void updateEvent (nlohmann::json &data) override;
+		void deleteEvent (int id) override;
 };
 
-
-class DeleteEntityEventResource: public ApiResource {
-	public:
-		DeleteEntityEventResource (mg_context *ctx, std::string uri);
-		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
-};
+void from_json (const nlohmann::json &j, BandFoundationEventType::Data &d);
+void to_json (nlohmann::json &j, const BandFoundationEventType::Data &d);
 
 
-class ReportEntityEventResource: public ApiResource {
-	public:
-		ReportEntityEventResource (mg_context *ctx, std::string uri);
-		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
-};
 
 
-class GetEntityEventReportListResource : public ApiResource {
-	public:
-		GetEntityEventReportListResource (mg_context *ctx, std::string uri);
-		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
-};
+template <class T>
+T EventType::getParameter (std::string name, nlohmann::json &data) {
+	if (data.contains (name) == false) {
+		throw UserSideEventException (
+			std::string ("Нет поля '") + name + "' в переданной структуре данных" 
+		);
+	}
+
+	try {
+		return data[name].get <T>();
+	} catch (nlohmann::json::exception &e) {
+		throw UserSideEventException (
+			std::string ("Невозможно привести поле '") + name + "' к необходимому типу"
+		);
+	}
+}

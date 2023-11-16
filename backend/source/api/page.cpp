@@ -287,6 +287,15 @@ int EntityDataResource::getEntityByNameWithWork (pqxx::work &work, const std::st
 	return checkRes[0][0].as <int> ();
 }
 
+int EntityDataResource::getEntityByName (const std::string &name) {
+	auto conn = database.connect();
+	pqxx::work work (*conn.conn);
+	auto id = EntityDataResource::getEntityByNameWithWork (work, name);
+	work.commit();
+	return id;
+}
+
+
 EntityData EntityDataResource::getEntityDataByIdWithWork (pqxx::work &work, int id) {
 	EntityData ed;
 	std::string getEntityDataByIdQuery = 

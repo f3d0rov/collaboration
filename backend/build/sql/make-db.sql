@@ -25,14 +25,12 @@ create table user_login (
 	device_ip inet
 );
 
-create table events (
-	id serial primary key not null,
-	start_date date not null,
-	end_date date,
-	type varchar (32) not null,
+CREATE TABLE events (
+	id SERIAL PRIMARY KEY NOT NULL,
+	sort_index INT NOT NULL,
+	type VARCHAR (32) NOT NULL,
 
-	name varchar (128) not null,
-	description varchar (512) not null
+	description TEXT
 );
 
 create table user_event_contributions (
@@ -132,6 +130,11 @@ CREATE TABLE search_index (
 );
 
 
-SELECT url, title, type, picture_path, SUM(value)
-FROM indexed_resources INNER JOIN search_index ON indexed_resources.id = search_index.resource_id
-WHERE keyword IN ('trent') GROUP BY url, title, type, picture_path ORDER BY SUM(value);
+CREATE TABLE band_foundation_events (
+	id INT PRIMARY KEY REFERENCES events ON DELETE CASCADE,
+	entity_id INT REFERENCES entities NOT NULL,
+	event_date DATE NOT NULL
+);
+
+
+
