@@ -130,7 +130,7 @@ CREATE TABLE search_index (
 );
 
 
-CREATE TABLE band_foundation_events (
+CREATE TABLE single_entity_related_events (
 	id INT PRIMARY KEY REFERENCES events ON DELETE CASCADE,
 	entity_id INT REFERENCES entities NOT NULL,
 	event_date DATE NOT NULL

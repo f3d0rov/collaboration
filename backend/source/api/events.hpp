@@ -44,18 +44,26 @@ struct InputTypeDescriptor {
 
 	InputTypeDescriptor ();
 	InputTypeDescriptor (std::string id, std::string prompt, std::string type, bool optional = false);
-
-	operator nlohmann::json ();
 };
 
-class EventType {
-	protected:
-		template <class T>
-		T getParameter (std::string name, nlohmann::json &data);
-		std::vector <ParticipantEntity> getParticipants (nlohmann::json &data);
+void to_json (nlohmann::json &j, const InputTypeDescriptor &pe);
 
+
+class EventType {
+	private:
+		template <class T> 	std::string wrapType (const T &t, pqxx::work &work);
+		template <>			std::string wrapType <int> (const int &t, pqxx::work &work);
+		template <>			std::string wrapType <std::string> (const std::string &s, pqxx::work &work);
+	protected:
+		template <class T> T getParameter (std::string name, nlohmann::json &data);
+		template <class T> std::string getUpdateQueryString (std::string param, nlohmann::json &data, pqxx::work &work, bool &notFirst);
+		std::vector <ParticipantEntity> getParticipants (nlohmann::json &data);
+		
 	public:
 		virtual std::string getTypeName () const = 0;
+		virtual std::string getDisplayName () const = 0;
+		virtual std::string getTitleFormat () const = 0;
+		
 		virtual std::vector <InputTypeDescriptor> getInputs () const = 0;
 		virtual std::vector <std::string> getApplicableEntityTypes () const = 0;
 
@@ -64,7 +72,7 @@ class EventType {
 		virtual int createEvent (nlohmann::json &data) = 0;
 		virtual nlohmann::json getEvent (int id) = 0;
 		virtual void updateEvent (nlohmann::json &data) = 0;
-		virtual void deleteEvent (int id) = 0;
+		virtual void deleteEvent (int id); // Default implementation deletes corresponding row in events table
 };
 
 
@@ -94,33 +102,6 @@ class EventManager {
 };
 
 
-class BandFoundationEventType: public EventType {
-	private:
-		struct Data {
-			std::string date;
-			ParticipantEntity band;
-			std::string description;
-		};
-		
-		friend void from_json (const nlohmann::json &j, BandFoundationEventType::Data &d);
-		friend void to_json (nlohmann::json &j, const BandFoundationEventType::Data &d);
-	public:
-		std::string getTypeName () const override;
-		std::vector <InputTypeDescriptor> getInputs () const;
-		std::vector <std::string> getApplicableEntityTypes () const;
-		
-		nlohmann::json getEventDescriptor () override;
-
-		int createEvent (nlohmann::json &data) override;
-		nlohmann::json getEvent (int id) override;
-		void updateEvent (nlohmann::json &data) override;
-		void deleteEvent (int id) override;
-};
-
-void from_json (const nlohmann::json &j, BandFoundationEventType::Data &d);
-void to_json (nlohmann::json &j, const BandFoundationEventType::Data &d);
-
-
 
 
 template <class T>
@@ -138,4 +119,21 @@ T EventType::getParameter (std::string name, nlohmann::json &data) {
 			std::string ("Невозможно привести поле '") + name + "' к необходимому типу"
 		);
 	}
+}
+
+template <class T> std::string EventType::wrapType (const T &t, pqxx::work &work) {
+	throw std::logic_error ("std::string EventType::wrapType<T> вызван с непредусмотренным типом данных");
+}
+
+
+template <class T>
+std::string EventType::getUpdateQueryString (std::string param, nlohmann::json &data, pqxx::work &work, bool &notFirst) {
+	if (data.contains (param)) {
+		T value = this->getParameter<T> (param, data);
+		std::string result = (notFirst ? "," : "") + param + "=";
+		notFirst = true;
+		result += this->wrapType<T> (value, work);
+		return result;
+	}
+	return "";
 }
