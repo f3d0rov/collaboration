@@ -76,6 +76,26 @@ class EventType {
 };
 
 
+class AllEntitiesEventType: public EventType {
+	public:
+		std::vector <std::string> getApplicableEntityTypes () const final;
+};
+
+
+class BandOnlyEventType: public EventType {
+	public:
+		std::vector <std::string> getApplicableEntityTypes () const final;
+};
+
+
+class PersonOnlyEventType: public EventType {
+	public:
+		std::vector <std::string> getApplicableEntityTypes () const final;
+};
+
+
+
+
 class EventManager {
 	private:
 		static EventManager *_obj;

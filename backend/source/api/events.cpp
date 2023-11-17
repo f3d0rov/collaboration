@@ -101,6 +101,20 @@ void EventType::deleteEvent (int id) {
 
 
 
+std::vector <std::string> AllEntitiesEventType::getApplicableEntityTypes () const {
+	return {"band", "person"};
+}
+
+std::vector <std::string> BandOnlyEventType::getApplicableEntityTypes () const {
+	return {"band"};
+}
+
+std::vector <std::string> PersonOnlyEventType::getApplicableEntityTypes () const {
+	return {"person"};
+}
+
+
+
 
 EventManager *EventManager::_obj = nullptr;
 

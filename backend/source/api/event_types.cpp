@@ -144,10 +144,6 @@ std::string BandFoundationEventType::getTitleFormat () const {
 	return "Основание группы {entity}";
 }
 
-std::vector <std::string> BandFoundationEventType::getApplicableEntityTypes () const {
-	return { "person" };
-}
-
 std::string BandFoundationEventType::getRelatedEntityType () const {
 	return "band";
 }
@@ -176,10 +172,6 @@ std::string BandJoinEventType::getDisplayName () const {
 
 std::string BandJoinEventType::getTitleFormat () const {
 	return "Присоединение к группе {entity}";
-}
-
-std::vector <std::string> BandJoinEventType::getApplicableEntityTypes () const {
-	return { "person" };
 }
 
 std::string BandJoinEventType::getRelatedEntityType () const {
@@ -211,10 +203,6 @@ std::string BandLeaveEventType::getDisplayName () const {
 
 std::string BandLeaveEventType::getTitleFormat () const {
 	return "Уход из группы {entity}";
-}
-
-std::vector <std::string> BandLeaveEventType::getApplicableEntityTypes () const {
-	return { "person" };
 }
 
 std::string BandLeaveEventType::getRelatedEntityType () const {

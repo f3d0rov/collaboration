@@ -32,13 +32,11 @@ void from_json (const nlohmann::json &j, SingleEntityRelatedEventType::Data &d);
 void to_json (nlohmann::json &j, const SingleEntityRelatedEventType::Data &d);
 
 
-class BandFoundationEventType: public SingleEntityRelatedEventType {
+class BandFoundationEventType: public SingleEntityRelatedEventType, public PersonOnlyEventType {
 	public:
 		std::string getTypeName () const override;
 		std::string getDisplayName () const override;
 		std::string getTitleFormat () const override;
-
-		std::vector <std::string> getApplicableEntityTypes () const override;
 
 		virtual std::string getRelatedEntityType () const override;
 		virtual std::string getRelatedEntityPromptString () const override;
@@ -46,13 +44,11 @@ class BandFoundationEventType: public SingleEntityRelatedEventType {
 };
 
 
-class BandJoinEventType: public SingleEntityRelatedEventType {
+class BandJoinEventType: public SingleEntityRelatedEventType, public PersonOnlyEventType {
 	public:
 		std::string getTypeName () const override;
 		std::string getDisplayName () const override;
 		std::string getTitleFormat () const override;
-
-		std::vector <std::string> getApplicableEntityTypes () const override;
 
 		virtual std::string getRelatedEntityType () const override;
 		virtual std::string getRelatedEntityPromptString () const override;
@@ -60,15 +56,22 @@ class BandJoinEventType: public SingleEntityRelatedEventType {
 };
 
 
-class BandLeaveEventType: public SingleEntityRelatedEventType {
+class BandLeaveEventType: public SingleEntityRelatedEventType, public PersonOnlyEventType {
 	public:
 		std::string getTypeName () const override;
 		std::string getDisplayName () const override;
 		std::string getTitleFormat () const override;
 
-		std::vector <std::string> getApplicableEntityTypes () const override;
-
 		virtual std::string getRelatedEntityType () const override;
 		virtual std::string getRelatedEntityPromptString () const override;
 		virtual std::string getDatePrompt () const override;
+};
+
+
+class AlbumPublicationEvent: public AllEntitiesEventType {
+
+};
+
+class SinglePublicationEvent: public AllEntitiesEventType {
+
 };
