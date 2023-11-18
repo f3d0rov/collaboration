@@ -19,6 +19,7 @@ void ParticipantEntity::updateId () {
 }
 
 void to_json (nlohmann::json &j, const ParticipantEntity &pe) {
+	// ? Should entity_id be set independently of pe.created?
 	j["created"] = pe.created;
 	if (pe.created) {
 		j["entity_id"] = pe.entityId;
@@ -60,13 +61,66 @@ void to_json (nlohmann::json &j, const InputTypeDescriptor &itd) {
 
 
 
-
-std::vector <ParticipantEntity> EventType::getParticipants (nlohmann::json &data) {
-	auto participants =  this->getParameter <std::vector <ParticipantEntity>> ("participants", data);
-	for (auto &i: participants) {
-		i.updateId ();
+template <>
+std::string EventType::getUpdateQueryString <ParticipantEntity> (std::string jsonParam, std::string colName, nlohmann::json &data, pqxx::work &work, bool &notFirst) {
+	if (data.contains (jsonParam)) {
+		ParticipantEntity entity = data [jsonParam].get <ParticipantEntity>();
+		notFirst = true;
+		return std::string(notFirst ? "," : "") + colName + "=" + std::to_string(entity.entityId);
 	}
+	return "";
+}
+
+std::vector <ParticipantEntity> EventType::getParticipantsFromJson (nlohmann::json &data) {
+	return this->getParameter <std::vector <ParticipantEntity>> ("participants", data);
+}
+
+void EventType::addParticipants (const int eventId, const std::vector <ParticipantEntity> &participants, pqxx::work &work) {
+	if (participants.size() == 0) return;
+	std::string addParticipantsQuery = "INSERT INTO participation (event_id, entity_id) VALUES ";
+	bool notFirst = false;
+	std::string eventIdStr = std::to_string (eventId);
+	for (const auto &i: participants) {
+		if (notFirst) addParticipantsQuery += ",";
+		addParticipantsQuery += std::string("(") + eventIdStr + "," + std::to_string (i.entityId) + ")";
+	}
+	addParticipantsQuery += ";";
+	auto res = work.exec (addParticipantsQuery);
+	if (res.affected_rows() != participants.size()) {
+		logger << "EventType::addParticipants: res.affected_rows() != participants.size()" << std::endl;
+	}
+}
+
+std::vector <ParticipantEntity> EventType::getParticipantsForEvent (int eventId, pqxx::work &work) {
+	std::string getParticipantsQuery = std::string (
+		"SELECT awaits_creation, entities.id, name "
+		"FROM participation INNER JOIN entities ON participation.entity_id=entities.id "
+		"WHERE event_id="
+	) + std::to_string (eventId) + ";";
+	auto result = work.exec (getParticipantsQuery);
+
+	std::vector <ParticipantEntity> participants;
+	for (int i = 0; i < result.size(); i++) {
+		auto row = result[i];
+		ParticipantEntity pe;
+		pe.created = !(row ["awaits_creation"].as <bool>());
+		pe.entityId = row ["id"].as <int>();
+		pe.name = row ["name"].as <std::string>();
+
+		participants.push_back (pe);
+	}
+	
 	return participants;
+}
+
+void EventType::updateCommonEventData (int eventId, nlohmann::json &data, pqxx::work &work) {
+	bool notFirst = false;
+	std::string changeEventQuery = "UPDATE events SET ";
+	changeEventQuery += this->getUpdateQueryString<int> ("sort_index", "sort_index", data, work, notFirst);
+	changeEventQuery += this->getUpdateQueryString<std::string> ("description", "description", data, work, notFirst);
+	changeEventQuery += std::string(" WHERE id=") + std::to_string (eventId) + ";";
+	if (notFirst /* changing something? */) work.exec (changeEventQuery);
+
 }
 
 nlohmann::json EventType::getEventDescriptor () {

@@ -54,11 +54,18 @@ class EventType {
 		template <class T> 	std::string wrapType (const T &t, pqxx::work &work);
 		template <>			std::string wrapType <int> (const int &t, pqxx::work &work);
 		template <>			std::string wrapType <std::string> (const std::string &s, pqxx::work &work);
+	
 	protected:
 		template <class T> T getParameter (std::string name, nlohmann::json &data);
-		template <class T> std::string getUpdateQueryString (std::string param, nlohmann::json &data, pqxx::work &work, bool &notFirst);
-		std::vector <ParticipantEntity> getParticipants (nlohmann::json &data);
-		
+		template <class T> std::string getUpdateQueryString (std::string jsonParam, std::string colName, nlohmann::json &data, pqxx::work &work, bool &notFirst);
+		template <> std::string getUpdateQueryString <ParticipantEntity> (std::string jsonParam, std::string colName, nlohmann::json &data, pqxx::work &work, bool &notFirst);
+
+
+		std::vector <ParticipantEntity> getParticipantsFromJson (nlohmann::json &data);
+		void addParticipants (const int eventId, const std::vector <ParticipantEntity> &participants, pqxx::work &work);
+		std::vector <ParticipantEntity> getParticipantsForEvent (int eventId, pqxx::work &work);
+	
+		void updateCommonEventData (int eventId, nlohmann::json &data, pqxx::work &work);
 	public:
 		virtual std::string getTypeName () const = 0;
 		virtual std::string getDisplayName () const = 0;
@@ -147,10 +154,10 @@ template <class T> std::string EventType::wrapType (const T &t, pqxx::work &work
 
 
 template <class T>
-std::string EventType::getUpdateQueryString (std::string param, nlohmann::json &data, pqxx::work &work, bool &notFirst) {
-	if (data.contains (param)) {
-		T value = this->getParameter<T> (param, data);
-		std::string result = (notFirst ? "," : "") + param + "=";
+std::string EventType::getUpdateQueryString (std::string jsonParam, std::string colName, nlohmann::json &data, pqxx::work &work, bool &notFirst) {
+	if (data.contains (jsonParam)) {
+		T value = this->getParameter<T> (jsonParam, data);
+		std::string result = (notFirst ? "," : "") + colName + "=";
 		notFirst = true;
 		result += this->wrapType<T> (value, work);
 		return result;

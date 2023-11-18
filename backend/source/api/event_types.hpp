@@ -68,10 +68,44 @@ class BandLeaveEventType: public SingleEntityRelatedEventType, public PersonOnly
 };
 
 
-class AlbumPublicationEvent: public AllEntitiesEventType {
+class SinglePublicationEventType: public AllEntitiesEventType {
+	private:
+		struct Data {
+			ParticipantEntity author;
+			std::string song;
+			std::string description;
+			std::string date;
+		};
 
+		friend void from_json (const nlohmann::json &j, SinglePublicationEventType::Data &d);
+		friend void to_json (nlohmann::json &j, const SinglePublicationEventType::Data &d);
+
+	public:
+		std::string getTypeName () const override;
+		std::string getDisplayName () const override;
+		std::string getTitleFormat () const override;
+
+		std::vector <InputTypeDescriptor> getInputs () const override;
+		
+		int createEvent (nlohmann::json &data) override;
+		nlohmann::json getEvent (int id) override;
+		void updateEvent (nlohmann::json &data) override;
 };
 
-class SinglePublicationEvent: public AllEntitiesEventType {
+void from_json (const nlohmann::json &j, SinglePublicationEventType::Data &d);
+void to_json (nlohmann::json &j, const SinglePublicationEventType::Data &d);
 
+
+class AlbumPublicationEventType: public AllEntitiesEventType {
+	public:
+		std::string getTypeName () const override;
+		std::string getDisplayName () const override;
+		std::string getTitleFormat () const override;
+
+		std::vector <InputTypeDescriptor> getInputs () const override;
+		
+		int createEvent (nlohmann::json &data) override;
+		nlohmann::json getEvent (int id) override;
+		void updateEvent (nlohmann::json &data) override;
 };
+
