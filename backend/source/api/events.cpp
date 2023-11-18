@@ -204,6 +204,11 @@ void EventManager::registerEventType (std::shared_ptr <EventType> et) {
 		);
 	}
 	this->_types [typeName] = et;
+	logger << "В EventManager зарегистрирован тип события '" + typeName + "'" << std::endl;
+}
+
+int EventManager::size() const {
+	return this->_types.size();
 }
 
 std::shared_ptr <EventType> EventManager::getEventTypeByName (std::string typeName) {
@@ -294,10 +299,10 @@ void EventManager::deleteEvent (int eventId, int byUser) {
 }
 
 nlohmann::json EventManager::getAvailableEventDescriptors () {
-	nlohmann::json result;
-	for (auto i: this->_types) {
+	nlohmann::json result = nlohmann::json::object();
+	for (const auto &i: this->_types) {
 		auto et = i.second;
-		result [i.first] = i.second->getEventDescriptor();
+		result [i.first] = et->getEventDescriptor();
 	}
 	return result;
 }

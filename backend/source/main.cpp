@@ -225,13 +225,14 @@ int main (int argc, const char *argv[]) {
 
 	std::filesystem::path entityPics = "./user/";
 
-	auto eventManager = EventManager::getManager();
+	EventManager &eventManager = EventManager::getManager();
 	BandFoundationEventType *bfe = new BandFoundationEventType{};
 
 	eventManager.registerEventType (std::make_shared <BandFoundationEventType>());
 	eventManager.registerEventType (std::make_shared <BandJoinEventType>());
 	eventManager.registerEventType (std::make_shared <BandLeaveEventType>());
 	eventManager.registerEventType (std::make_shared <SinglePublicationEventType>());
+	logger << "Зарегистрированно типов событий: " << eventManager.size() << std::endl;
 
 	SharedDirectory sharedFiles (ctx, frontendDir, true, dontCache);
 	WebResource indexPage (ctx, "", frontendDir + "/index.html", dontCache);

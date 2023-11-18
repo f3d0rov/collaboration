@@ -117,6 +117,8 @@ class EventManager {
 	private:
 		static EventManager *_obj;
 		EventManager ();
+		EventManager (const EventManager &) = delete;
+		EventManager (EventManager &&) = delete;
 	
 		std::map <std::string, std::shared_ptr <EventType>> _types;
 
@@ -124,6 +126,7 @@ class EventManager {
 		static EventManager &getManager ();
 	
 		void registerEventType (std::shared_ptr <EventType> et);
+		int size() const;
 
 		std::shared_ptr <EventType> getEventTypeByName (std::string typeName);
 		std::shared_ptr <EventType> getEventTypeFromJson (nlohmann::json &data);

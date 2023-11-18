@@ -9,8 +9,8 @@ ApiResource (ctx, uri) {
 
 ApiResponsePtr GetEntityEventDescriptorsResource::processRequest (RequestData &rd, nlohmann::json body) {
 	if (rd.method != "GET") return makeApiResponse (405);
-	auto eventManager = EventManager::getManager ();
-	return makeApiResponse (nlohmann::json {{"options", eventManager.getAvailableEventDescriptors ()}});
+	EventManager &eventManager = EventManager::getManager ();
+	return makeApiResponse (nlohmann::json {{"options", eventManager.getAvailableEventDescriptors ()}}, 200);
 }
 
 
@@ -33,7 +33,7 @@ ApiResponsePtr CreateEntityEventResource::processRequest (RequestData &rd, nlohm
 	UsernameUid user = CheckSessionResource::checkSessionId (rd);
 	if (!user.valid) return makeApiResponse (401);
 
-	auto eventManager = EventManager::getManager();
+	EventManager &eventManager = EventManager::getManager();
 
 	try {
 		int createdEventId = eventManager.createEvent (body, user.uid);
@@ -64,7 +64,7 @@ ApiResponsePtr GetEntityEventsResource::processRequest (RequestData &rd, nlohman
 		return makeApiResponse (nlohmann::json{{"error", e.what()}}, 400);
 	}
 
-	auto eventManager = EventManager::getManager();
+	EventManager &eventManager = EventManager::getManager();
 
 	try {
 		return makeApiResponse (eventManager.getEventsForEntity (entityId), 200);
@@ -87,7 +87,7 @@ ApiResponsePtr UpdateEntityEventResource::processRequest (RequestData &rd, nlohm
 	UsernameUid user = CheckSessionResource::checkSessionId (rd);
 	if (!user.valid) return makeApiResponse (401);
 
-	auto eventManager = EventManager::getManager();
+	EventManager &eventManager = EventManager::getManager();
 
 	try {
 		int updatedEvent = eventManager.updateEvent (body, user.uid);
@@ -113,7 +113,7 @@ ApiResponsePtr DeleteEntityEventResource::processRequest (RequestData &rd, nlohm
 	if (user.permissionLevel < 1) return makeApiResponse (401);
 	if (!user.valid) return makeApiResponse (401);
 
-	auto eventManager = EventManager::getManager();
+	EventManager &eventManager = EventManager::getManager();
 
 	try {
 		eventManager.deleteEvent (body, user.uid);
