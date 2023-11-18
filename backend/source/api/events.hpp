@@ -11,11 +11,16 @@
 
 
 class UserSideEventException;
-class ParticipantEntity;
+struct ParticipantEntity;
+class InputTypeDescriptor;
+
 class EventType;
+class AllEntitiesEventType;
+class BandOnlyEventType;
+class PersonOnlyEventType;
+
 class EventManager;
 
-class BandFoundationEventType;
 
 
 class UserSideEventException: public std::runtime_error {
@@ -56,6 +61,8 @@ class EventType {
 		template <>			std::string wrapType <std::string> (const std::string &s, pqxx::work &work);
 	
 	protected:
+		virtual ~EventType ();
+
 		template <class T> T getParameter (std::string name, nlohmann::json &data);
 		template <class T> std::string getUpdateQueryString (std::string jsonParam, std::string colName, nlohmann::json &data, pqxx::work &work, bool &notFirst);
 		template <> std::string getUpdateQueryString <ParticipantEntity> (std::string jsonParam, std::string colName, nlohmann::json &data, pqxx::work &work, bool &notFirst);
@@ -67,8 +74,8 @@ class EventType {
 	
 		void updateCommonEventData (int eventId, nlohmann::json &data, pqxx::work &work);
 
-		// TODO: implement this v
 		nlohmann::json formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, nlohmann::json &data);
+	
 	public:
 		virtual std::string getTypeName () const = 0;
 		virtual std::string getDisplayName () const = 0;
@@ -81,24 +88,24 @@ class EventType {
 
 		virtual int createEvent (nlohmann::json &data) = 0;
 		virtual nlohmann::json getEvent (int id) = 0;
-		virtual void updateEvent (nlohmann::json &data) = 0;
+		virtual int updateEvent (nlohmann::json &data) = 0;
 		virtual void deleteEvent (int id); // Default implementation deletes corresponding row in events table
 };
 
 
-class AllEntitiesEventType: public EventType {
+class AllEntitiesEventType: virtual public EventType {
 	public:
 		std::vector <std::string> getApplicableEntityTypes () const final;
 };
 
 
-class BandOnlyEventType: public EventType {
+class BandOnlyEventType: virtual public EventType {
 	public:
 		std::vector <std::string> getApplicableEntityTypes () const final;
 };
 
 
-class PersonOnlyEventType: public EventType {
+class PersonOnlyEventType: virtual public EventType {
 	public:
 		std::vector <std::string> getApplicableEntityTypes () const final;
 };
@@ -112,6 +119,7 @@ class EventManager {
 		EventManager ();
 	
 		std::map <std::string, std::shared_ptr <EventType>> _types;
+
 	public:
 		static EventManager &getManager ();
 	
@@ -124,7 +132,8 @@ class EventManager {
 		// returns event id
 		int createEvent (nlohmann::json &data, int byUser);
 		nlohmann::json getEvent (int eventId);
-		void updateEvent (nlohmann::json &data, int byUser);
+		nlohmann::json getEventsForEntity (int entityId);
+		int updateEvent (nlohmann::json &data, int byUser);
 		void deleteEvent (int eventId, int byUser);
 
 		// Data fields to create different event types

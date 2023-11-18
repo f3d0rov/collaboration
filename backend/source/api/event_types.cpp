@@ -91,7 +91,7 @@ nlohmann::json SingleEntityRelatedEventType::getEvent (int id) {
 	return this->formGetEventResponse (work, id, row["description"].as <std::string>(), row["sort_index"].as <int>(), dataJson);
 }
 
-void SingleEntityRelatedEventType::updateEvent (nlohmann::json &data) {
+int SingleEntityRelatedEventType::updateEvent (nlohmann::json &data) {
 	int eventId = this->getParameter<int> ("id", data);
 	auto conn = database.connect();
 	pqxx::work work (*conn.conn);
@@ -109,6 +109,7 @@ void SingleEntityRelatedEventType::updateEvent (nlohmann::json &data) {
 	}
 
 	work.commit();
+	return eventId;
 }
 
 
@@ -288,7 +289,7 @@ nlohmann::json SinglePublicationEventType::getEvent (int id) {
 	return this->formGetEventResponse (work, id, row ["description"].as <std::string>(), row ["sort_index"].as <int>(), dataJson);
 }
 
-void SinglePublicationEventType::updateEvent (nlohmann::json &data) {
+int SinglePublicationEventType::updateEvent (nlohmann::json &data) {
 	int eventId = this->getParameter<int> ("id", data);
 	auto conn = database.connect();
 	pqxx::work work (*conn.conn);
@@ -307,6 +308,7 @@ void SinglePublicationEventType::updateEvent (nlohmann::json &data) {
 	}
 
 	work.commit();
+	return eventId;
 }
 
 

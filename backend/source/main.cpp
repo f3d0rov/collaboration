@@ -20,6 +20,9 @@
 #include "api/search.hpp"
 #include "api/user_auth.hpp"
 #include "api/page.hpp"
+
+#include "api/events.hpp"
+#include "api/event_types.hpp"
 #include "api/eventResources.hpp"
 
 
@@ -222,6 +225,14 @@ int main (int argc, const char *argv[]) {
 
 	std::filesystem::path entityPics = "./user/";
 
+	auto eventManager = EventManager::getManager();
+	BandFoundationEventType *bfe = new BandFoundationEventType{};
+
+	eventManager.registerEventType (std::make_shared <BandFoundationEventType>());
+	eventManager.registerEventType (std::make_shared <BandJoinEventType>());
+	eventManager.registerEventType (std::make_shared <BandLeaveEventType>());
+	eventManager.registerEventType (std::make_shared <SinglePublicationEventType>());
+
 	SharedDirectory sharedFiles (ctx, frontendDir, true, dontCache);
 	WebResource indexPage (ctx, "", frontendDir + "/index.html", dontCache);
 	WebResource personPage (ctx, "p", frontendDir + "/person.html", dontCache);
@@ -255,9 +266,11 @@ int main (int argc, const char *argv[]) {
 	EntityDataResource bandDataApiResource 				(ctx, "api/b", "bands", std::string(userPics.uri()));
 	EntityDataResource albumDataApiResource 			(ctx, "api/a", "albums", std::string(userPics.uri()));
 
-
+	GetEntityEventDescriptorsResource eventDescriptorsResource (ctx, "api/events/types");
 	CreateEntityEventResource createEntityEventResource	(ctx, "api/events/create");
-	GetEntityEventsResource GetEntityEventsResource		(ctx, "api/events/get");
+	GetEntityEventsResource getEntityEventsResource		(ctx, "api/events/getfor");
+	UpdateEntityEventResource updateEntityEventResource (ctx, "api/events/update");
+	DeleteEntityEventResource deleteEntityEventResource (ctx, "api/events/delete");
 
 	while (1) { // Ждем входящие подключения
 		occasionalTasks ();	

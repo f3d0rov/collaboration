@@ -97,7 +97,7 @@ CREATE TABLE albums (
 	name VARCHAR (256) NOT NULL,
 	description TEXT,
 
-	author REFERENCES entities (id) ON DELETE SET NULL
+	author INT REFERENCES entities (id) ON DELETE SET NULL
 );
 
 create table songs (

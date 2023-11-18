@@ -4,7 +4,16 @@
 #include "events.hpp"
 
 
-class SingleEntityRelatedEventType: public EventType {
+class SingleEntityRelatedEventType;
+class BandFoundationEventType;
+class BandJoinEventType;
+class BandLeaveEventType;
+
+class SinglePublicationEventType;
+
+
+
+class SingleEntityRelatedEventType: virtual public EventType {
 	protected:
 		struct Data {
 			std::string date;
@@ -20,7 +29,7 @@ class SingleEntityRelatedEventType: public EventType {
 
 		virtual int createEvent (nlohmann::json &data) override;
 		virtual nlohmann::json getEvent (int id) override;
-		virtual void updateEvent (nlohmann::json &data) override;
+		virtual int updateEvent (nlohmann::json &data) override;
 		// Default delete
 
 		virtual std::string getRelatedEntityType () const = 0;
@@ -32,7 +41,7 @@ void from_json (const nlohmann::json &j, SingleEntityRelatedEventType::Data &d);
 void to_json (nlohmann::json &j, const SingleEntityRelatedEventType::Data &d);
 
 
-class BandFoundationEventType: public SingleEntityRelatedEventType, public PersonOnlyEventType {
+class BandFoundationEventType: virtual public PersonOnlyEventType, virtual public SingleEntityRelatedEventType {
 	public:
 		std::string getTypeName () const override;
 		std::string getDisplayName () const override;
@@ -89,12 +98,14 @@ class SinglePublicationEventType: public AllEntitiesEventType {
 		
 		int createEvent (nlohmann::json &data) override;
 		nlohmann::json getEvent (int id) override;
-		void updateEvent (nlohmann::json &data) override;
+		int updateEvent (nlohmann::json &data) override;
 };
 
 void from_json (const nlohmann::json &j, SinglePublicationEventType::Data &d);
 void to_json (nlohmann::json &j, const SinglePublicationEventType::Data &d);
 
+
+#if 0
 
 class AlbumPublicationEventType: public AllEntitiesEventType {
 	public:
@@ -109,3 +120,4 @@ class AlbumPublicationEventType: public AllEntitiesEventType {
 		void updateEvent (nlohmann::json &data) override;
 };
 
+#endif

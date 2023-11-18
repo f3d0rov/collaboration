@@ -61,6 +61,9 @@ void to_json (nlohmann::json &j, const InputTypeDescriptor &itd) {
 
 
 
+
+EventType::~EventType () = default;
+
 template <>
 std::string EventType::getUpdateQueryString <ParticipantEntity> (std::string jsonParam, std::string colName, nlohmann::json &data, pqxx::work &work, bool &notFirst) {
 	if (data.contains (jsonParam)) {
@@ -250,7 +253,37 @@ nlohmann::json EventManager::getEvent (int eventId) {
 	return this->getEventTypeById (eventId)->getEvent (eventId);
 }
 
-void EventManager::updateEvent (nlohmann::json &data, int byUser) {
+
+nlohmann::json EventManager::getEventsForEntity (int entityId) {
+	std::string getEventListQuery = std::string()
+		+ "SELECT id FROM events INNER JOIN participation ON participation.event_id=events.id WHERE entity_id="
+		+ std::to_string (entityId) + ";";
+
+	pqxx::result result;
+
+	{ // {} used as a safety measure to avoid keeping `conn` and `work` in scope after calling `conn.release()`
+		auto conn = database.connect ();
+		pqxx::work work (*conn.conn);
+		result = work.exec (getEventListQuery);
+	}
+
+	std::vector <int> eventIds;
+
+	for (int i = 0; i < result.size(); i++) {
+		eventIds.push_back (result[i][0].as <int>());
+	}
+
+	std::vector <nlohmann::json> events;
+	events.reserve (eventIds.size());
+
+	for (const auto &i: eventIds) {
+		events.push_back (this->getEvent (i));
+	}
+
+	return nlohmann::json {{"events", events}};
+}
+
+int EventManager::updateEvent (nlohmann::json &data, int byUser) {
 	// TODO: check user creds, add user contrib
 	return this->getEventTypeFromJson (data)->updateEvent (data);
 }

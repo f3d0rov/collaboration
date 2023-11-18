@@ -7,8 +7,7 @@
 #include "page.hpp"
 
 
-struct ParticipantEntity;
-class EventData;
+class GetEntityEventDescriptorsResource;
 
 class CreateEntityEventResource;
 class GetEntityEventsResource;
@@ -20,16 +19,12 @@ class GetEntityEventReportListResource;
 
 
 
-class EventData {
+
+class GetEntityEventDescriptorsResource: public ApiResource {
 	public:
-		int id;
-		std::string name, desc, type, startDate;
-		std::optional <std::string> endDate;
-		std::vector <ParticipantEntity> participants;
+		GetEntityEventDescriptorsResource (mg_context *ctx, std::string uri);
+		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
 };
-
-void to_json (nlohmann::json &j, const EventData &pe);
-
 
 
 /******
@@ -56,8 +51,7 @@ void to_json (nlohmann::json &j, const EventData &pe);
 class CreateEntityEventResource: public ApiResource {
 	public:
 		CreateEntityEventResource (mg_context *ctx, std::string uri);
-		static void addUserContributionWithWork (pqxx::work &work, const UsernameUid &user, int eventId);
-		static void addParticipantWithWork (pqxx::work &work, const ParticipantEntity &pe, int eventId);
+		// static void addUserContributionWithWork (pqxx::work &work, const UsernameUid &user, int eventId);
 		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
 };
 
@@ -92,7 +86,6 @@ class CreateEntityEventResource: public ApiResource {
 class GetEntityEventsResource: public ApiResource {
 	public:
 		GetEntityEventsResource (mg_context *ctx, std::string uri);
-		static std::vector <ParticipantEntity> getEventParticipantsWithWork (pqxx::work &work, int eventId);
 		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
 };
 
@@ -123,3 +116,5 @@ class GetEntityEventReportListResource : public ApiResource {
 		GetEntityEventReportListResource (mg_context *ctx, std::string uri);
 		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
 };
+
+
