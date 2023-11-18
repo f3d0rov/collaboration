@@ -79,25 +79,16 @@ nlohmann::json SingleEntityRelatedEventType::getEvent (int id) {
 	if (res.size() == 0) throw UserSideEventException ("Не существует события с заданным id");
 	auto row = res[0];
 
-	ParticipantEntity entity;
-	entity.created = !(row ["awaits_creation"].as <bool>());
-	entity.entityId = row ["entity_id"].as <int>();
-	entity.name = row ["name"].as <std::string>();
+	SingleEntityRelatedEventType::Data data;
+	data.date = row["event_date"].as <std::string>();
+	data.entity.created = !(row ["awaits_creation"].as <bool>());
+	data.entity.entityId = row ["entity_id"].as <int>();
+	data.entity.name = row ["name"].as <std::string>();
 
-	nlohmann::json result = {
-		{"id", id},
-		{"title", this->getTitleFormat()},
-		{"type", this->getTypeName()},
-		{"sort_index", row["sort_index"].as <std::string>()},
-		{"description", row["description"].as <std::string>()},
-		{"data", {
-			{"event_date", row["event_date"].as <std::string>()},
-			{"entity", entity}
-		}},
-		{"participants", this->getParticipantsForEvent (id, work)}
-	};
+	nlohmann::json dataJson;
+	to_json (dataJson, data);
 
-	return result;
+	return this->formGetEventResponse (work, id, row["description"].as <std::string>(), row["sort_index"].as <int>(), dataJson);
 }
 
 void SingleEntityRelatedEventType::updateEvent (nlohmann::json &data) {
@@ -290,19 +281,11 @@ nlohmann::json SinglePublicationEventType::getEvent (int id) {
 	data.author.entityId = row ["author"].as <int>();
 	data.author.created = !(row ["awaits_creation"].as <bool>());
 	data.author.name = row ["name"].as <std::string>();
+	
+	nlohmann::json dataJson;
+	to_json (dataJson, data);
 
-	nlohmann::json response = {
-		{"id", id},
-		{"type", this->getTypeName()},
-		{"title", this->getTitleFormat()},
-		{"description", row ["description"].as <std::string>()},
-		{"sort_index", row ["sort_index"].as <int>()},
-
-		{"data", data},
-		{"participants", this->getParticipantsForEvent (id, work)}
-	};
-
-	return response;
+	return this->formGetEventResponse (work, id, row ["description"].as <std::string>(), row ["sort_index"].as <int>(), dataJson);
 }
 
 void SinglePublicationEventType::updateEvent (nlohmann::json &data) {

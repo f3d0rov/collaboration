@@ -123,6 +123,18 @@ void EventType::updateCommonEventData (int eventId, nlohmann::json &data, pqxx::
 
 }
 
+nlohmann::json EventType::formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, nlohmann::json &data) {
+	return nlohmann::json {
+		{"id", eventId},
+		{"title", this->getTitleFormat()},
+		{"type", this->getTypeName()},
+		{"sort_index", sortIndex},
+		{"description", desc},
+		{"data", data},
+		{"participants", this->getParticipantsForEvent (eventId, work)}
+	};
+}
+
 nlohmann::json EventType::getEventDescriptor () {
 	return nlohmann::json{
 		{"type_display_name", this->getDisplayName()},

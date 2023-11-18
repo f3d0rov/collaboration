@@ -66,6 +66,9 @@ class EventType {
 		std::vector <ParticipantEntity> getParticipantsForEvent (int eventId, pqxx::work &work);
 	
 		void updateCommonEventData (int eventId, nlohmann::json &data, pqxx::work &work);
+
+		// TODO: implement this v
+		nlohmann::json formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, nlohmann::json &data);
 	public:
 		virtual std::string getTypeName () const = 0;
 		virtual std::string getDisplayName () const = 0;
