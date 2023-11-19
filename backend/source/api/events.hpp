@@ -47,6 +47,8 @@ struct InputTypeDescriptor {
 	std::string type;
 	bool optional = false;
 
+	int order = 0;
+
 	InputTypeDescriptor ();
 	InputTypeDescriptor (std::string id, std::string prompt, std::string type, bool optional = false);
 };

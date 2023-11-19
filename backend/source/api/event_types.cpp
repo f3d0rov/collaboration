@@ -41,7 +41,7 @@ int SingleEntityRelatedEventType::createEvent (nlohmann::json &rawData) {
 		+ "INSERT INTO events (sort_index, type, description) VALUES ("
 		+ /* sort_index */ 	"0,"
 		+ /* type */		work.quote (this->getTypeName()) + ","
-		+ /* desc */		work.quote (data.description) + ","
+		+ /* desc */		work.quote (data.description)
 		+ ") RETURNING id;";
 	
 	auto res = work.exec (addEventQuery);
@@ -66,7 +66,7 @@ int SingleEntityRelatedEventType::createEvent (nlohmann::json &rawData) {
 
 nlohmann::json SingleEntityRelatedEventType::getEvent (int id) {
 	std::string getEventDataQuery = std::string()
-		+ "SELECT sort_index, description,"
+		+ "SELECT sort_index, events.description,"
 			"entity_id, event_date,"
 			"name, awaits_creation "
 			"FROM events INNER JOIN single_entity_related_events ON events.id = single_entity_related_events.id "
@@ -263,7 +263,7 @@ int SinglePublicationEventType::createEvent (nlohmann::json &rawData) {
 
 nlohmann::json SinglePublicationEventType::getEvent (int id) {
 	std::string getEventQuery = std::string (
-		"SELECT sort_index, description,"
+		"SELECT sort_index, events.description,"
 		"songs.title, release_date,"
 		"author, entities.name, awaits_creation "
 		"FROM events INNER JOIN songs ON events.id = songs.release "

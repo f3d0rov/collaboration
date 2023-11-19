@@ -20,6 +20,14 @@ body {
 	vertical-align: top;
 }
 
+
+#personImage.square {
+	width: 300px;
+	height: 300px;
+	margin-left: 0px;
+	margin-right: 0px;
+}
+
 #personCard {
 	padding: 10px;
 	vertical-align: top;
@@ -151,7 +159,7 @@ body {
 }
 
 .addMissing {
-	display: flex;
+	display: none;
 	align-items: center;
 	align-content: center;
 
@@ -161,6 +169,10 @@ body {
 
 	opacity: 0.3;
 	transition: opacity 0.2s ease-in-out;
+}
+
+.addMissing.ondisplay {
+	display: flex;
 }
 
 .addMissing img {
@@ -178,11 +190,15 @@ body {
 	cursor: pointer;
 }
 
-.createTilmelineElem {
+.createTimelineElem {
+	display: none;
+}
+
+.createTimelineElem.ondisplay {
 	display: flex;
 }
 
-.tielineCreatorBox {
+.timelineCreatorBox {
 	display: flex;
 	flex-flow: column;
 }
@@ -239,6 +255,16 @@ body {
 	font-family: 'Oswald', sans-serif;
 
 	margin: 5px;
+	padding-left: 5px;
+	padding-right: 5px;
+
+	outline-color: rgba(255, 0, 0, 0);
+
+	transition: outline-color 0.1s ease-in-out;
+}
+
+.incorrect .creationInput {
+	outline: 2px rgb(163, 0, 0) solid;
 }
 
 .creationInputLabel {
@@ -287,6 +313,15 @@ body {
 	padding-right: 5px;
 	margin: 5px;
 	margin-top: 20px;
+
+	transition: background-color 0.2s ease-in-out,
+				color 0.2s ease-in-out;
+}
+
+.uploadEventButton.inactive, .uploadEventButton.inactive:hover {
+	background-color: rgb(92, 75, 75);
+	color: rgb(102, 102, 102);
+	cursor: default;
 }
 
 .uploadEventButton:hover {
@@ -298,11 +333,15 @@ body {
 
 
 .addParticipants {
-	display: flex;
+	display: none;
 	flex-wrap: wrap;
 
 	overflow-x: hidden;
 	width: 100%;
+}
+
+.addParticipants.ondisplay {
+	display: flex;
 }
 
 .addParticipantButton {

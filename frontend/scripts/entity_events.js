@@ -209,164 +209,7 @@ class PrimitiveInput {
 	}
 }
 
-class BandSearchSuggestions {
-	constructor (parent) {
-		this.parent = parent;
-		this.cache = {};
-		this.currentOption = null;
-		this.elem = null;
 
-		window.addEventListener ('resize', () => {this.setupSuggestionListPosition();});
-	}
-
-	setupSuggestionListPosition () {
-		let box = this.parent.getBoundingClientRect();
-		this.elem.style.top = (box.bottom + window.scrollY) + "px";
-		this.elem.style.left = (box.left + window.scrollX) + "px";
-		this.elem.style.width = box.width + "px";
-	}
-
-	createSearchSuggestion (optTemplate, elem, opt, index) {
-		let clone = optTemplate.cloneNode (true);
-		
-		clone.innerHTML = opt.title;
-		clone.classList.remove ("template");
-		clone.id = elem.id + "_ss_" + index;
-
-		clone.addEventListener ('click', (ev) => { this.selectOpt (ev.target, elem, opt); });
-
-		return clone;
-	}
-
-	constuctList () {
-		this.elem?.remove();
-		this.elem = this.parent.templates.suggestionList.cloneNode (true);
-		this.elem.classList.remove ('template');
-
-		this.parent.templates.suggestionList.parentElement.insertBefore (this.elem, this.parent.templates.suggestionList);
-	}
-
-	clearList () {
-		if (this.elem == null) return;
-		for (let i = this.elem.childElementCount - 1; i >= 0; i--) {
-			this.elem.children[i].remove();
-		}
-	}
-
-	addSuggestion (s) {
-		let clone = this.parent.templates.suggestion.cloneNode (true);
-		clone.classList.remove ('template');
-		clone.innerHTML = s.title;
-		clone.addEventListener ('click', (ev) => { this.pickOption (s) });
-		this.elem.appendChild (clone);
-	}
-
-	buildList (results) {
-		if (this.elem == null) this.constuctList();
-		else this.clearList();
-
-		for (let i of results) {
-			this.addSuggestion (i);
-		}
-	}
-
-	suggestFor (results) {
-		this.buildList (results);
-	}
-
-	pickOption (option) {
-		this.parent.selectItem (option);
-		this.hide();
-	}
-
-	hide () {
-		this.clearList();
-		this.elem?.remove();
-	}
-};
-
-class BandInput {
-	constructor (inpData, templates) {
-		this.id = inpData.id;
-
-		this.elem = templates.input.cloneNode (true);
-		this.elem.id = inpData.id + "_cont";
-		this.elem.classList.remove ('template');
-		this.inputElem = this.elem.querySelector ('input');
-		
-		this.elem.querySelector (templates.labelSelector).innerHTML = inpData.prompt;
-	
-		this.inputElem.setAttribute ('type', 'text');
-		this.inputElem.addEventListener ('input', (ev) => { this.checkBandInput(ev);} );
-	
-		this.inputElem.id = inpData.id;
-		
-		templates.input.parentElement.insertBefore (this.elem, templates.input);
-
-		this.selectedItem = null;
-		this.suggestions = new BandSearchSuggestions (this); 
-		this.bandSearchCache = {};
-
-		this.templates = templates;
-	}
-
-	selectItem (item) {
-		this.selectedItem = item;
-		this.inputElem.value = item.title;
-	}
-
-	checkBandInput (ev) {
-		this.selectedItem = null;
-		
-		let checkId =  Math.floor (10000000 * Math.random ());
-		this.latestCheckId = checkId;
-		let value = this.inputElem.value.trim();
-
-		if (value in this.bandSearchCache) {
-			this.suggestions.suggestFor (this.bandSearchCache[value]);
-			return;
-		}
-		
-		let body = {
-			"prompt": ev.target.value
-		};
-
-
-		fetch (
-			'/api/search/b',
-			{
-				"method": 'POST',
-				"body": JSON.stringify (body)
-			}
-		).then (async (resp) => {
-			if (checkId != this.latestCheckId) return;
-			let res = await resp.json();
-			console.log ("checkBandInput::res:");
-			console.log (res);
-			this.bandSearchCache [value] = res.results;
-			this.suggestions.suggestFor (res.results);
-		}, /* on rejection */(resp) => {
-			if (checkId != this.latestCheckId) return;
-		});
-	}
-
-	getValue () {
-		let ret = {
-			created: (this.selectedItem != null),
-			name: this.inputElem.value
-		};
-		if (ret.created) ret.entity_id = this.selectedItem.id; 
-		return ret;
-	}
-
-	getId () {
-		return this.id;
-	}
-
-	getElem () {
-		return this.elem;
-	}
-}
 
 class TextareaInput {
 	constructor (inpData, templates) {
@@ -417,7 +260,10 @@ class InputFactory {
 			suggestion: document.getElementById ("creationInputSuggestionTemplate"),
 			labelSelector: '.creationInputLabel' 
 		}
+
 	}
+
+
 
 	constructInput (inpData) {
 		let type = inpData.type;
@@ -429,102 +275,40 @@ class InputFactory {
 
 class EventCreateForm {
 	constructor () {
-		// TODO: get this from server
-		this.options = {
-			"album" : {
-				"applicable": new Set([ "person", "band" ]),
-				"inputs": [
-					{
-						"id": "album_name",
-						"type": "text",
-						"prompt": "Имя альбома"
-					}, 
-					{
-						"id": "description",
-						"type": "textarea",
-						"prompt": "Описание события",
-						"optional": true
-					}
-				]
-			},
-
-			"ep" : {
-				"applicable": new Set([ "person", "band" ]),
-				"inputs": [
-					{
-						"id": "single_name",
-						"type": "text",
-						"prompt": "Имя сингла"
-					}, 
-					{
-						"id": "description",
-						"type": "textarea",
-						"prompt": "Описание события",
-						"optional": true
-					}
-				]
-			},
-			
-			"band_foundation": {
-				"applicable": new Set([ "person" ]),
-				"inputs": [
-					{
-						"id": "band",
-						"type": "band",
-						"prompt": "Группа"
-					}, 
-					{
-						"id": "description",
-						"type": "textarea",
-						"prompt": "Описание события",
-						"optional": true
-					}
-				]
-			},
-
-			"band_join": {
-				"applicable": new Set([ "person" ]),
-				"inputs": [
-					{
-						"id": "band",
-						"type": "band",
-						"prompt": "Группа"
-					}, 
-					{
-						"id": "description",
-						"type": "textarea",
-						"prompt": "Описание события",
-						"optional": true
-					}
-				]
-			},
-
-			"band_leave": {
-				"applicable": new Set([ "person" ]),
-				"inputs": [
-					{
-						"id": "band",
-						"type": "band",
-						"prompt": "Группа"
-					}, 
-					{
-						"id": "description",
-						"type": "textarea",
-						"prompt": "Описание события",
-						"optional": true
-					}
-				]
-			}
-		};
-		
 		this.inputFactory = new InputFactory;
-
 
 		this.currentInputs = {};
 		this.currentOption = 'album';
-		this.generatePrompt (this.currentOption);
+		//this.generatePrompt (this.currentOption);
 		
+
+		this.getDescriptorsApiEndpoint = "/api/events/types";
+		this.getDescriptorsApiMethod = "GET";
 	}
+	
+	async pullInputOptions () {
+		fetch (
+			this.getDescriptorsApiEndpoint,
+			{
+				"method": this.getDescriptorsApiMethod,
+				"credentials": "same-origin"
+			}
+		).then (
+			/* 200 */ async (fetchRes) => {
+				let obj = await fetchRes.json();
+				this.parseOptions (obj ['options']);
+			},
+			/* fail */ (rej) => {
+				console.log (rej);
+			}
+		);
+	}
+
+	parseOptions (options) {
+		this.options = options;
+		console.log (this.options);
+	}
+
 
 	clearInputs () {
 		for (let i in this.currentInputs) {
@@ -560,28 +344,6 @@ class EventCreateForm {
 var eventCreateForm = null; // new EventCreateForm;
 
 
-
-function getFont (elem) {
-	// let inp = this.inputTemplate.querySelector ('input');
-	let css = window.getComputedStyle (elem);
-	let weight = css ['font-weight'];
-	let size = css ['font-size'];
-	let family = css ['font-family'];
-	let font = `${weight} ${size} ${family}`;
-	console.log (font);
-	return font;
-}
-
-var testingCanvas = null;
-// with help from https://stackoverflow.com/a/21015393/8665933
-function getTextWidth (text, elem) {
-	if (testingCanvas == null) {
-		testingCanvas = document.createElement ('canvas');
-	}
-	let ctx = testingCanvas.getContext ('2d');
-	ctx.font = getFont (elem);
-	return ctx.measureText (text).width;
-}
 
 class ParticipantEntityTemplates {
 	constructor (inputTemplate, suggestionListTemplate, suggestionTemplate, minInputElementWidth) {
@@ -800,6 +562,7 @@ class ParticipantList {
 
 		this.addParticipantButton = document.getElementById ("addParticipantButton");
 		this.addParticipantButton.addEventListener ('click', (ev) => { this.addParticipant(); })
+
 	}
 
 	removeParticipant (part) {
@@ -835,7 +598,7 @@ var participantList = null;
 function tryUploadEvent () {
 	console.log (participantList?.getParticipantsArray());
 	console.log (eventCreateForm?.getEventData());
-
+	
 }
 
 function switchClicked (ev) {
@@ -846,9 +609,10 @@ function switchClicked (ev) {
 	eventCreateForm.generatePrompt (me.getAttribute ('value'));
 }
 
-function setupTimelineElementCreator () {
-	eventCreateForm = new EventCreateForm;
+async function setupTimelineElementCreator () {
 	participantList = new ParticipantList;
+	eventCreateForm = new EventCreateForm;
+	await eventCreateForm.pullInputOptions ();
 	
 	let typeSwitches = document.querySelectorAll ('.timelineTypeSelectorButton');
 	for (let i of typeSwitches) {

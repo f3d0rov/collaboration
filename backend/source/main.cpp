@@ -236,7 +236,7 @@ int main (int argc, const char *argv[]) {
 
 	SharedDirectory sharedFiles (ctx, frontendDir, true, dontCache);
 	WebResource indexPage (ctx, "", frontendDir + "/index.html", dontCache);
-	WebResource personPage (ctx, "p", frontendDir + "/person.html", dontCache);
+	WebResource personPage (ctx, "e", frontendDir + "/entity.html", dontCache);
 	WebResource searchPage (ctx, "search", frontendDir + "/search.html", dontCache);
 	WebResource createPage (ctx, "create", frontendDir + "/create_page.html", dontCache);
 
@@ -247,7 +247,7 @@ int main (int argc, const char *argv[]) {
 	
 	TypedSearchResource bandSearchResource				(ctx, "api/search/b", "band");
 	TypedSearchResource personSearchResource			(ctx, "api/search/p", "person");
-	EntitySearchResource EntitySearchResource			(ctx, "api/search/entities");
+	EntitySearchResource entitySearchResource			(ctx, "api/search/entities");
 
 	UserLoginResource userLoginResource 				(ctx, "api/u/login");
 	UserLogoutResource userLogoutResource 				(ctx, "api/u/logout");

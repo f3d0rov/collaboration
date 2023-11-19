@@ -97,8 +97,6 @@ async function pullPersonData () {
 }
 
 function dateToString (date) {
-	abc = date.split ("-");
-	return abc[2] + "." + abc[1] + "." + abc[0];
 }
 
 function generatePage (ev) {

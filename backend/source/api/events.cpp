@@ -30,12 +30,12 @@ void to_json (nlohmann::json &j, const ParticipantEntity &pe) {
 }
 
 void from_json (const nlohmann::json &j, ParticipantEntity &pe) {
-	pe.created = j["created"].get <bool>();
+	pe.created = j.at("created").get <bool>();
 	if (pe.created) {
-		pe.entityId = j["entity_id"].get <int>();
-		if (j.contains ("name")) pe.name = j["name"].get <std::string>();
+		pe.entityId = j.at("entity_id").get <int>();
+		if (j.contains ("name")) pe.name = j.at("name").get <std::string>();
 	} else {
-		pe.name = j["name"].get <std::string>();
+		pe.name = j.at("name").get <std::string>();
 		pe.updateId();
 	}
 }
@@ -57,6 +57,7 @@ void to_json (nlohmann::json &j, const InputTypeDescriptor &itd) {
 	j["prompt"] = itd.prompt;
 	j["type"] = itd.type;
 	j["optional"] = itd.optional;
+	j["order"] = itd.order;
 }
 
 
@@ -86,6 +87,7 @@ void EventType::addParticipants (const int eventId, const std::vector <Participa
 	for (const auto &i: participants) {
 		if (notFirst) addParticipantsQuery += ",";
 		addParticipantsQuery += std::string("(") + eventIdStr + "," + std::to_string (i.entityId) + ")";
+		notFirst = true;
 	}
 	addParticipantsQuery += ";";
 	auto res = work.exec (addParticipantsQuery);
@@ -139,10 +141,14 @@ nlohmann::json EventType::formGetEventResponse (pqxx::work &work, int eventId, s
 }
 
 nlohmann::json EventType::getEventDescriptor () {
+	auto inputs = this->getInputs ();
+	for (int i = 0; i < inputs.size(); i++) {
+		inputs[i].order = i;
+	}
 	return nlohmann::json{
 		{"type_display_name", this->getDisplayName()},
 		{"applicable", this->getApplicableEntityTypes()},
-		{"inputs", this->getInputs()}
+		{"inputs", inputs}
 	};
 }
 

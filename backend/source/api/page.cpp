@@ -75,12 +75,7 @@ int CreatePageResource::createTypedEntity (pqxx::work &work, int entityId, std::
 }
 
 std::string CreatePageResource::pageUrlForTypedEntity (std::string type, int id) {
-	const std::map <std::string /* type */, std::string /* url */> urls = {
-		{"person", "p"},
-		{"band", "b"},
-		{"album", "a"}
-	};
-	return "/" + urls.at (type) + "?id=" + std::to_string(id);
+	return "/e?id=" + std::to_string(id);
 }
 
 std::unique_ptr<ApiResponse> CreatePageResource::processRequest (RequestData &rd, nlohmann::json body) {
@@ -114,7 +109,7 @@ std::unique_ptr<ApiResponse> CreatePageResource::processRequest (RequestData &rd
 		return std::make_unique <ApiResponse> (nlohmann::json{}, 400);
 	}
 
-	const std::set <std::string> allowedTypes = { "person", "band", "album" };
+	const std::set <std::string> allowedTypes = { "person", "band" };
 	if (!allowedTypes.contains (type)) return std::make_unique <ApiResponse> (nlohmann::json{}, 400);
 	
 	auto conn = database.connect ();
@@ -343,7 +338,7 @@ std::unique_ptr <ApiResponse> EntityDataResource::processRequest (RequestData &r
 	}
 
 	std::string getEntityDataQuery = std::string()
-		+ "SELECT entities.id, name, description, start_date, end_date, picture_path, awaits_creation, created_by "
+		+ "SELECT entities.id, type, name, description, start_date, end_date, picture_path, awaits_creation, created_by "
 		+ "FROM entities INNER JOIN " + this->_table + " on entities.id = " + this->_table + ".entity_id "
 		+ "WHERE " + this->_table + ".id=" + std::to_string (id) + ";";
 
@@ -370,6 +365,7 @@ std::unique_ptr <ApiResponse> EntityDataResource::processRequest (RequestData &r
 
 	response->body ["description"] = row ["description"].as <std::string>();
 	response->body ["start_date"] = row ["start_date"].as <std::string>();
+	response->body ["type"] = row ["type"].as <std::string>();
 	if (!row ["end_date"].is_null()) response->body ["end_date"] = row ["end_date"].as <std::string>();
 	if (!row ["picture_path"].is_null()) response->body ["picture_path"] = this->_pics + "/" + row ["picture_path"].as <std::string>();
 	response->body ["created_by"] = row ["created_by"].as <int>();
