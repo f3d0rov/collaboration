@@ -208,6 +208,21 @@ body {
 	flex-flow: column;
 }
 
+.cancelCreation {
+	font-size: 20px;
+	color:rgb(119, 119, 119);
+	padding-left: 10px;
+	text-align: right;
+
+	transition: color 0.2s ease-in-out;
+}
+
+.cancelCreation:hover {
+	color: white;
+	cursor: pointer;
+}
+
+
 .timelineTypeSelector {
 	display: flex;
 	flex-wrap: wrap;

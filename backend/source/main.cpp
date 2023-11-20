@@ -263,9 +263,7 @@ int main (int argc, const char *argv[]) {
 
 	DynamicDirectory userPics 							(ctx, "imgs", "./user/");
 
-	EntityDataResource personDataApiResource 			(ctx, "api/p", "personalities", std::string(userPics.uri()));
-	EntityDataResource bandDataApiResource 				(ctx, "api/b", "bands", std::string(userPics.uri()));
-	EntityDataResource albumDataApiResource 			(ctx, "api/a", "albums", std::string(userPics.uri()));
+	EntityDataResource EntityDataResource 				(ctx, "api/p", std::string(userPics.uri()));
 
 	GetEntityEventDescriptorsResource eventDescriptorsResource (ctx, "api/events/types");
 	CreateEntityEventResource createEntityEventResource	(ctx, "api/events/create");

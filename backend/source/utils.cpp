@@ -39,6 +39,22 @@ std::string cookieString (std::string name, std::string value, bool httpOnly, lo
 		+ (httpOnly ? "; HttpOnly" : "");
 }
 
+std::string queryString (std::string from) {
+	std::string res = "";
+	bool hadSpace = true;
+	for (int i = 0; i < from.length(); i++) {
+		if (std::isspace (from[i])) {
+			if (hadSpace) continue;
+			hadSpace = true;
+			res += "+";
+		} else {
+			res += from[i];
+			hadSpace = false;
+		}
+	}
+	return res;
+}
+
 
 std::string lowercase (std::string s) {
 	std::string res = s;

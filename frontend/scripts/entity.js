@@ -917,6 +917,13 @@ class EventGeneratorType {
 		}
 		return res;
 	}
+
+	clear() {
+		let opponents = document.querySelectorAll ('.' + this.primaryClassName + '.' + this.selectedClassName);
+		for (let i of opponents) {
+			i.classList.remove (this.selectedClassName);
+		}
+	}
 }
 
 
@@ -1245,6 +1252,9 @@ class EventGenerator {
 	hideEventCreator () {
 		this.eventCreatorElem.classList.remove ('ondisplay');
 		this.addEventButton.classList.add ('ondisplay');
+		this.clearInputs ();
+		this.reset();
+
 		this.entity.eventsView.resize();
 	}
 	
@@ -1264,9 +1274,10 @@ class EventGenerator {
 	}
 
 	reset () {
-		this.clearInputs ();
-		this.currentType = null;
-		document.querySelector ('.timelineTypeSelectorButton.selected')?.classList.remove ('selected');
+		if (this.currentType != null) {
+			this.currentType.clear();
+			this.currentType = null;
+		}
 		this.participantList.hide();
 	}
 	
@@ -1277,6 +1288,7 @@ class EventGenerator {
 	setupEvents () {
 		this.addEventButton.addEventListener ('click', () => { this.addMissingEvent(); });
 		this.submitButton.addEventListener ('click', () => { this.trySubmit(); });
+		this.cancelButton.addEventListener ('click', () => { this.hideEventCreator(); });
 	}
 
 	getSubmitData () {
@@ -1337,6 +1349,7 @@ class EventGenerator {
 		this.types = this.entity.eventTypes;
 		this.addEventButton = document.getElementById ('addMissingEvent');
 		this.submitButton = document.getElementById ('tryUploadEvent');
+		this.cancelButton = document.getElementById ('cancelCreationButton');
 		this.eventCreatorElem = document.getElementById ('timelineElemCreate');
 		this.timelineTypeSelectorTemplate = document.getElementById ('timelineTypeSelectorTemplate');
 		
@@ -1408,6 +1421,11 @@ class Entity {
 
 	async pullData () {
 		this.entityData = await this.getEntityData ();
+
+		if ('redirect' in this.entityData) {
+			window.location.replace (this.entityData['redirect']);
+		}
+
 		this.eventTypes = await this.getEventTypes ();
 		
 		console.log (this.entityData);

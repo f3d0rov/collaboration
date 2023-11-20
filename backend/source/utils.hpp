@@ -32,6 +32,7 @@ std::string getFileExtension (std::string path);
 std::string readFile (std::string path, std::ios_base::openmode mode = std::ios::in);
 
 std::string cookieString (std::string name, std::string value, bool httpOnly, long long maxAge);
+std::string queryString (std::string from);
 
 std::string lowercase (std::string s);
 bool isAscii (std::string s);
