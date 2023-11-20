@@ -23,12 +23,12 @@ std::unique_ptr<ApiResponse> RandomSearchPromptResource::processRequest(RequestD
 	if (result.size() > 0) {
 		auto row = result[0];
 		int id = row[0].as <int>();
-		std::string type = row[2].as <std::string>();
+		std::string name = row[1].as <std::string>();
 		std::string url = "";
 
-		url = CreatePageResource::pageUrlForTypedEntity (type, id);
+		url = CreatePageResource::pageUrlForTypedEntity ("", id);
 
-		return std::make_unique<ApiResponse> (nlohmann::json{{"text", result[0][1].c_str()}, {"url", url}, {"id", id}}, 200);
+		return std::make_unique<ApiResponse> (nlohmann::json{{"text", name}, {"url", url}, {"id", id}}, 200);
 	}
 	
 	return std::make_unique <ApiResponse> (nlohmann::json {{"text", "посмотри исходный код проекта на Github"}, {"url", "https://github.com/f3d0rov/collaboration"}});
