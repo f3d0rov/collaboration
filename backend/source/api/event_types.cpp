@@ -88,7 +88,7 @@ nlohmann::json SingleEntityRelatedEventType::getEvent (int id) {
 	nlohmann::json dataJson;
 	to_json (dataJson, data);
 
-	return this->formGetEventResponse (work, id, row["description"].as <std::string>(), row["sort_index"].as <int>(), dataJson);
+	return this->formGetEventResponse (work, id, row["description"].as <std::string>(), row["sort_index"].as <int>(), data.date, dataJson);
 }
 
 int SingleEntityRelatedEventType::updateEvent (nlohmann::json &data) {
@@ -282,11 +282,14 @@ nlohmann::json SinglePublicationEventType::getEvent (int id) {
 	data.author.entityId = row ["author"].as <int>();
 	data.author.created = !(row ["awaits_creation"].as <bool>());
 	data.author.name = row ["name"].as <std::string>();
+	data.song = row ["title"].as <std::string>();
 	
+	std::string releaseDate = row ["release_date"].as <std::string> ();
+
 	nlohmann::json dataJson;
 	to_json (dataJson, data);
 
-	return this->formGetEventResponse (work, id, row ["description"].as <std::string>(), row ["sort_index"].as <int>(), dataJson);
+	return this->formGetEventResponse (work, id, row ["description"].as <std::string>(), row ["sort_index"].as <int>(), releaseDate, dataJson);
 }
 
 int SinglePublicationEventType::updateEvent (nlohmann::json &data) {

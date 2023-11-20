@@ -83,15 +83,20 @@
 								</div>
 								<div class = "timepointBox">
 									<span class = "timepoint"></span> 
-									<img src = "resources/lookup.svg" class = "timelineInlineButton" id = "lookupEntry"/>
-									<img src = "resources/edit.svg" class = "timelineInlineButton" id = "editEntry"/>
-									<img src = "resources/report.svg" class = "timelineInlineButton" id = "reportEntry"/>
+									<img src = "resources/lookup.svg" class = "timelineInlineButton lookupEntry"/>
+									<img src = "resources/edit.svg" class = "timelineInlineButton editEntry"/>
+									<img src = "resources/report.svg" class = "timelineInlineButton reportEntry"/>
 								</div>
 								<div class = "timepointBody"></div>
+								<div class = "eventParticipants">
+									<div class = "eventParticipant template" id = "eventParticipantTemplate"></div>
+								</div>
 							</td>
 						</tr>
 					</table>
 				</div>
+
+				<div class = "template" id = "latestEventHere"></div>
 
 				<svg class = "timelineConnector template" role="img" id = "timelineConnectorTemplate" width = "8px" height="100px">
 					<line x1="4" y1="0" x2="4" y2="100" stroke="white" stroke-width="4"/>
@@ -105,8 +110,7 @@
 						<div class = "timelineTypeSelector">
 							<div class = "timelineTypeSelectorButton noselect template" id = "timelineTypeSelectorTemplate"> </div>
 						</div>
-<!-- 
-						<div class = "inputBox dateInputBox" id = "eventDateBox"> 
+						<!-- <div class = "inputBox dateInputBox" id = "eventDateBox"> 
 							<div class = "creationInputLabel"> Дата события </div>
 							<input class = "creationInput" id = "eventDate" type = "date"> 
 						</div> -->

@@ -128,16 +128,25 @@ void EventType::updateCommonEventData (int eventId, nlohmann::json &data, pqxx::
 
 }
 
-nlohmann::json EventType::formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, nlohmann::json &data) {
+nlohmann::json EventType::formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, std::string startDate, nlohmann::json &data) {
 	return nlohmann::json {
 		{"id", eventId},
-		{"title", this->getTitleFormat()},
 		{"type", this->getTypeName()},
 		{"sort_index", sortIndex},
+
+		{"title", this->getTitleFormat()},
 		{"description", desc},
+		{"start_date", startDate},
+
 		{"data", data},
 		{"participants", this->getParticipantsForEvent (eventId, work)}
 	};
+}
+
+nlohmann::json EventType::formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, std::string startDate, std::string endDate, nlohmann::json &data) {
+	auto resp = formGetEventResponse (work, eventId, desc, sortIndex, startDate, data);
+	resp ["end_date"] = endDate;
+	return resp;
 }
 
 nlohmann::json EventType::getEventDescriptor () {

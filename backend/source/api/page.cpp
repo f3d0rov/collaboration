@@ -29,8 +29,8 @@ int CreatePageResource::createEntity (pqxx::work &work, std::string type, std::s
 			+ "created_by=" + std::to_string (uid) + ","
 			+ "created_on=CURRENT_DATE,"
 			+ "start_date=" + work.quote (startDate) + ","
-			+ "endDate=" + ((endDate == "") ? "NULL" : work.quote(endDate)) 
-			+ "WHERE id=" + std::to_string (id) + ";";
+			+ "end_date=" + ((endDate == "") ? "NULL" : work.quote(endDate)) 
+			+ " WHERE id=" + std::to_string (id) + ";";
 		work.exec (updateEntityQuery);
 		return id;
 

@@ -49,6 +49,32 @@ function flashNetworkError () {
 	console.log ("FlashNetworkError!");
 }
 
+function intDateEval (date) {
+	let abc = date.split ('-');
+	for (let i in abc) abc[i] = parseInt (abc[i]);
+	return abc[0] * 10000 + abc[1] * 100 + abc[2];
+}
+
+function compareDates (a, b) {
+	return intDateEval (a) - intDateEval (b);
+}
+
+function getEntityUrl (id){ 
+	return '/e?id=' + id;
+}
+
+function getUrlForCreation (text) {
+	let spl = text.split (" ");
+	if (spl.length == 0) return "/create";
+	let res = "/create?q=" + spl[0];
+	for (let i = 1; i < spl.length; i++) {
+		if (spl[i] == "") continue;
+		res += "+" + spl[i];	
+	}
+	return res;
+}
+
+
 
 class EntityDataView {
 	constructor (entity) {
@@ -92,6 +118,170 @@ class EntityDataView {
 	}
 }
 
+
+class EventDisplayObject {
+	constructor (event, eventsView) {
+		this.event = event;
+		this.eventsView = eventsView;
+		this.nextEvent = null;
+
+		this.picsDir = '/resources/timeline/';
+		this.typePics = {
+			'band_foundation': 'band.svg',
+			'band_leave': 'band.svg',
+			'band_join': 'band.svg',
+			'ep': 'song.svg',
+			'album': 'album.svg'
+		};
+		this.defaultPic = 'song.svg';
+
+		this.constructElem ();
+	}
+
+	formatString (str, data) { 
+		const getVariablesRegex = /{[^\{\}]*}/gm;
+		let vars = [...str.matchAll (getVariablesRegex)];
+		for (let j of vars) {
+			let i = j[0];
+			let varName = ("" + i).slice (1, -1); // 'abc' from '{abc}'
+			if (varName in data) {
+				let variable = data [varName];
+				if (typeof variable === 'object' && variable !== null && !Array.isArray(variable)) {
+					if ('name' in variable) {
+						let url = null;
+						if ('url' in variable) {
+							url = variable.url;
+						} else if ('entity_id' in variable) {
+							url = getEntityUrl (variable.entity_id);
+						}
+
+						let repl = '<a' + ((url != null) ? (' href = "' + url + '"') : "") + ">" + variable.name + "</a>";
+						str = str.replaceAll (i, repl);
+					} else {
+						console.log ("Can't convert object to string: ");
+						console.log (variable);
+					}
+				} else {
+					str = str.replaceAll (i, variable);
+					console.log (data);
+					console.log (`${i} -> ${variable}`);
+				}
+			} else {
+				console.log ("No variable named '" + varName + "'(from " + i + ") in data object: ");
+				console.log (data);
+			}
+		}
+		return str;
+	} 
+	
+	getDateString (event) {
+		let str = dateToString (event.start_date);
+		if ('end_date' in event) return str + ' - ' + dateToString (event.end_date);
+		return str;
+	}
+
+	getPictureForType (type) {
+		if (type in this.typePics) {
+			return this.picsDir + this.typePics [type];
+		}
+		return this.picsDir + this.defaultPic;
+	}
+
+	setupCallbacks () {
+		this.elem.querySelector ('.' + this.eventsView.lookupEntryClass).addEventListener ('click', () => { this.lookupEntry(); });
+		this.elem.querySelector ('.' + this.eventsView.reportEntryClass).addEventListener ('click', () => { this.reportEntry(); });
+		this.elem.querySelector ('.' + this.eventsView.editEntryClass).addEventListener ('click', () => { this.editEntry(); });
+	}
+
+	getTitle () {
+		return this.elem.querySelector ('.' + this.eventsView.eventTitleClass).innerText;
+	}
+
+	genLookupUrl () {
+		let keys = this.getTitle().split (' ');
+		if (keys.length == 0) return "https://developer.mozilla.org/en-US/docs/Web/JavaScript";
+		let res = "https://www.google.com/search?q=" + keys[0];
+		for (let i = 1; i < keys.length; i++) res += "+" + keys[i];
+		return res;
+	}
+
+	lookupEntry () {
+		window.open (this.genLookupUrl (), '_blank', 'noopener');
+	}
+
+	reportEntry () {
+
+	}
+
+	editEntry () {
+
+	}
+
+	generateParticipant (pc) {
+		let clone = this.eventsView.eventParticipantTemplate.cloneNode (true);
+		clone.innerHTML = pc.name;
+		clone.classList.remove ('template');
+		clone.id = '';
+		if (pc.created) {
+			clone.addEventListener ('click', () => { location.href = getEntityUrl (pc.entity_id)});
+		} else {
+			clone.classList.add ('notCreated');
+			clone.addEventListener ('click', () => { if (demandAuth()) location.href = getUrlForCreation (pc.name)});
+		}
+		this.elem.querySelector ('.' + this.eventsView.eventParticipantBoxClass).appendChild (clone);
+	}
+
+	generateParticipants () {
+		for (let i of this.event.participants) {
+			// Don't show current entity as a participant
+			if (i.entity_id != this.eventsView.entity.entityData.entity_id)
+				this.generateParticipant (i)
+		}
+	}
+
+	constructElem () {
+		let clone = this.eventsView.eventBodyTemplate.cloneNode (true);
+		clone.id = 'event_' + this.event.id;
+		clone.classList.remove ('template'); 
+		
+		this.title = this.formatString (this.event.title, this.event.data);
+
+		clone.querySelector ('.' + this.eventsView.eventTitleClass).innerHTML = this.title;
+		clone.querySelector ('.' + this.eventsView.eventTimepointClass).innerHTML = this.getDateString (this.event);
+		clone.querySelector ('.' + this.eventsView.eventDescriptionClass).innerHTML = this.formatString (this.event.description, this.event.data);
+		clone.querySelector ('.' + this.eventsView.pictureClass).setAttribute ('src', this.getPictureForType (this.event.type));
+
+		this.elem?.remove();
+		this.elem = clone;
+		this.setupCallbacks ();
+		this.generateParticipants ();
+	}
+
+	insertBefore (elem) {
+		elem.parentElement.insertBefore (this.elem, elem);
+	}
+
+	laterDate () {
+		if ('end_date' in this.event) return this.event.end_date;
+		return this.event.start_date;
+	}
+
+	earlierDate () {
+		return this.event.start_date;
+	}
+
+	isEarlierThanEvent (event) {
+		return compareDates(this.laterDate(), event.earlierDate()) < 0;
+	}
+
+	isOrderedBefore (event) {
+		if (this.isEarlierThanEvent (event) && event.isEarlierThanEvent (this)) {
+			return this.event.order_index < event.order_index;
+		}
+		return this.isEarlierThanEvent (event);
+	}
+}
+
 class EventsView {
 	constructor (entity) {
 		this.entity = entity;
@@ -102,14 +292,111 @@ class EventsView {
 		};
 
 		window.addEventListener ('resize', () => { this.resize(); });
+
+		this.firstEvent = null;
+		this.events = [];
+		this.connectors = [];
+	}
+
+	insertEvent (event) {
+		let prev = null;
+		let ptr = this.firstEvent;
+
+		while (ptr != null) {
+			if (event.isOrderedBefore (ptr)) {
+				event.insertBefore (ptr.elem);
+				if (ptr === this.firstEvent) this.firstEvent = event;
+				if (prev !== null) prev.next = event;
+				event.next = ptr;
+				return;
+			}
+			prev = ptr;
+			ptr = ptr.next;
+		}
+
+		if (this.firstEvent == null) {
+			this.firstEvent = event;
+		} else {
+			prev.next = event;
+		}
+		event.insertBefore (this.eventPointer);
 	}
 
 	resize () {
-
+		console.log ('resize');
+		this.reconnect();
 	}
 
 	constructEvent (event) {
 		console.log (event);
+		let newEventObj = new EventDisplayObject (event, this);
+		this.events.push (newEventObj);
+		this.insertEvent (newEventObj);
+		this.reconnect();
+	}
+
+	genConnector (topPoint, bottomPoint) {
+		let clone = this.connectorTemplate.cloneNode (true);
+
+		clone.id = '';
+		clone.classList.remove ('template');
+		clone.classList.add ('actualConnector');
+		let line = clone.querySelector ('line');
+
+		clone.style.left = (topPoint.x - 4) + 'px';
+		clone.style.top = topPoint.y + 'px';
+		clone.setAttribute ('height', (bottomPoint.y - topPoint.y) + 'px');
+		line.setAttribute('y2', bottomPoint.y - topPoint.y);
+		this.connectorTemplate.parentElement.appendChild (clone);
+	}
+	
+	getElemBottomCoordsForConnector (elem) {
+		let br = elem.getBoundingClientRect ();
+		return {
+			x: (br.left + br.right) / 2 + window.scrollX,
+			y: br.bottom - 16 + window.scrollY
+		};
+	}
+	
+	getElemTopCoordsForConnector (elem) {
+		let br = elem.getBoundingClientRect ();
+		return {
+			x: (br.left + br.right) / 2 + window.scrollX,
+			y: br.top + 16 + window.scrollY
+		};
+	}
+
+	connect (a, b) {
+		let aIcon = a.querySelector('.timelineElemIcon');
+		let bIcon = b.querySelector('.timelineElemIcon');
+	
+		let topPoint = this.getElemBottomCoordsForConnector (aIcon);
+		let bottomPoint = this.getElemTopCoordsForConnector (bIcon);
+	
+		this.genConnector (topPoint, bottomPoint);
+	}
+	
+	generateConnectors () {
+		let nodes = document.querySelectorAll ('.timelineElem');
+		let elems = [];
+
+		for (let i of nodes) { // Not connecting templates
+			if (!i.classList.contains ('template')) {
+				elems.push (i);
+			}
+		}
+
+		for (let i = 0; i < elems.length - 1; i++) {
+			this.connect (elems[i], elems[i + 1]);
+		}
+	}
+	
+	reconnect (ev) {
+		let connectors = document.querySelectorAll ('.actualConnector');
+		this.generateConnectors ();
+		for (let i of connectors) {
+			i.remove();
+		}
 	}
 
 	async pullEvents () {
@@ -118,6 +405,22 @@ class EventsView {
 	}
 
 	async initialize () {
+		this.eventBodyTemplate = document.getElementById ('timelineElemTemplate');
+		this.eventTitleClass = 'timepointTitle';
+		this.eventTimepointClass = 'timepoint';
+		this.eventDescriptionClass = 'timepointBody';
+		this.pictureClass = 'timelineElemIcon';
+		this.eventParticipantBoxClass = 'eventParticipants';
+		this.eventParticipantTemplate = document.getElementById('eventParticipantTemplate');
+
+		this.reportEntryClass = 'reportEntry';
+		this.editEntryClass = 'editEntry';
+		this.lookupEntryClass = 'lookupEntry';
+
+		this.connectorTemplate = document.getElementById ('timelineConnectorTemplate');
+
+		this.eventPointer = document.getElementById ('latestEventHere');
+
 		this.types = this.entity.eventTypes;
 		let events = await this.pullEvents();
 		for (let i of events) {
@@ -329,6 +632,7 @@ class BandSearchSuggestions {
 	}
 
 	setupSuggestionListPosition () {
+		if (this.elem == null) return;
 		let box = this.parent.inputElem.getBoundingClientRect();
 		this.elem.style.top = (box.bottom + window.scrollY) + "px";
 		this.elem.style.left = (box.left + window.scrollX) + "px";
@@ -565,6 +869,7 @@ class EventGeneratorType {
 		this.eventGenerator.currentType = this;
 		this.eventGenerator.displayParticipants ();
 		this.eventGenerator.checkSubmitButtonActivation ();
+		this.eventGenerator.scrollToView ();
 	}
 
 	constuctInputs () {
@@ -925,11 +1230,22 @@ class EventGenerator {
 	showEventCreator () {
 		this.eventCreatorElem.classList.add ('ondisplay');
 		this.addEventButton.classList.remove ('ondisplay');
+		this.entity.eventsView.resize();
+		this.scrollToView ();
+	}
+
+	scrollToView () {
+		window.scrollTo ({
+			'left': window.scrollX,
+			'top': window.scrollY + this.eventCreatorElem.getBoundingClientRect().top,
+			'behavior': 'smooth'
+		});
 	}
 	
 	hideEventCreator () {
 		this.eventCreatorElem.classList.remove ('ondisplay');
 		this.addEventButton.classList.add ('ondisplay');
+		this.entity.eventsView.resize();
 	}
 	
 	generateOptionsSelector () {

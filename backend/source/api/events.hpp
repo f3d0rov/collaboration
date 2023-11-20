@@ -76,7 +76,8 @@ class EventType {
 	
 		void updateCommonEventData (int eventId, nlohmann::json &data, pqxx::work &work);
 
-		nlohmann::json formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, nlohmann::json &data);
+		nlohmann::json formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, std::string startDate, nlohmann::json &data);
+		nlohmann::json formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, std::string startDate, std::string endDate, nlohmann::json &data);
 	
 	public:
 		virtual std::string getTypeName () const = 0;
