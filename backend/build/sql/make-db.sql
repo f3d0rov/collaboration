@@ -25,14 +25,12 @@ create table user_login (
 	device_ip inet
 );
 
-create table events (
-	id serial primary key not null,
-	start_date date not null,
-	end_date date,
-	type varchar (32) not null,
+CREATE TABLE events (
+	id SERIAL PRIMARY KEY NOT NULL,
+	sort_index INT NOT NULL DEFAULT 0,
+	type VARCHAR (32) NOT NULL,
 
-	name varchar (128) not null,
-	description varchar (512) not null
+	description TEXT
 );
 
 create table user_event_contributions (
@@ -85,7 +83,8 @@ create table personalities (
 
 create table participation (
 	event_id int references events(id) ON DELETE CASCADE,
-	entity_id INT REFERENCES entities(id) ON DELETE CASCADE
+	entity_id INT REFERENCES entities(id) ON DELETE CASCADE,
+	PRIMARY KEY (event_id, entity_id)
 );
 
 create table bands (
@@ -93,19 +92,23 @@ create table bands (
 	entity_id INT REFERENCES entities (id) ON DELETE CASCADE
 );
 
-create table albums (
-	id serial primary key not null,
-	entity_id INT REFERENCES entities (id) ON DELETE CASCADE
+CREATE TABLE albums (
+	id SERIAL PRIMARY KEY,
+	name VARCHAR (256) NOT NULL,
+	description TEXT,
+
+	author INT REFERENCES entities (id) ON DELETE SET NULL
 );
 
 create table songs (
 	id serial primary key not null,
-	name varchar (128) not null,
+	title varchar (128) not null,
 
-	release int references events(id) on delete SET NULL default NULL, -- null for songs in albums
+	author INT REFERENCES entities(id) ON DELETE SET NULL,
 	album int references albums(id) on delete CASCADE default NULL, -- null for singles
-
-	band int references bands (id) on delete SET NULL DEFAULT NULL -- null for songs released by personalities
+	
+	release int references events(id) on delete CASCADE default NULL,
+	release_date date
 );
 
 create table concerts (
@@ -132,6 +135,11 @@ CREATE TABLE search_index (
 );
 
 
-SELECT url, title, type, picture_path, SUM(value)
-FROM indexed_resources INNER JOIN search_index ON indexed_resources.id = search_index.resource_id
-WHERE keyword IN ('trent') GROUP BY url, title, type, picture_path ORDER BY SUM(value);
+CREATE TABLE single_entity_related_events (
+	id INT PRIMARY KEY REFERENCES events ON DELETE CASCADE,
+	entity_id INT REFERENCES entities NOT NULL,
+	event_date DATE NOT NULL
+);
+
+
+

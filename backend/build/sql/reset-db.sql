@@ -1,3 +1,4 @@
+drop table if exists single_entity_related_events;
 drop table if exists search_index;
 drop table if exists indexed_resources;
 drop table if exists concerts;

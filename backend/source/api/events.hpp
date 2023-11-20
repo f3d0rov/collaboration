@@ -1,135 +1,184 @@
+
 #pragma once
 
-#include "../api_resource.hpp"
+#include <map>
+#include <vector>
 
-#include "user_auth.hpp"
+#include "../nlohmann-json/json.hpp"
+
 #include "page.hpp"
+#include "../database.hpp"
 
 
+class UserSideEventException;
 struct ParticipantEntity;
-class EventData;
+class InputTypeDescriptor;
 
-class CreateEntityEventResource;
-class GetEntityEventsResource;
-class UpdateEntityEventResource;
-class DeleteEntityEventResource;
+class EventType;
+class AllEntitiesEventType;
+class BandOnlyEventType;
+class PersonOnlyEventType;
 
-class ReportEntityEventResource;
-class GetEntityEventReportListResource;
+class EventManager;
 
+
+
+class UserSideEventException: public std::runtime_error {
+	public:
+		UserSideEventException (std::string w);
+};
 
 
 struct ParticipantEntity {
 	bool created = false;
 	int entityId;
 	std::string name;
+
+	void updateId ();
 };
 
 void to_json (nlohmann::json &j, const ParticipantEntity &pe);
 void from_json (const nlohmann::json &j, ParticipantEntity &pe);
 
 
-class EventData {
-	public:
-		int id;
-		std::string name, desc, type, startDate;
-		std::optional <std::string> endDate;
-		std::vector <ParticipantEntity> participants;
+struct InputTypeDescriptor {
+	std::string id;
+	std::string prompt;
+	std::string type;
+	bool optional = false;
+
+	int order = 0;
+
+	InputTypeDescriptor ();
+	InputTypeDescriptor (std::string id, std::string prompt, std::string type, bool optional = false);
 };
 
-void to_json (nlohmann::json &j, const EventData &pe);
+void to_json (nlohmann::json &j, const InputTypeDescriptor &pe);
 
 
+class EventType {
+	private:
+		template <class T> 	std::string wrapType (const T &t, pqxx::work &work);
+		template <>			std::string wrapType <int> (const int &t, pqxx::work &work);
+		template <>			std::string wrapType <std::string> (const std::string &s, pqxx::work &work);
+	
+	protected:
+		virtual ~EventType ();
 
-/******
- * POST {
- * 		"name": name,
- * 		"desc": description,
- * 		"type": type,
- * 		"start_date": date,
- * 		"end_date": date (optional),
- * 		"participants": [
- * 			{
- * 				"created": true,
- * 				"entity_id": entity id (int)
- * 			},
- * 			{
- * 				"created": false,
- * 				"name": band/person name (string)
- * 			}
- * 		]
- * } ->
- * {
- * 		"status": "success",
- * 		"event_id": created event id
- * }
-*/
-class CreateEntityEventResource: public ApiResource {
+		template <class T> T getParameter (std::string name, nlohmann::json &data);
+		template <class T> std::string getUpdateQueryString (std::string jsonParam, std::string colName, nlohmann::json &data, pqxx::work &work, bool &notFirst);
+		template <> std::string getUpdateQueryString <ParticipantEntity> (std::string jsonParam, std::string colName, nlohmann::json &data, pqxx::work &work, bool &notFirst);
+
+
+		std::vector <ParticipantEntity> getParticipantsFromJson (nlohmann::json &data);
+		void addParticipants (const int eventId, const std::vector <ParticipantEntity> &participants, pqxx::work &work);
+		std::vector <ParticipantEntity> getParticipantsForEvent (int eventId, pqxx::work &work);
+	
+		void updateCommonEventData (int eventId, nlohmann::json &data, pqxx::work &work);
+
+		nlohmann::json formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, std::string startDate, nlohmann::json &data);
+		nlohmann::json formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, std::string startDate, std::string endDate, nlohmann::json &data);
+	
 	public:
-		CreateEntityEventResource (mg_context *ctx, std::string uri);
-		static void addUserContributionWithWork (pqxx::work &work, const UsernameUid &user, int eventId);
-		static void addParticipantWithWork (pqxx::work &work, const ParticipantEntity &pe, int eventId);
-		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
-};
+		virtual std::string getTypeName () const = 0;
+		virtual std::string getDisplayName () const = 0;
+		virtual std::string getTitleFormat () const = 0;
+		
+		virtual std::vector <InputTypeDescriptor> getInputs () const = 0;
+		virtual std::vector <std::string> getApplicableEntityTypes () const = 0;
 
+		virtual nlohmann::json getEventDescriptor ();
 
-/***********
- * POST {
- * 		"entity_id": entity id
- * } -> {
- * 		"events": [
- * 			{
- * 				"name": name,
- * 				"desc": desc,
- * 				"type": type,	
- * 				"start_date": start_date,
- * 				"end_date" (if has): end_date,
- * 				"participants": [
- * 					{
- * 						"created": true,
- * 						"entity_id": id,
- * 						"name": name
- * 					},
- * 					{
- * 						"created": false,
- * 						"name": name
- * 					}
- * 				]	
- * 			}
- * 		]
- * }
-*/
-class GetEntityEventsResource: public ApiResource {
-	public:
-		GetEntityEventsResource (mg_context *ctx, std::string uri);
-		static std::vector <ParticipantEntity> getEventParticipantsWithWork (pqxx::work &work, int eventId);
-		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
+		virtual int createEvent (nlohmann::json &data) = 0;
+		virtual nlohmann::json getEvent (int id) = 0;
+		virtual int updateEvent (nlohmann::json &data) = 0;
+		virtual void deleteEvent (int id); // Default implementation deletes corresponding row in events table
 };
 
 
-class UpdateEntityEventResource: public ApiResource {
+class AllEntitiesEventType: virtual public EventType {
 	public:
-		UpdateEntityEventResource (mg_context *ctx, std::string uri);
-		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
+		std::vector <std::string> getApplicableEntityTypes () const final;
 };
 
 
-class DeleteEntityEventResource: public ApiResource {
+class BandOnlyEventType: virtual public EventType {
 	public:
-		DeleteEntityEventResource (mg_context *ctx, std::string uri);
-		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
+		std::vector <std::string> getApplicableEntityTypes () const final;
 };
 
 
-class ReportEntityEventResource: public ApiResource {
+class PersonOnlyEventType: virtual public EventType {
 	public:
-		ReportEntityEventResource (mg_context *ctx, std::string uri);
-		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
+		std::vector <std::string> getApplicableEntityTypes () const final;
 };
 
 
-class GetEntityEventReportListResource : public ApiResource {
+
+
+class EventManager {
+	private:
+		static EventManager *_obj;
+		EventManager ();
+		EventManager (const EventManager &) = delete;
+		EventManager (EventManager &&) = delete;
+	
+		std::map <std::string, std::shared_ptr <EventType>> _types;
+
 	public:
-		GetEntityEventReportListResource (mg_context *ctx, std::string uri);
-		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
+		static EventManager &getManager ();
+	
+		void registerEventType (std::shared_ptr <EventType> et);
+		int size() const;
+
+		std::shared_ptr <EventType> getEventTypeByName (std::string typeName);
+		std::shared_ptr <EventType> getEventTypeFromJson (nlohmann::json &data);
+		std::shared_ptr <EventType> getEventTypeById (int eventId);
+
+		// returns event id
+		int createEvent (nlohmann::json &data, int byUser);
+		nlohmann::json getEvent (int eventId);
+		nlohmann::json getEventsForEntity (int entityId);
+		int updateEvent (nlohmann::json &data, int byUser);
+		void deleteEvent (int eventId, int byUser);
+
+		// Data fields to create different event types
+		nlohmann::json getAvailableEventDescriptors ();
 };
+
+
+
+
+template <class T>
+T EventType::getParameter (std::string name, nlohmann::json &data) {
+	if (data.contains (name) == false) {
+		throw UserSideEventException (
+			std::string ("Нет поля '") + name + "' в переданной структуре данных" 
+		);
+	}
+
+	try {
+		return data[name].get <T>();
+	} catch (nlohmann::json::exception &e) {
+		throw UserSideEventException (
+			std::string ("Невозможно привести поле '") + name + "' к необходимому типу"
+		);
+	}
+}
+
+template <class T> std::string EventType::wrapType (const T &t, pqxx::work &work) {
+	throw std::logic_error ("std::string EventType::wrapType<T> вызван с непредусмотренным типом данных");
+}
+
+
+template <class T>
+std::string EventType::getUpdateQueryString (std::string jsonParam, std::string colName, nlohmann::json &data, pqxx::work &work, bool &notFirst) {
+	if (data.contains (jsonParam)) {
+		T value = this->getParameter<T> (jsonParam, data);
+		std::string result = (notFirst ? "," : "") + colName + "=";
+		notFirst = true;
+		result += this->wrapType<T> (value, work);
+		return result;
+	}
+	return "";
+}

@@ -16,8 +16,7 @@
 		<script src="scripts/is_person_page.js"></script>
 		<script src="scripts/userauth.js"></script>
 		<script src="scripts/header.js"></script>
-		<script src="scripts/entity_events.js"></script>
-		<script src="scripts/person.js"></script>
+		<script src = "scripts/entity.js"></script>
 	</head>
 	<body>
 		<div class = "header">
@@ -84,41 +83,56 @@
 								</div>
 								<div class = "timepointBox">
 									<span class = "timepoint"></span> 
-									<img src = "resources/lookup.svg" class = "timelineInlineButton" id = "lookupEntry"/>
-									<img src = "resources/edit.svg" class = "timelineInlineButton" id = "editEntry"/>
-									<img src = "resources/report.svg" class = "timelineInlineButton" id = "reportEntry"/>
+									<img src = "resources/lookup.svg" class = "timelineInlineButton lookupEntry"/>
+									<img src = "resources/edit.svg" class = "timelineInlineButton editEntry"/>
+									<img src = "resources/report.svg" class = "timelineInlineButton reportEntry"/>
 								</div>
 								<div class = "timepointBody"></div>
+								<div class = "eventParticipants">
+									<div class = "eventParticipant template" id = "eventParticipantTemplate"></div>
+								</div>
 							</td>
 						</tr>
 					</table>
 				</div>
 
+				<div class = "template" id = "latestEventHere"></div>
+
 				<svg class = "timelineConnector template" role="img" id = "timelineConnectorTemplate" width = "8px" height="100px">
 					<line x1="4" y1="0" x2="4" y2="100" stroke="white" stroke-width="4"/>
 				</svg>
 				
-				<div class = "timelineElem createTilmelineElem" id = "timelineElemCreate">
+				<div class = "timelineElem createTimelineElem" id = "timelineElemCreate">
 					<div class="timelineElemIconBox">
 						<img src = "./resources/timeline/song.svg" class = "timelineElemIcon">
 					</div>
-					<div class = "timelineElemData">
-						<div class = "timelineTypeSelector">
-							<div class = "timelineTypeSelectorButton noselect selected" value = "album"> Альбом </div>
-							<div class = "timelineTypeSelectorButton noselect" value = "ep"> Сингл </div>
-							<div class = "timelineTypeSelectorButton noselect" value = "band_foundation"> Основание группы </div>
-							<div class = "timelineTypeSelectorButton noselect" value = "band_join"> Присоединение к группе </div>
-							<div class = "timelineTypeSelectorButton noselect" value = "band_leave"> Уход из группы </div>
+					<div class = "timelineElemData" id = "BigBoxx">
+						<div class = "cancelCreation" id = "cancelCreationButton">
+							Отменить
 						</div>
-
-						<div class = "inputBox dateInputBox" id = "eventDateBox"> 
+						<div class = "timelineTypeSelector">
+							<div class = "timelineTypeSelectorButton noselect template" id = "timelineTypeSelectorTemplate"> </div>
+						</div>
+						<!-- <div class = "inputBox dateInputBox" id = "eventDateBox"> 
 							<div class = "creationInputLabel"> Дата события </div>
 							<input class = "creationInput" id = "eventDate" type = "date"> 
+						</div> -->
+
+						<div class = "inputPlacer template" id = "inputPlacer"></div>
+
+						<div class = "inputBox template" id = "textInputTemplate">
+							<div class = "creationInputLabel">  </div>
+							<input class = "creationInput" type = "text">
 						</div>
 
-						<div class = "inputBox template" id = "createTimelineElemInputTemplate">
+						<div class = "inputBox template" id = "dateInputTemplate">
 							<div class = "creationInputLabel">  </div>
-							<input class = "creationInput">
+							<input class = "creationInput" type = "date">
+						</div>
+
+						<div class = "inputBox template" id = "textareaInputTemplate">
+							<div class = "creationInputLabel">  </div>
+							<textarea class = "creationInput"></textarea>
 						</div>
 
 						<div class = "template creationInputSuggestionList" id = "creationInputSuggestionListTemplate">
@@ -127,7 +141,7 @@
 
 						<div class = "addParticipants" id = "addParticipantField">
 							<div class = "participantInput template" id = "participantInputTemplate"> 
-								<input class = "participantName" value = "Шумахер">
+								<input class = "participantName" value = "">
 								<img class = "removeParticipantIcon" src="resources/bad.svg"/>
 							</div>
 							<div class = "participantSuggestionList template" id = "participantSuggestionListTemplate">
@@ -139,12 +153,12 @@
 							</div>
 						</div>
 
-						<div class = "uploadEventButton noselect" id = "tryUploadEvent"> Создать событие </div>
+						<div class = "uploadEventButton noselect inactive" id = "tryUploadEvent"> Создать событие </div>
 					</div>
 				</div>
 
 
-				<div class = "addMissing">
+				<div class = "addMissing ondisplay" id = "addMissingEvent">
 					<img src="resources/add.svg"/>
 					<div class = "addMissingPrompt"> Добавить событие </div>
 				</div>

@@ -91,12 +91,12 @@ class UploadPictureResource: public Resource {
 
 class EntityDataResource: public ApiResource {
 	private:
-		std::string _table;
 		std::string _pics;
 	public:
-		EntityDataResource (mg_context *ctx, std::string uri, std::string entityTable, std::string picsUri);
+		EntityDataResource (mg_context *ctx, std::string uri, std::string picsUri);
 		static bool entityCreated (int id);
 		static int getEntityByNameWithWork (pqxx::work &work, const std::string &name);
+		static int getEntityByName (const std::string &name);
 		static EntityData getEntityDataByIdWithWork (pqxx::work &work, int id);
 		static EntityData getEntityDataById (int id);
 		std::unique_ptr <ApiResponse> processRequest (RequestData &rd, nlohmann::json body) override;

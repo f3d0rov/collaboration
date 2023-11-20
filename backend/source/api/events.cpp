@@ -1,8 +1,25 @@
 
 #include "events.hpp"
 
+#define TYPE "type"
+
+
+UserSideEventException::UserSideEventException (std::string w):
+std::runtime_error (w) {
+
+}
+
+
+
+
+void ParticipantEntity::updateId () {
+	if (!created) {
+		this->entityId = EntityDataResource::getEntityByName (this->name);
+	}
+}
 
 void to_json (nlohmann::json &j, const ParticipantEntity &pe) {
+	// ? Should entity_id be set independently of pe.created?
 	j["created"] = pe.created;
 	if (pe.created) {
 		j["entity_id"] = pe.entityId;
@@ -13,225 +30,295 @@ void to_json (nlohmann::json &j, const ParticipantEntity &pe) {
 }
 
 void from_json (const nlohmann::json &j, ParticipantEntity &pe) {
-	pe.created = j["created"].get <bool>();
+	pe.created = j.at("created").get <bool>();
 	if (pe.created) {
-		pe.entityId = j["entity_id"].get <int>();
-		if (j.contains ("name")) pe.name = j["name"].get <std::string>();
+		pe.entityId = j.at("entity_id").get <int>();
+		if (j.contains ("name")) pe.name = j.at("name").get <std::string>();
 	} else {
-		pe.name = j["name"].get <std::string>();
+		pe.name = j.at("name").get <std::string>();
+		pe.updateId();
 	}
 }
 
-void to_json (nlohmann::json &j, const EventData &ed) {
-	j ["id"] = ed.id;
-	
-	j ["name"] = ed.name;
-	j ["description"] = ed.desc;
-	j ["type"] = ed.type;
-
-	j ["start_date"] = ed.startDate;
-	if (ed.endDate.has_value()) j ["end_date"] = ed.endDate.value();
-
-	j ["participants"] = ed.participants;
-}
 
 
-CreateEntityEventResource::CreateEntityEventResource (mg_context *ctx, std::string uri):
-ApiResource (ctx, uri) {
+
+InputTypeDescriptor::InputTypeDescriptor () {
 
 }
 
-void CreateEntityEventResource::addUserContributionWithWork (pqxx::work &work, const UsernameUid &user, int eventId) {
-	std::string insertUserContributionQuery = "INSERT INTO user_event_contributions (user_id, contributed_on, event_id) VALUES ("
-		+ /* user id */ 	work.quote (user.uid) + ","
-		+ /* contrib on*/	"CURRENT_DATE,"
-		+ /* event id */	std::to_string (eventId) + ");";
-	work.exec0 (insertUserContributionQuery);
+InputTypeDescriptor::InputTypeDescriptor (std::string id, std::string prompt, std::string type, bool optional):
+id (id), prompt (prompt), type (type), optional (optional) {
+
 }
 
-void CreateEntityEventResource::addParticipantWithWork (pqxx::work &work, const ParticipantEntity &pe, int eventId) {
-	int entityId;
-	if (pe.created) {
-		entityId = pe.entityId;
-	} else {
-		entityId = EntityDataResource::getEntityByNameWithWork (work, pe.name);
+void to_json (nlohmann::json &j, const InputTypeDescriptor &itd) {
+	j["id"] = itd.id;
+	j["prompt"] = itd.prompt;
+	j["type"] = itd.type;
+	j["optional"] = itd.optional;
+	j["order"] = itd.order;
+}
+
+
+
+
+EventType::~EventType () = default;
+
+template <>
+std::string EventType::getUpdateQueryString <ParticipantEntity> (std::string jsonParam, std::string colName, nlohmann::json &data, pqxx::work &work, bool &notFirst) {
+	if (data.contains (jsonParam)) {
+		ParticipantEntity entity = data [jsonParam].get <ParticipantEntity>();
+		notFirst = true;
+		return std::string(notFirst ? "," : "") + colName + "=" + std::to_string(entity.entityId);
 	}
-	std::string addParticipationQuery = "INSERT INTO participation (event_id, entity_id) VALUES ("s
-		+ /* event id */ std::to_string (eventId) + ","
-		+ /* entity id*/ std::to_string (entityId) + ");";
-	work.exec (addParticipationQuery);
+	return "";
 }
 
-ApiResponsePtr CreateEntityEventResource::processRequest (RequestData &rd, nlohmann::json body) {
-	UsernameUid user = CheckSessionResource::checkSessionId (rd);
-	if (!user.valid) return makeApiResponse (401);
-	if (!(
-		body.contains ("name")
-		&& body.contains ("desc")
-		&& body.contains ("type")
-		&& body.contains ("start_date")
-		&& body.contains ("participants")
-	)) return makeApiResponse (400);
+std::vector <ParticipantEntity> EventType::getParticipantsFromJson (nlohmann::json &data) {
+	return this->getParameter <std::vector <ParticipantEntity>> ("participants", data);
+}
 
-	std::string name, desc, type, startDate;
-	std::optional <std::string> endDate;
-	std::vector <ParticipantEntity> participants;
-	try {
-		name = body ["name"].get <std::string>();
-		desc = body ["desc"].get <std::string>();
-		type = body ["type"].get <std::string>();
-		startDate = body ["start_date"].get <std::string>();
-		if (body.contains ("end_date")) endDate = body ["end_date"].get <std::string> ();
-		participants = body ["participants"].get <std::vector <ParticipantEntity>>();
-	} catch (nlohmann::json::exception &e) {
-		return makeApiResponse (nlohmann::json{{"error", e.what()}}, 400);
+void EventType::addParticipants (const int eventId, const std::vector <ParticipantEntity> &participants, pqxx::work &work) {
+	if (participants.size() == 0) return;
+	std::string addParticipantsQuery = "INSERT INTO participation (event_id, entity_id) VALUES ";
+	bool notFirst = false;
+	std::string eventIdStr = std::to_string (eventId);
+	for (const auto &i: participants) {
+		if (notFirst) addParticipantsQuery += ",";
+		addParticipantsQuery += std::string("(") + eventIdStr + "," + std::to_string (i.entityId) + ")";
+		notFirst = true;
 	}
-
-	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
-	
-	// Insert event ***************************************
-	std::string insertEventQuery = 
-		"INSERT INTO events (name, description, type, start_date, end_date) "s
-		+ " VALUES ("
-		+ /* name */ 			work.quote (name) + ","
-		+ /* description */		work.quote (desc) + ","
-		+ /* type */			work.quote (type) + ","
-		+ /* start_date */		work.quote (startDate) + ","
-		+ /* end_date */		(endDate.has_value() ? work.quote (endDate.value()) : "NULL")
-		+ ") RETURNING id;";
-	pqxx::row eventIdRow = work.exec1 (insertEventQuery);
-	int eventId = eventIdRow[0].as <int>();
-
-	// Insert user contribution ***************************
-	CreateEntityEventResource::addUserContributionWithWork (work, user, eventId);
-
-	// Insert participants ********************************
-	for (const auto &i: participants) addParticipantWithWork (work, i, eventId);
-	work.commit();
-
-	return makeApiResponse (nlohmann::json {{"status", "success"}, {"event_id", eventId}}, 200);
+	addParticipantsQuery += ";";
+	auto res = work.exec (addParticipantsQuery);
+	if (res.affected_rows() != participants.size()) {
+		logger << "EventType::addParticipants: res.affected_rows() != participants.size()" << std::endl;
+	}
 }
 
-
-
-
-GetEntityEventsResource::GetEntityEventsResource (mg_context *ctx, std::string uri):
-ApiResource (ctx, uri) {
-
-}
-
-std::vector <ParticipantEntity> GetEntityEventsResource::getEventParticipantsWithWork (pqxx::work &work, int eventId) {
-	std::vector <ParticipantEntity> participants;
-	std::string getParticipantsQuery = 
-		"SELECT id, name, awaits_creation "s
-		+ "FROM participation INNER JOIN entities on participation.entity_id=entities.id "
-		+ "WHERE event_id=" + std::to_string (eventId) + ";";
+std::vector <ParticipantEntity> EventType::getParticipantsForEvent (int eventId, pqxx::work &work) {
+	std::string getParticipantsQuery = std::string (
+		"SELECT awaits_creation, entities.id, name "
+		"FROM participation INNER JOIN entities ON participation.entity_id=entities.id "
+		"WHERE event_id="
+	) + std::to_string (eventId) + ";";
 	auto result = work.exec (getParticipantsQuery);
+
+	std::vector <ParticipantEntity> participants;
 	for (int i = 0; i < result.size(); i++) {
+		auto row = result[i];
 		ParticipantEntity pe;
-		pqxx::row row = result[i];
-		pe.entityId = 	row[0].as <int>();
-		pe.name = 		row[1].as <std::string>();
-		pe.created = 	!(row[2].as <bool>());
+		pe.created = !(row ["awaits_creation"].as <bool>());
+		pe.entityId = row ["id"].as <int>();
+		pe.name = row ["name"].as <std::string>();
 
 		participants.push_back (pe);
 	}
-
+	
 	return participants;
 }
 
-ApiResponsePtr GetEntityEventsResource::processRequest (RequestData &rd, nlohmann::json body) {
-	if (rd.method != "POST") return makeApiResponse (405);
-	// No auth required
-	if (!body.contains ("entity_id")) return makeApiResponse (400);
-	int entityId = 0;
-	try {
-		entityId = body["entity_id"].get <int>();
-	} catch (nlohmann::json::exception &e) {
-		return makeApiResponse (nlohmann::json{{"error", e.what()}}, 400);
+void EventType::updateCommonEventData (int eventId, nlohmann::json &data, pqxx::work &work) {
+	bool notFirst = false;
+	std::string changeEventQuery = "UPDATE events SET ";
+	changeEventQuery += this->getUpdateQueryString<int> ("sort_index", "sort_index", data, work, notFirst);
+	changeEventQuery += this->getUpdateQueryString<std::string> ("description", "description", data, work, notFirst);
+	changeEventQuery += std::string(" WHERE id=") + std::to_string (eventId) + ";";
+	if (notFirst /* changing something? */) work.exec (changeEventQuery);
+
+}
+
+nlohmann::json EventType::formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, std::string startDate, nlohmann::json &data) {
+	return nlohmann::json {
+		{"id", eventId},
+		{"type", this->getTypeName()},
+		{"sort_index", sortIndex},
+
+		{"title", this->getTitleFormat()},
+		{"description", desc},
+		{"start_date", startDate},
+
+		{"data", data},
+		{"participants", this->getParticipantsForEvent (eventId, work)}
+	};
+}
+
+nlohmann::json EventType::formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, std::string startDate, std::string endDate, nlohmann::json &data) {
+	auto resp = formGetEventResponse (work, eventId, desc, sortIndex, startDate, data);
+	resp ["end_date"] = endDate;
+	return resp;
+}
+
+nlohmann::json EventType::getEventDescriptor () {
+	auto inputs = this->getInputs ();
+	for (int i = 0; i < inputs.size(); i++) {
+		inputs[i].order = i;
+	}
+	return nlohmann::json{
+		{"type_display_name", this->getDisplayName()},
+		{"applicable", this->getApplicableEntityTypes()},
+		{"inputs", inputs}
+	};
+}
+
+
+template <>
+std::string EventType::wrapType <int> (const int &t, pqxx::work &work) {
+	return std::to_string (t);
+}
+
+template <>
+std::string EventType::wrapType <std::string> (const std::string &s, pqxx::work &work) {
+	return work.quote (s);
+}
+
+
+void EventType::deleteEvent (int id) {
+	std::string deleteEventQuery = std::string("DELETE FROM events WHERE id=") + std::to_string(id) + ";";
+	auto conn = database.connect();
+	pqxx::work work(*conn.conn);
+	auto res = work.exec (deleteEventQuery);
+	if (res.affected_rows() > 1) throw std::logic_error ("EventType::deleteEvent: res.affected_rows() > 1");
+	if (res.affected_rows() == 0) throw UserSideEventException ("Не существует события с заданным id");
+	work.commit();
+}
+
+
+
+std::vector <std::string> AllEntitiesEventType::getApplicableEntityTypes () const {
+	return {"band", "person"};
+}
+
+std::vector <std::string> BandOnlyEventType::getApplicableEntityTypes () const {
+	return {"band"};
+}
+
+std::vector <std::string> PersonOnlyEventType::getApplicableEntityTypes () const {
+	return {"person"};
+}
+
+
+
+
+EventManager *EventManager::_obj = nullptr;
+
+EventManager::EventManager () {
+
+}
+
+EventManager &EventManager::getManager () {
+	if (EventManager::_obj == nullptr) EventManager::_obj = new EventManager{};
+	return *EventManager::_obj;
+}
+
+void EventManager::registerEventType (std::shared_ptr <EventType> et) {
+	std::string typeName = et->getTypeName();
+	if (this->_types.contains (typeName)) {
+		throw std::logic_error (
+			std::string("Повтор имени типа события: '") + typeName + "'"
+		);
+	}
+	this->_types [typeName] = et;
+	logger << "В EventManager зарегистрирован тип события '" + typeName + "'" << std::endl;
+}
+
+int EventManager::size() const {
+	return this->_types.size();
+}
+
+std::shared_ptr <EventType> EventManager::getEventTypeByName (std::string typeName) {
+	if (this->_types.contains (typeName) == false) {
+		throw UserSideEventException (std::string("Некорректный тип события: '") + typeName + "'");
+	}
+	return this->_types [typeName];
+}
+
+
+std::shared_ptr <EventType> EventManager::getEventTypeFromJson (nlohmann::json &data) {
+	if (data.contains (TYPE) == false) {
+		throw UserSideEventException ("Отсутсвует поле 'type' при создании события");
 	}
 
-	std::string getEventsQuery = 
-		"SELECT id, name, description, type, start_date, end_date "s
-		+ "FROM participation INNER JOIN events ON participation.event_id = events.id "s
-		+ "WHERE participation.entity_id = " + std::to_string (entityId) + ";";
+	std::string typeName;
+	try {
+		typeName = data [TYPE].get <std::string>();
+	} catch (nlohmann::json::exception &e) {
+		throw UserSideEventException ("Невозможно привести поле 'type' к строке при создании события");
+	}
+
+	return this->getEventTypeByName (typeName);
+}
+
+std::shared_ptr <EventType> EventManager::getEventTypeById (int eventId) {
+	std::string getEventTypeByIdQuery = std::string () +
+		"SELECT type FROM events WHERE id=" + std::to_string (eventId) + ";";
 
 	auto conn = database.connect();
 	pqxx::work work (*conn.conn);
 
-	pqxx::result eventsQueryResults = work.exec (getEventsQuery);
-	if (eventsQueryResults.size() == 0) {
-		return makeApiResponse (nlohmann::json{{"events", nlohmann::json::array()}}, 200);
+	auto res = work.exec (getEventTypeByIdQuery);
+	if (res.size() == 0) throw UserSideEventException ("Нет события с выбранным id");
+
+	std::string typeName = res[0][0].as <std::string>();
+	return this->getEventTypeByName (typeName);
+}
+
+int EventManager::createEvent (nlohmann::json &data, int byUser) {
+	// TODO: check user creds, add user contrib
+	return this->getEventTypeFromJson (data)->createEvent (data);
+}
+
+
+nlohmann::json EventManager::getEvent (int eventId) {
+	return this->getEventTypeById (eventId)->getEvent (eventId);
+}
+
+
+nlohmann::json EventManager::getEventsForEntity (int entityId) {
+	std::string getEventListQuery = std::string()
+		+ "SELECT id FROM events INNER JOIN participation ON participation.event_id=events.id WHERE entity_id="
+		+ std::to_string (entityId) + ";";
+
+	pqxx::result result;
+
+	{ // {} used as a safety measure to avoid keeping `conn` and `work` in scope after calling `conn.release()`
+		auto conn = database.connect ();
+		pqxx::work work (*conn.conn);
+		result = work.exec (getEventListQuery);
 	}
-	
-	std::vector <EventData> events;
-	for (int i = 0; i < eventsQueryResults.size(); i++) {
-		EventData ed;
-		auto row = eventsQueryResults [i];
 
-		ed.id = row[0].as <int>();
-		ed.name = row[1].as <std::string>();
-		ed.desc = row[2].as <std::string>();
-		ed.type = row[3].as <std::string>();
-		ed.startDate = row[4].as <std::string>();
-		if (row[5].is_null() == false) ed.endDate = row[5].as <std::string>();
-		
-		events.push_back (ed);
+	std::vector <int> eventIds;
+
+	for (int i = 0; i < result.size(); i++) {
+		eventIds.push_back (result[i][0].as <int>());
 	}
 
-	for (auto &i: events) {
-		i.participants = GetEntityEventsResource::getEventParticipantsWithWork (work, i.id);
+	std::vector <nlohmann::json> events;
+	events.reserve (eventIds.size());
+
+	for (const auto &i: eventIds) {
+		events.push_back (this->getEvent (i));
 	}
 
-	return makeApiResponse (nlohmann::json{{"events", events}}, 200);
+	return nlohmann::json {{"events", events}};
 }
 
-
-UpdateEntityEventResource::UpdateEntityEventResource (mg_context *ctx, std::string uri):
-ApiResource (ctx, uri) {
-
+int EventManager::updateEvent (nlohmann::json &data, int byUser) {
+	// TODO: check user creds, add user contrib
+	return this->getEventTypeFromJson (data)->updateEvent (data);
 }
 
-ApiResponsePtr UpdateEntityEventResource::processRequest (RequestData &rd, nlohmann::json body) {
-	if (!CheckSessionResource::isLoggedIn (rd)) return makeApiResponse (401);
-	
+void EventManager::deleteEvent (int eventId, int byUser) {
+	// TODO: check user creds, add user contrib
+	return this->getEventTypeById (eventId)->deleteEvent (eventId);
 }
 
-
-
-
-DeleteEntityEventResource::DeleteEntityEventResource (mg_context *ctx, std::string uri):
-ApiResource (ctx, uri) {
-
+nlohmann::json EventManager::getAvailableEventDescriptors () {
+	nlohmann::json result = nlohmann::json::object();
+	for (const auto &i: this->_types) {
+		auto et = i.second;
+		result [i.first] = et->getEventDescriptor();
+	}
+	return result;
 }
 
-ApiResponsePtr DeleteEntityEventResource::processRequest (RequestData &rd, nlohmann::json body) {
-	if (!CheckSessionResource::isLoggedIn (rd, 1)) return makeApiResponse (401);
-	
-}
-
-
-
-
-ReportEntityEventResource::ReportEntityEventResource (mg_context *ctx, std::string uri):
-ApiResource (ctx, uri) {
-
-}
-
-ApiResponsePtr ReportEntityEventResource::processRequest (RequestData &rd, nlohmann::json body) {
-	
-}
-
-
-
-
-GetEntityEventReportListResource::GetEntityEventReportListResource (mg_context *ctx, std::string uri):
-ApiResource (ctx, uri) {
-
-}
-
-ApiResponsePtr GetEntityEventReportListResource::processRequest (RequestData &rd, nlohmann::json body) {
-	if (!CheckSessionResource::isLoggedIn (rd, 1)) return makeApiResponse (401);
-	
-}

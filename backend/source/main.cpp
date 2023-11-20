@@ -20,7 +20,10 @@
 #include "api/search.hpp"
 #include "api/user_auth.hpp"
 #include "api/page.hpp"
+
 #include "api/events.hpp"
+#include "api/event_types.hpp"
+#include "api/eventResources.hpp"
 
 
 #define DEFAULT_PORT "8080"
@@ -222,9 +225,18 @@ int main (int argc, const char *argv[]) {
 
 	std::filesystem::path entityPics = "./user/";
 
+	EventManager &eventManager = EventManager::getManager();
+	BandFoundationEventType *bfe = new BandFoundationEventType{};
+
+	eventManager.registerEventType (std::make_shared <BandFoundationEventType>());
+	eventManager.registerEventType (std::make_shared <BandJoinEventType>());
+	eventManager.registerEventType (std::make_shared <BandLeaveEventType>());
+	eventManager.registerEventType (std::make_shared <SinglePublicationEventType>());
+	logger << "Зарегистрированно типов событий: " << eventManager.size() << std::endl;
+
 	SharedDirectory sharedFiles (ctx, frontendDir, true, dontCache);
 	WebResource indexPage (ctx, "", frontendDir + "/index.html", dontCache);
-	WebResource personPage (ctx, "p", frontendDir + "/person.html", dontCache);
+	WebResource personPage (ctx, "e", frontendDir + "/entity.html", dontCache);
 	WebResource searchPage (ctx, "search", frontendDir + "/search.html", dontCache);
 	WebResource createPage (ctx, "create", frontendDir + "/create_page.html", dontCache);
 
@@ -235,7 +247,7 @@ int main (int argc, const char *argv[]) {
 	
 	TypedSearchResource bandSearchResource				(ctx, "api/search/b", "band");
 	TypedSearchResource personSearchResource			(ctx, "api/search/p", "person");
-	EntitySearchResource EntitySearchResource			(ctx, "api/search/entities");
+	EntitySearchResource entitySearchResource			(ctx, "api/search/entities");
 
 	UserLoginResource userLoginResource 				(ctx, "api/u/login");
 	UserLogoutResource userLogoutResource 				(ctx, "api/u/logout");
@@ -251,13 +263,13 @@ int main (int argc, const char *argv[]) {
 
 	DynamicDirectory userPics 							(ctx, "imgs", "./user/");
 
-	EntityDataResource personDataApiResource 			(ctx, "api/p", "personalities", std::string(userPics.uri()));
-	EntityDataResource bandDataApiResource 				(ctx, "api/b", "bands", std::string(userPics.uri()));
-	EntityDataResource albumDataApiResource 			(ctx, "api/a", "albums", std::string(userPics.uri()));
+	EntityDataResource EntityDataResource 				(ctx, "api/p", std::string(userPics.uri()));
 
-
+	GetEntityEventDescriptorsResource eventDescriptorsResource (ctx, "api/events/types");
 	CreateEntityEventResource createEntityEventResource	(ctx, "api/events/create");
-	GetEntityEventsResource GetEntityEventsResource		(ctx, "api/events/get");
+	GetEntityEventsResource getEntityEventsResource		(ctx, "api/events/getfor");
+	UpdateEntityEventResource updateEntityEventResource (ctx, "api/events/update");
+	DeleteEntityEventResource deleteEntityEventResource (ctx, "api/events/delete");
 
 	while (1) { // Ждем входящие подключения
 		occasionalTasks ();	
