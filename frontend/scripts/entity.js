@@ -1419,8 +1419,14 @@ class Entity {
 		return fRes ['options'];
 	}
 
+	unveil () {
+		this.veil.classList.add ('nodisplay');
+		setTimeout (() => { this.veil.style.display = 'none'}, 200);
+	}
+
 	async pullData () {
 		this.entityData = await this.getEntityData ();
+		this.veil = document.getElementById ('veil');
 
 		if ('redirect' in this.entityData) {
 			window.location.replace (this.entityData['redirect']);
@@ -1431,9 +1437,14 @@ class Entity {
 		console.log (this.entityData);
 		console.log (this.eventTypes);
 
-		this.dataView.initialize ();
-		this.eventsView.initialize ();
-		this.eventGenerator.initialize ();
+		Promise.all ([
+			this.dataView.initialize(),
+			this.eventsView.initialize(),
+			this.eventGenerator.initialize(),
+		]).then (
+			() => { this.unveil(); },
+			(err) => { flashNetworkError(); console.log (err); } 
+		);
 	}
 
 }
