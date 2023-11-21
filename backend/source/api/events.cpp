@@ -211,6 +211,19 @@ EventManager &EventManager::getManager () {
 	return *EventManager::_obj;
 }
 
+void EventManager::addUserEventContribution (int userId, int eventId) {
+	std::string addContributionQuery = std::string () +
+		"INSERT INTO user_event_contributions (user_id, contributed_on, event_id) "
+		"VALUES (" + std::to_string (userId) + ",CURRENT_DATE," + std::to_string (eventId) + ")";
+	
+	auto conn = database.connect();
+	pqxx::work work (*conn.conn);
+
+	work.exec (addContributionQuery);
+	work.commit ();
+}
+
+
 void EventManager::registerEventType (std::shared_ptr <EventType> et) {
 	std::string typeName = et->getTypeName();
 	if (this->_types.contains (typeName)) {
@@ -265,7 +278,9 @@ std::shared_ptr <EventType> EventManager::getEventTypeById (int eventId) {
 
 int EventManager::createEvent (nlohmann::json &data, int byUser) {
 	// TODO: check user creds, add user contrib
-	return this->getEventTypeFromJson (data)->createEvent (data);
+	int id = this->getEventTypeFromJson (data)->createEvent (data);
+	this->addUserEventContribution (byUser, id);
+	return id;
 }
 
 
@@ -305,12 +320,15 @@ nlohmann::json EventManager::getEventsForEntity (int entityId) {
 
 int EventManager::updateEvent (nlohmann::json &data, int byUser) {
 	// TODO: check user creds, add user contrib
-	return this->getEventTypeFromJson (data)->updateEvent (data);
+	auto id = this->getEventTypeFromJson (data)->updateEvent (data);
+	this->addUserEventContribution (byUser, id);
+	return id;
 }
 
 void EventManager::deleteEvent (int eventId, int byUser) {
 	// TODO: check user creds, add user contrib
-	return this->getEventTypeById (eventId)->deleteEvent (eventId);
+	this->getEventTypeById (eventId)->deleteEvent (eventId);
+	this->addUserEventContribution (byUser, eventId);
 }
 
 nlohmann::json EventManager::getAvailableEventDescriptors () {
@@ -321,4 +339,8 @@ nlohmann::json EventManager::getAvailableEventDescriptors () {
 	}
 	return result;
 }
+
+// std::map <int, std::string> getEventReportReasons () {
+
+// }
 

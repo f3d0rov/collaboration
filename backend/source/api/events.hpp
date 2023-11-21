@@ -125,6 +125,8 @@ class EventManager {
 	
 		std::map <std::string, std::shared_ptr <EventType>> _types;
 
+		void addUserEventContribution (int userId, int eventId);
+
 	public:
 		static EventManager &getManager ();
 	
@@ -144,6 +146,7 @@ class EventManager {
 
 		// Data fields to create different event types
 		nlohmann::json getAvailableEventDescriptors ();
+		// std::map <int, std::string> getEventReportReasons ();
 };
 
 
