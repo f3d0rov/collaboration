@@ -194,14 +194,21 @@ class EventReporter {
 	showWindow () {
 		this.veil.classList.add ("ondisplay");
 		this.window.classList.add ("ondisplay");
+		this.veil.classList.remove ("hiddenRep");
+		this.window.classList.remove ("hiddenRep");
 		this.resize();
 	}
 
 	hideWindow () {
-		this.veil.classList.remove ("ondisplay");
-		this.window.classList.remove ("ondisplay");
-		this.reset();
+		this.veil.classList.add ("hiddenRep");
+		this.window.classList.add ("hiddenRep");
 		this.eventId = null;
+
+		setTimeout (() => {
+			this.veil.classList.remove ("ondisplay");
+			this.window.classList.remove ("ondisplay");
+		}, 200);
+		this.reset();
 	}
 
 	reset () {

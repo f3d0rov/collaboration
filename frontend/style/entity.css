@@ -23,8 +23,9 @@ body {
 }
 
 .reportWindowVeil {
-	display: none;
+	display: block;
 	position: fixed;
+	visibility: hidden;
 	z-index: 49;
 
 	padding: 0;
@@ -39,15 +40,23 @@ body {
 	opacity: 0.6;
 
 	cursor: pointer;
+
+	transition: opacity 0.2s ease-in-out;
 }
 
 .reportWindowVeil.ondisplay {
-	display: block;
+	visibility: visible;
+}
+
+.reportWindowVeil.hiddenRep {
+	opacity: 0;
+	transition: opacity 0.2s ease-in-out;
 }
 
 .reportWindow {
-	display: none;
+	display: block;
 	position: fixed;
+	visibility: hidden;
 	z-index: 50;
 
 	width: fit-content;
@@ -67,10 +76,17 @@ body {
 	padding-left: 15px;
 	padding-right: 15px;
 	padding-bottom: 15px;
+
+	transition: opacity 0.2s ease-in-out;
+}
+
+.reportWindow.hiddenRep {
+	opacity: 0;
+	transition: opacity 0.2s ease-in-out;
 }
 
 .reportWindow.ondisplay {
-	display: block;
+	visibility: visible;
 }
 
 .reportWindowHeader {
