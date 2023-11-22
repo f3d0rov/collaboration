@@ -11,9 +11,8 @@
 		<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald&display=swap" rel="stylesheet">
 		
 		<link rel="stylesheet" type="text/css" href="style/style.css">
-		<link rel="stylesheet" type="text/css" href="style/person.css">
+		<link rel="stylesheet" type="text/css" href="style/entity.css">
 
-		<script src="scripts/is_person_page.js"></script>
 		<script src="scripts/userauth.js"></script>
 		<script src="scripts/header.js"></script>
 		<script src = "scripts/entity.js"></script>
@@ -53,6 +52,18 @@
 		</div>
 
 		<div class = "veil" id = "veil"></div>
+		
+		<div class = "reportWindowVeil" id="reportWindowVeil"></div>
+		<div class = "reportWindow" id="reportWindow">
+			<div class = "reportWindowHeader"> Пожаловаться на событие </div>
+			<div class = "reportOptions">
+				<div class = "reportTypeOption noselect template" id="reportTypeOptionTemplate"> </div>
+			</div>
+			<div class = "reportActions">
+				<div class = "reportAction noselect inactive" id = "sendReport"> Отправить </div>
+				<div class = "reportAction noselect" id = "cancelReport"> Отмена </div>
+			</div>
+		</div>
 
 		<div class = "page">
 			<table>

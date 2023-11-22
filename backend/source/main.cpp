@@ -270,6 +270,8 @@ int main (int argc, const char *argv[]) {
 	GetEntityEventsResource getEntityEventsResource		(ctx, "api/events/getfor");
 	UpdateEntityEventResource updateEntityEventResource (ctx, "api/events/update");
 	DeleteEntityEventResource deleteEntityEventResource (ctx, "api/events/delete");
+	EventReportTypesResource eventReportTypesResource 	(ctx, "api/events/report_types");
+	ReportEntityEventResource reportEventResource 		(ctx, "api/events/report");
 
 	while (1) { // Ждем входящие подключения
 		occasionalTasks ();	

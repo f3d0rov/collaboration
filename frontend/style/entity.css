@@ -22,6 +22,135 @@ body {
 	opacity: 0;
 }
 
+.reportWindowVeil {
+	display: none;
+	position: fixed;
+	z-index: 49;
+
+	padding: 0;
+	margin: 0;
+	
+	width: 100vw;
+	height: 100vh;
+	top: 0;
+	left: 0;
+
+	background-color: black;
+	opacity: 0.6;
+
+	cursor: pointer;
+}
+
+.reportWindowVeil.ondisplay {
+	display: block;
+}
+
+.reportWindow {
+	display: none;
+	position: fixed;
+	z-index: 50;
+
+	width: fit-content;
+	height: fit-content;
+
+	top: 400px;
+	left: 400px;
+
+	font-family: 'Oswald', sans-serif;
+
+	background-color: rgb(0, 0, 0);
+	box-shadow: #4a0404 0 5px 40px;
+
+	border-radius: 10px;
+
+	padding: 5px;
+	padding-left: 15px;
+	padding-right: 15px;
+	padding-bottom: 15px;
+}
+
+.reportWindow.ondisplay {
+	display: block;
+}
+
+.reportWindowHeader {
+	font-size: 26px;
+	text-align: center;
+}
+
+.reportTypeOption {
+	font-size: 22px;
+	padding: 10px;
+	margin: 3px;
+	background-color: #330b0b;
+	color: #c9c9c9;
+	border-radius: 5px;
+
+	transition: background-color 0.1s ease-in-out,
+				color 0.1s ease-in-out,
+				box-shadow 0.1s ease-in-out;
+}
+
+.reportTypeOption.selected {
+	background-color: #880000;
+	color: white;
+}
+
+.reportTypeOption:hover {
+	cursor: pointer;
+	background-color: #490d0d;
+	color: white;
+	box-shadow: #330b0b 0px 2px 4px;
+}
+
+.reportTypeOption.selected:hover {
+	cursor: default;
+	background-color: #880000;
+	color: white;
+	box-shadow: #330b0b 0px 2px 4px;
+}
+
+.reportActions {
+	display: flex;
+	justify-items: center;
+	justify-content: space-between;
+	align-items: center;
+	align-content: center;
+}
+
+.reportAction {
+	background-color: #5a0909;
+	color: rgba(207, 207, 207, 255);
+
+	font-size: 24px;
+
+	border-radius: 2px;
+	margin: 3px;
+	padding: 4px;
+	padding-left: 8px;
+	padding-right: 8px;
+
+	transition: color 0.1s ease-in-out,
+				background-color 0.1s ease-in-out;
+}
+
+.reportAction.inactive {
+	background-color: #504848;
+	color: rgb(139, 139, 139);
+}
+
+.reportAction:hover {
+	background-color: #640a0a;
+	color: white;
+	cursor: pointer;
+}
+
+.reportAction.inactive:hover {
+	background-color: #504848;
+	color: rgb(139, 139, 139);
+	cursor: default;
+}
+
 #personImage {
 	width: 200px;
 	height: 300px;

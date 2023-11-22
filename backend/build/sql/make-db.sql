@@ -40,12 +40,19 @@ create table user_event_contributions (
 	event_id int references events(id) ON DELETE CASCADE
 );
 
+CREATE TABLE event_report_reasons (
+	id SERIAL PRIMARY KEY,
+	name VARCHAR (128) NOT NULL
+);
+
 create table event_reports (
 	id serial primary key not null,
 	event_id int references events(id) ON DELETE CASCADE,
 	reported_by int references users(uid) ON DELETE CASCADE,
-	reason_id int not null
+	reason_id INT REFERENCES event_report_reasons(id) ON DELETE CASCADE NOT NULL,
+	UNIQUE (event_id, reported_by, reason_id)
 );
+
 
 CREATE TABLE entities (
 	id SERIAL PRIMARY KEY NOT NULL,
@@ -72,7 +79,8 @@ CREATE TABLE entity_reports (
 	id SERIAL PRIMARY KEY NOT NULL,
 	entity_id INT REFERENCES entities(id) ON DELETE CASCADE,
 	reported_by INT REFERENCES users(uid) ON DELETE CASCADE,
-	reason_id INT NOT NULL	
+	reason_id INT NOT NULL,
+	UNIQUE (entity_id, reported_by, reason_id)
 );
 
 
@@ -141,5 +149,8 @@ CREATE TABLE single_entity_related_events (
 	event_date DATE NOT NULL
 );
 
-
+INSERT INTO event_report_reasons (name) 
+VALUES 
+	('Недостоверные данные'),
+	('Спам')
 

@@ -340,7 +340,52 @@ nlohmann::json EventManager::getAvailableEventDescriptors () {
 	return result;
 }
 
-// std::map <int, std::string> getEventReportReasons () {
+std::vector <EventManager::EventReportReason> EventManager::getEventReportReasons () {
+	std::string getEventReportReasonsQuery = "SELECT id, name FROM event_report_reasons;";
+	auto conn = database.connect();
+	pqxx::work work (*conn.conn);
+	auto result = work.exec (getEventReportReasonsQuery);
+	
+	std::vector <EventManager::EventReportReason> eventReportReasons;
 
-// }
+	for (int i = 0; i < result.size(); i++) {
+		EventManager::EventReportReason reason;
+		reason.id = result[i].at ("id").as <int>();
+		reason.name = result[i].at ("name").as <std::string>();
+		eventReportReasons.push_back (reason);
+	}
 
+	return eventReportReasons;
+}
+
+void to_json (nlohmann::json &j, const EventManager::EventReportReason &evrr) {
+	j["id"] = evrr.id;
+	j["name"] = evrr.name;
+}
+
+void to_json (nlohmann::json &j, const EventManager::EventReportCount &evrc) {
+	j["id"] = evrc.reportTypeId;
+	j["count"] = evrc.count;
+}
+
+void to_json (nlohmann::json &j, const EventManager::EventReportData &evrd) {
+	j["event_id"] = evrd.eventId;
+	j["reports"] = evrd.statistics;
+}
+
+void EventManager::reportEvent (int id, int reasonId, int byUser) {
+	std::string reportEventQuery = std::string() +
+		"INSERT INTO event_reports (event_id, reported_by, reason_id) VALUES ("
+		+ std::to_string (id) + ","
+		+ std::to_string (byUser) + ","
+		+ std::to_string (reasonId) + ");";
+	try {
+		auto conn = database.connect();
+		pqxx::work work (*conn.conn);
+		work.exec (reportEventQuery);
+		work.commit();
+	} catch (pqxx::sql_error &e) {
+		logger << "EventManager::reportEvent: " << e.what() << std::endl;
+		throw UserSideEventException ("No such id"); // ?
+	}
+}

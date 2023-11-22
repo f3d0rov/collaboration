@@ -135,7 +135,26 @@ ApiResource (ctx, uri) {
 }
 
 ApiResponsePtr ReportEntityEventResource::processRequest (RequestData &rd, nlohmann::json body) {
+	if (rd.method != "POST") return makeApiResponse (405);
+	auto user = CheckSessionResource::checkSessionId (rd);
+	if (!user.valid) return makeApiResponse (401);
+
+	int eventId, reasonId;
+	try {
+		eventId = body.at ("event_id").get <int>();
+		reasonId = body.at ("reason_id").get <int>();
+	} catch (nlohmann::json::exception &e) {
+		return makeApiResponse (nlohmann::json{{"error", e.what()}}, 400);
+	}
+
+	EventManager &eventManager = EventManager::getManager();
+	try {
+		eventManager.reportEvent (eventId, reasonId, user.uid);
+	} catch (UserSideEventException &e) {
+		return makeApiResponse (nlohmann::json{{"error", e.what()}});
+	}
 	
+	return makeApiResponse (nlohmann::json{{"status", "success"}}, 200);
 }
 
 
@@ -150,3 +169,20 @@ ApiResponsePtr GetEntityEventReportListResource::processRequest (RequestData &rd
 	if (!CheckSessionResource::isLoggedIn (rd, 1)) return makeApiResponse (401);
 	
 }
+
+
+
+
+EventReportTypesResource::EventReportTypesResource (mg_context *ctx, std::string uri):
+ApiResource (ctx, uri) {
+
+}
+
+ApiResponsePtr EventReportTypesResource::processRequest (RequestData &rd, nlohmann::json body) {
+	if (rd.method != "GET") return makeApiResponse (405);
+	EventManager &eventManager = EventManager::getManager();
+	auto types = eventManager.getEventReportReasons ();
+
+	return makeApiResponse (types, 200);
+}
+

@@ -128,6 +128,22 @@ class EventManager {
 		void addUserEventContribution (int userId, int eventId);
 
 	public:
+		struct EventReportReason {
+			int id;
+			std::string name;
+		};
+
+		struct EventReportCount {
+			int reportTypeId;
+			int count;
+		};
+		
+		struct EventReportData {
+			int eventId;
+			std::vector <EventReportCount> statistics;
+		};
+	
+
 		static EventManager &getManager ();
 	
 		void registerEventType (std::shared_ptr <EventType> et);
@@ -146,10 +162,15 @@ class EventManager {
 
 		// Data fields to create different event types
 		nlohmann::json getAvailableEventDescriptors ();
-		// std::map <int, std::string> getEventReportReasons ();
+		
+		std::vector <EventReportReason> getEventReportReasons ();
+		void reportEvent (int id, int reasonId, int byUser);
+		std::vector <EventReportData> getEventReports ();
 };
 
-
+void to_json (nlohmann::json &j, const EventManager::EventReportReason &evrr);
+void to_json (nlohmann::json &j, const EventManager::EventReportCount &evrc);
+void to_json (nlohmann::json &j, const EventManager::EventReportData &evrd);
 
 
 template <class T>
