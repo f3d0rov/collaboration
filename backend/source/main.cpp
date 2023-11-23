@@ -152,7 +152,8 @@ int main (int argc, const char *argv[]) {
 				ArgOption ("", "smtp-config", "Путь к файлу .json с данными для подключения к SMTP-серверу", true),
 				ArgOption ("", "no-smtp", "Не отправлять письма"),
 				ArgOption ("", "no-cache", "Не кешировать веб-ресурсы"),
-				ArgOption ("", "log-sql", "Сохранять в логах все исполненные SQL-запросы")
+				ArgOption ("", "log-sql", "Сохранять в логах все исполненные SQL-запросы"),
+				ArgOption ("", "log-width", "Максимальная длина строки в логе (не считая временной отметки)", true)
 			}
 		);
 
@@ -166,6 +167,8 @@ int main (int argc, const char *argv[]) {
 		argParser.printHelp();
 		return -1;
 	}
+
+	common.logOverflowLineLength = std::stoi (argParser.getArgValue ("log-width", "120"));
 
 	if (argParser.hasArg ("help")) {
 		argParser.printHelp();
