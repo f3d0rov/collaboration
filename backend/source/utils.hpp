@@ -57,6 +57,8 @@ class Common;
 class Logger: private std::streambuf, public std::ostream {
 		std::ofstream file;
 		bool newline = true;
+		int _sinceNewline = 0;
+		bool _lineOverflow = false;
 	public:
 		std::mutex mutex;
 
@@ -102,6 +104,8 @@ class Common {
 		std::string domain;
 		std::string http = "http";
 		std::string frontendDir;
+		bool logSql;
+		int logOverflowLineLength = 120;
 };
 
 extern Common common;

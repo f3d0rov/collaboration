@@ -184,18 +184,35 @@ int Logger::overflow(int c) {
 }
 
 void Logger::log(char c) {
-	if (newline) {
+	if (this->newline) {
 		auto ts = "[" + getCurrentTimeString() + "] ";
 		std::cout << ts;
 		this->file << ts;
-		newline = false;
+
+		this->newline = false;
+		this->_sinceNewline = 0;
+
+	} else if (this->_lineOverflow) {
+		this->_sinceNewline = 0;
+		this->_lineOverflow = 0;
+		
+		auto ts = "[" + getCurrentTimeString() + "] ";
+		std::cout << std::string (ts.length(), ' ');
+		this->file << std::string (ts.length(), ' ');
 	}
 
-	std::cout.put(c);
-	this->file.put(c);
-	
+	++this->_sinceNewline;
+	std::cout.put (c);
+	this->file.put (c);
+
+	if (this->_sinceNewline >= common.logOverflowLineLength) {
+		std::cout.put ('\n');
+		this->file.put ('\n');
+		this->_lineOverflow = true;
+	}
+
 	if (c == '\n') {
-		newline = true;
+		this->newline = true;
 		this->file.flush();
 	}
 }
