@@ -480,3 +480,39 @@ a {
 .registrationSuccessful.ondisplay {
 	display: flex;
 }
+
+
+.message {
+	position: fixed;
+	opacity: 0;
+
+	height: fit-content;
+	width: fit-content;
+	right: 10px;
+	left: initial;
+
+	bottom: -300px;
+
+	border-radius: 5px;
+	padding: 5px;
+	margin: 10px;
+
+	background-color: #975d1a;
+	color: white;
+
+	font-family: 'Oswald', sans-serif;
+	font-size: 22px;
+
+
+	transition: all 0.2s ease-in-out;
+}
+
+.message.ondisplay {
+	bottom: 0px;
+	opacity: 0.8;
+}
+
+.message.ondisplay.goingAway {
+	transform: translate(200%, 0);
+	opacity: 0;
+}

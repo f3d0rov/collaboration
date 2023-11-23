@@ -1052,6 +1052,11 @@ class EventEditor {
 				return;
 			} else {
 				this.entity.eventsView.constructEvent (resp);
+				if (this.editedEvent !== null) {
+					message ("Событие изменено!");
+				} else {
+					message ("Событие создано!");
+				}
 				this.editedEvent = null; // We replace the old event with the newly constructed one
 				this.done ();
 			}

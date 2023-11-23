@@ -45,8 +45,7 @@ function getTextWidth (text, elem) {
 }
 
 function flashNetworkError () {
-	// TODO: this
-	console.log ("FlashNetworkError!");
+	message ("Ошибка подключения к серверу!")
 }
 
 function intDateEval (date) {
@@ -92,4 +91,25 @@ function objDiff (orig, changed) {
 		}
 	}
 	return result;
+}
+
+function cloneTemplate (template) {
+	let clone = template.cloneNode (true);
+	clone.id = "";
+	clone.classList.remove ("template");
+	return clone;
+}
+
+var msgCounter = 0;
+
+function message (text) {
+	let template = document.getElementById ("messageTemplate");
+	let clone = cloneTemplate (template);
+	clone.innerHTML = text;
+	clone.classList.remove ("hidden");
+	template.parentElement.appendChild (clone);
+	
+	setTimeout (() => { clone.classList.add ("ondisplay"); }, 100);
+	setTimeout (() => { clone.classList.add ("goingAway"); }, 5E3);
+	setTimeout (() => { clone.remove(); }, 5E3 + 400);
 }

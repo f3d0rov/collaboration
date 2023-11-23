@@ -152,8 +152,10 @@ class EventReporter {
 
 	async submit () {
 		if (this.selectedReason === null) return;
-		fetchApi (this.reportEventEndpoint, {"event_id": parseInt(this.eventId), "reason_id": parseInt(this.selectedReason)});
+		let res = fetchApi (this.reportEventEndpoint, {"event_id": parseInt(this.eventId), "reason_id": parseInt(this.selectedReason)});
+		res.then ( () => { message ("Жалоба отправлена!"); });
 		this.hideWindow ();
+
 	}
 }
 
