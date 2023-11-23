@@ -41,6 +41,21 @@ void from_json (const nlohmann::json &j, ParticipantEntity &pe) {
 }
 
 
+UpdateQueryElement <ParticipantEntity>::UpdateQueryElement (std::string jsonElementName, std::string sqlColName, std::string sqlTableName):
+UpdateQueryElement <int> (jsonElementName, sqlColName, sqlTableName) {
+
+}
+
+UQEI_ptr UpdateQueryElement <ParticipantEntity>::make (std::string jsonElementName, std::string sqlColName, std::string sqlTableName) {
+	return std::make_shared <UpdateQueryElement <ParticipantEntity>> (jsonElementName, sqlColName, sqlTableName);
+}
+
+std::string UpdateQueryElement <ParticipantEntity>::getWrappedValue (const nlohmann::json &value, pqxx::work &w) {
+	ParticipantEntity pe;
+	from_json (value, pe);
+	return std::to_string (pe.entityId);
+}
+
 
 
 InputTypeDescriptor::InputTypeDescriptor () {
@@ -65,15 +80,6 @@ void to_json (nlohmann::json &j, const InputTypeDescriptor &itd) {
 
 EventType::~EventType () = default;
 
-template <>
-std::string EventType::getUpdateQueryString <ParticipantEntity> (std::string jsonParam, std::string colName, nlohmann::json &data, pqxx::work &work, bool &notFirst) {
-	if (data.contains (jsonParam)) {
-		ParticipantEntity entity = data [jsonParam].get <ParticipantEntity>();
-		notFirst = true;
-		return std::string(notFirst ? "," : "") + colName + "=" + std::to_string(entity.entityId);
-	}
-	return "";
-}
 
 std::vector <ParticipantEntity> EventType::getParticipantsFromJson (nlohmann::json &data) {
 	return this->getParameter <std::vector <ParticipantEntity>> ("participants", data);
@@ -118,16 +124,6 @@ std::vector <ParticipantEntity> EventType::getParticipantsForEvent (int eventId,
 	return participants;
 }
 
-void EventType::updateCommonEventData (int eventId, nlohmann::json &data, pqxx::work &work) {
-	bool notFirst = false;
-	std::string changeEventQuery = "UPDATE events SET ";
-	changeEventQuery += this->getUpdateQueryString<int> ("sort_index", "sort_index", data, work, notFirst);
-	changeEventQuery += this->getUpdateQueryString<std::string> ("description", "description", data, work, notFirst);
-	changeEventQuery += std::string(" WHERE id=") + std::to_string (eventId) + ";";
-	if (notFirst /* changing something? */) work.exec (changeEventQuery);
-
-}
-
 nlohmann::json EventType::formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, std::string startDate, nlohmann::json &data) {
 	return nlohmann::json {
 		{"id", eventId},
@@ -159,17 +155,6 @@ nlohmann::json EventType::getEventDescriptor () {
 		{"applicable", this->getApplicableEntityTypes()},
 		{"inputs", inputs}
 	};
-}
-
-
-template <>
-std::string EventType::wrapType <int> (const int &t, pqxx::work &work) {
-	return std::to_string (t);
-}
-
-template <>
-std::string EventType::wrapType <std::string> (const std::string &s, pqxx::work &work) {
-	return work.quote (s);
 }
 
 

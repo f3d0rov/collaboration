@@ -84,11 +84,12 @@ nlohmann::json SingleEntityRelatedEventType::getEvent (int id) {
 	data.entity.created = !(row ["awaits_creation"].as <bool>());
 	data.entity.entityId = row ["entity_id"].as <int>();
 	data.entity.name = row ["name"].as <std::string>();
+	data.description = row ["description"].as <std::string> ();
 
 	nlohmann::json dataJson;
 	to_json (dataJson, data);
 
-	return this->formGetEventResponse (work, id, row["description"].as <std::string>(), row["sort_index"].as <int>(), data.date, dataJson);
+	return this->formGetEventResponse (work, id, "{description}", row["sort_index"].as <int>(), data.date, dataJson);
 }
 
 int SingleEntityRelatedEventType::updateEvent (nlohmann::json &data) {
@@ -96,16 +97,22 @@ int SingleEntityRelatedEventType::updateEvent (nlohmann::json &data) {
 	auto conn = database.connect();
 	pqxx::work work (*conn.conn);
 
-	this->updateCommonEventData (eventId, data, work);
-
 	if (data.contains ("data")) {
-		auto dataObj = data ["data"];
-		bool notFirst = false;
-		std::string changeEventQuery = "UPDATE single_entity_related_events SET ";
-		changeEventQuery += this->getUpdateQueryString <std::string> ("event_date", "event_date", dataObj, work, notFirst);
-		changeEventQuery += this->getUpdateQueryString <ParticipantEntity> ("entity", "entity_id", dataObj, work, notFirst);
-		changeEventQuery += std::string(" WHERE id=") + std::to_string (eventId) + ";";
-		if (notFirst) work.exec (changeEventQuery);
+		UpdateQueryGenerator qGen (
+			{
+				UpdateQueryElement <std::string>::make ("event_date", "event_date", "single_entity_related_events"),
+				UpdateQueryElement <ParticipantEntity>::make ("entity", "entity_id", "single_entity_related_events"),
+				UpdateQueryElement <std::string>::make ("description", "description", "events")
+			},
+			{
+				UpdateQueryGenerator::TableColumnValue {"events", "id", std::to_string (eventId)},
+				UpdateQueryGenerator::TableColumnValue {"single_entity_related_events", "id", std::to_string (eventId)}
+			}
+		);
+
+		std::string updateQuery = qGen.queryFor (data.at ("data"), work);
+		work.exec (updateQuery);
+		logger << "SingleEntityRelatedEventType::updateEvent updateQuery = '" << updateQuery << "'" << std::endl;
 	}
 
 	work.commit();
@@ -279,17 +286,17 @@ nlohmann::json SinglePublicationEventType::getEvent (int id) {
 	auto row = result[0];
 
 	SinglePublicationEventType::Data data;
-	data.author.entityId = row ["author"].as <int>();
-	data.author.created = !(row ["awaits_creation"].as <bool>());
-	data.author.name = row ["name"].as <std::string>();
-	data.song = row ["title"].as <std::string>();
-	
-	std::string releaseDate = row ["release_date"].as <std::string> ();
+	data.author.entityId = row.at ("author").as <int>();
+	data.author.created = !(row.at ("awaits_creation").as <bool>());
+	data.author.name = row.at ("name").as <std::string>();
+	data.song = row.at ("title").as <std::string>();
+	data.description = row.at ("description").as <std::string> ();
+	data.date = row.at ("release_date").as <std::string> ();
 
 	nlohmann::json dataJson;
 	to_json (dataJson, data);
 
-	return this->formGetEventResponse (work, id, row ["description"].as <std::string>(), row ["sort_index"].as <int>(), releaseDate, dataJson);
+	return this->formGetEventResponse (work, id, "{description}", row.at ("sort_index").as <int>(), data.date, dataJson);
 }
 
 int SinglePublicationEventType::updateEvent (nlohmann::json &data) {
@@ -297,17 +304,23 @@ int SinglePublicationEventType::updateEvent (nlohmann::json &data) {
 	auto conn = database.connect();
 	pqxx::work work (*conn.conn);
 
-	this->updateCommonEventData (eventId, data, work);
-
 	if (data.contains ("data")) {
-		auto dataObj = data ["data"];
-		bool notFirst = false;
-		std::string changeEventQuery = "UPDATE songs SET ";
-		changeEventQuery += this->getUpdateQueryString <std::string> ("song", "title", dataObj, work, notFirst);
-		changeEventQuery += this->getUpdateQueryString <std::string> ("date", "released_on", dataObj, work, notFirst);
-		changeEventQuery += this->getUpdateQueryString <ParticipantEntity> ("author", "author", dataObj, work, notFirst);
-		changeEventQuery += std::string(" WHERE id=") + std::to_string (eventId) + ";";
-		if (notFirst) work.exec (changeEventQuery);
+		UpdateQueryGenerator qGen (
+			{
+				UpdateQueryElement <std::string>::make ("song", "title", "songs"),
+				UpdateQueryElement <std::string>::make ("date", "release_date", "songs"),
+				UpdateQueryElement <std::string>::make ("description", "description", "events"),
+				UpdateQueryElement <ParticipantEntity>::make ("author", "author", "songs")
+			},
+			{
+				UpdateQueryGenerator::TableColumnValue {"events", "id", std::to_string (eventId)},
+				UpdateQueryGenerator::TableColumnValue {"songs", "release", std::to_string (eventId)}
+			}
+		);
+
+		std::string updateQuery = qGen.queryFor (data.at ("data"), work);
+		logger << "SinglePublicationEventType::updateEvent updateQuery: '" << updateQuery << "'" << std::endl;
+		work.exec (updateQuery);
 	}
 
 	work.commit();
@@ -325,7 +338,7 @@ void from_json (const nlohmann::json &j, SinglePublicationEventType::Data &d) {
 void to_json (nlohmann::json &j, const SinglePublicationEventType::Data &d) {
 	j ["author"] = d.author;
 	j ["date"] = d.date;
-	// j ["description"] = d.description;
+	j ["description"] = d.description;
 	j ["song"] = d.song;
 }
 

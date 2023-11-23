@@ -2,9 +2,12 @@
 #pragma once
 
 #include <fstream>
+
 #include <memory>
 #include <map>
+#include <set>
 #include <string>
+
 #include <thread>
 #include <mutex>
 #include <queue>
@@ -102,3 +105,83 @@ class Database {
 
 extern Database database;
 
+
+template <class T> 	std::string wrapType (const T &t, pqxx::work &work);
+template <>			std::string wrapType <int> (const int &t, pqxx::work &work);
+template <>			std::string wrapType <std::string> (const std::string &s, pqxx::work &work);
+
+
+// Converts JSON object to a set of `UPDATE ... SET x=fromJson, y=fromJson...;` queries
+class UpdateQueryElementInterface {
+	public:
+		~UpdateQueryElementInterface ();
+
+		virtual std::string getSqlColName () const = 0;
+		virtual std::string getSqlTableName () const = 0;
+		virtual std::string getJsonElementName () const = 0;
+		virtual std::string getWrappedValue (const nlohmann::json &j, pqxx::work &w) = 0;
+
+		virtual bool isPresentIn (const nlohmann::json &j);
+		std::string getQuery (const nlohmann::json &value, bool notFirst, pqxx::work &w);
+};
+
+typedef std::shared_ptr <UpdateQueryElementInterface> UQEI_ptr;
+
+
+template <class T>
+class UpdateQueryElement: public UpdateQueryElementInterface {
+	private:
+		std::string _jsonElementName;
+		std::string _sqlColName;
+		std::string _sqlTableName;
+
+	public:
+		UpdateQueryElement (std::string jsonElementName, std::string sqlColName, std::string sqlTableName);
+		static UQEI_ptr make (std::string jsonElementName, std::string sqlColName, std::string sqlTableName);
+
+		std::string getSqlColName () const override;
+		std::string getSqlTableName () const override;
+		std::string getJsonElementName () const override;
+		virtual std::string getWrappedValue (const nlohmann::json &value, pqxx::work &w) override;
+};
+
+class UpdateQueryGenerator {
+	public:
+		struct TableColumnValue {
+			std::string table, col, value;
+
+			TableColumnValue (std::string table, std::string col, std::string value);
+			std::string getWhereClause ();
+		};
+
+	private:
+		class SingleTableQuery {
+			private:
+				std::string _query;
+				UpdateQueryGenerator::TableColumnValue _key;
+				bool _updated = false;
+			public:
+				SingleTableQuery (std::string tableName, UpdateQueryGenerator::TableColumnValue key);
+				void addQuery (std::string query);
+				bool empty ();
+				std::string finalized ();
+		};
+
+	private:
+		std::set <std::string> _presentTables;
+		std::map <std::string, UpdateQueryGenerator::TableColumnValue> _tableKeyCols;
+		std::vector <UQEI_ptr> _elems;
+		
+
+		std::map <std::string, UpdateQueryGenerator::SingleTableQuery> _generateSTQS ();
+		void _parseJson (const nlohmann::json &j, std::map <std::string, UpdateQueryGenerator::SingleTableQuery> &stqs, pqxx::work &w);
+		std::string _generateFinalQuery (std::map <std::string, UpdateQueryGenerator::SingleTableQuery> &stqs);
+
+	public:
+		UpdateQueryGenerator (std::vector <UQEI_ptr> &&elems, const std::vector <UpdateQueryGenerator::TableColumnValue> &keys);
+		std::string queryFor (const nlohmann::json input, pqxx::work &w);
+};
+
+
+
+#include "database.tcc"

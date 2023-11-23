@@ -176,3 +176,115 @@ void execSqlFile (std::string path) {
 		throw;
 	}
 }
+
+
+template <>
+std::string wrapType <int> (const int &t, pqxx::work &work) {
+	return std::to_string (t);
+}
+
+template <>
+std::string wrapType <std::string> (const std::string &s, pqxx::work &work) {
+	return work.quote (s);
+}
+
+
+
+
+UpdateQueryElementInterface::~UpdateQueryElementInterface () = default;
+
+bool UpdateQueryElementInterface::isPresentIn (const nlohmann::json &j) {
+	return j.contains (this->getJsonElementName());
+}
+
+std::string UpdateQueryElementInterface::getQuery (const nlohmann::json &j, bool notFirst, pqxx::work &w) {
+	std::string comma = notFirst ? "," : "";
+	return comma + this->getSqlColName() + "=" + this->getWrappedValue (j.at (this->getJsonElementName()), w);
+}
+
+
+
+
+UpdateQueryGenerator::TableColumnValue::TableColumnValue (std::string table, std::string col, std::string value):
+table (table), col (col), value (value) {
+
+}
+
+std::string UpdateQueryGenerator::TableColumnValue::getWhereClause () {
+	return std::string (" WHERE ") + this->col + "=" + this->value;
+}
+
+
+
+UpdateQueryGenerator::SingleTableQuery::SingleTableQuery (std::string tableName, UpdateQueryGenerator::TableColumnValue key):
+_key (key) {
+	this->_query = std::string{};
+	this->_query = "UPDATE " + tableName + " SET ";
+}
+
+void UpdateQueryGenerator::SingleTableQuery::addQuery (std::string query) {
+	this->_updated = true;
+	this->_query += query;
+}
+
+bool UpdateQueryGenerator::SingleTableQuery::empty () {
+	return !this->_updated;
+}
+
+std::string UpdateQueryGenerator::SingleTableQuery::finalized () {
+	return this->_query + this->_key.getWhereClause () + ";";
+}
+
+
+
+UpdateQueryGenerator::UpdateQueryGenerator (std::vector <UQEI_ptr> &&elems, const std::vector <UpdateQueryGenerator::TableColumnValue> &keys):
+_elems (elems) {
+	for (const auto &i: keys) {
+		this->_tableKeyCols.insert ({i.table, i});
+	}
+
+	for (const auto &i: this->_elems) {
+		if (this->_tableKeyCols.contains (i->getSqlTableName ()) == false) {
+			throw std::logic_error (
+				std::string ("UpdateQueryGenerator: не найден ключ для таблицы '") + i->getSqlTableName() + "'"
+			);
+		}
+		this->_presentTables.emplace (i->getSqlTableName());
+	}
+}
+
+std::map <std::string, UpdateQueryGenerator::SingleTableQuery> UpdateQueryGenerator::_generateSTQS () {
+	std::map <std::string, UpdateQueryGenerator::SingleTableQuery> stqs;
+	for (auto &i: this->_presentTables) {
+		stqs.insert ({i, UpdateQueryGenerator::SingleTableQuery (i, this->_tableKeyCols.at (i))});
+	}
+	return stqs;
+}
+
+void UpdateQueryGenerator::_parseJson (const nlohmann::json &j, std::map <std::string, UpdateQueryGenerator::SingleTableQuery> &stqs, pqxx::work &w) {
+	for (auto &elem: this->_elems) {
+		if (elem->isPresentIn (j)) {
+			UpdateQueryGenerator::SingleTableQuery &stq = stqs.at (elem->getSqlTableName());
+			stq.addQuery ( elem->getQuery (j, !stq.empty(), w) );
+		}
+	}
+}
+
+std::string UpdateQueryGenerator::_generateFinalQuery (std::map <std::string, UpdateQueryGenerator::SingleTableQuery> &stqs) {
+	std::string finalQuery = "";
+
+	for (auto &i: stqs) {
+		UpdateQueryGenerator::SingleTableQuery &stq = i.second;
+		if (stq.empty()) continue;
+		finalQuery += stq.finalized();
+	}
+
+	return finalQuery;
+}
+
+std::string UpdateQueryGenerator::queryFor (const nlohmann::json input, pqxx::work &w) {
+	std::map <std::string, UpdateQueryGenerator::SingleTableQuery> stqs (this->_generateSTQS ());
+	this->_parseJson (input, stqs, w);
+	return this->_generateFinalQuery (stqs);
+}
+
