@@ -13,8 +13,10 @@
 		<link rel="stylesheet" type="text/css" href="style/style.css">
 		<link rel="stylesheet" type="text/css" href="style/entity.css">
 
-		<script src="scripts/userauth.js"></script>
-		<script src="scripts/header.js"></script>
+		<script src = "scripts/utils.js"></script>
+		<script src = "scripts/userauth.js"></script>
+		<script src = "scripts/header.js"></script>
+		<script src = "scripts/event_editor.js"></script>
 		<script src = "scripts/entity.js"></script>
 	</head>
 	<body>
@@ -83,30 +85,26 @@
 				</tr>
 			</table>
 
-			<div class = "timeline">
+			<div class = "timeline" id = "timelineContainer">
 				<div class = "timelineElem template" id = "timelineElemTemplate">
-					<table>
-						<tr>
-							<td class="timelineElemIconBox">
-								<img src = "./resources/timeline/band.svg" class = "timelineElemIcon">
-							</td>
-							<td class = "timelineElemData">
-								<div class = "timepointTitleBox">
-									<span class = "timepointTitle"></span>
-								</div>
-								<div class = "timepointBox">
-									<span class = "timepoint"></span> 
-									<img src = "resources/lookup.svg" class = "timelineInlineButton lookupEntry"/>
-									<img src = "resources/edit.svg" class = "timelineInlineButton editEntry"/>
-									<img src = "resources/report.svg" class = "timelineInlineButton reportEntry"/>
-								</div>
-								<div class = "timepointBody"></div>
-								<div class = "eventParticipants">
-									<div class = "eventParticipant template" id = "eventParticipantTemplate"></div>
-								</div>
-							</td>
-						</tr>
-					</table>
+					<div>
+						<img src = "./resources/timeline/band.svg" class = "timelineElemIcon">
+					</div>
+					<div class = "timelineElemData">
+						<div class = "timepointTitleBox">
+							<span class = "timepointTitle"></span>
+						</div>
+						<div class = "timepointBox">
+							<span class = "timepoint"></span> 
+							<img src = "resources/lookup.svg" class = "timelineInlineButton lookupEntry"/>
+							<img src = "resources/edit.svg" class = "timelineInlineButton editEntry"/>
+							<img src = "resources/report.svg" class = "timelineInlineButton reportEntry"/>
+						</div>
+						<div class = "timepointBody"></div>
+						<div class = "eventParticipants">
+							<div class = "eventParticipant template" id = "eventParticipantTemplate"></div>
+						</div>
+					</div>
 				</div>
 
 				<div class = "template" id = "latestEventHere"></div>
@@ -115,12 +113,12 @@
 					<line x1="4" y1="0" x2="4" y2="100" stroke="white" stroke-width="4"/>
 				</svg>
 				
-				<div class = "timelineElem createTimelineElem" id = "timelineElemCreate">
+				<div class = "timelineElem createTimelineElem template" id = "timelineElemCreateTemplate">
 					<div class="timelineElemIconBox">
 						<img src = "./resources/timeline/song.svg" class = "timelineElemIcon">
 					</div>
-					<div class = "timelineElemData" id = "BigBoxx">
-						<div class = "cancelCreation" id = "cancelCreationButton">
+					<div class = "timelineElemData BigBoxx">
+						<div class = "cancelCreation">
 							Отменить
 						</div>
 						<div class = "timelineTypeSelector">
@@ -131,7 +129,7 @@
 							<input class = "creationInput" id = "eventDate" type = "date"> 
 						</div> -->
 
-						<div class = "inputPlacer template" id = "inputPlacer"></div>
+						<div class = "inputPlacer template"></div>
 
 						<div class = "inputBox template" id = "textInputTemplate">
 							<div class = "creationInputLabel">  </div>
@@ -166,7 +164,7 @@
 							</div>
 						</div>
 
-						<div class = "uploadEventButton noselect inactive" id = "tryUploadEvent"> Создать событие </div>
+						<div class = "uploadEventButton noselect inactive"> Создать событие </div>
 					</div>
 				</div>
 

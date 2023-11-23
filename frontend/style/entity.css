@@ -260,6 +260,7 @@ body {
 .timepointBody {
 	font-size: 26px;
 	padding-right: 10%;
+	word-break: break-word;
 }
 
 .timelineElemData a:link, a:visited {
@@ -322,8 +323,8 @@ body {
 	cursor: pointer;
 }
 
-.timelineElem table {
-	width: 100%;
+.timelineElem {
+	display: flex;
 }
 
 .addMissing {
@@ -451,6 +452,12 @@ body {
 
 .incorrect .creationInput {
 	outline: 2px rgb(163, 0, 0) solid;
+}
+
+textarea.creationInput {
+	width: 450px;
+	height: 200px;
+	resize: none;
 }
 
 .creationInputLabel {
