@@ -17,8 +17,7 @@ std::unique_ptr<ApiResponse> RandomSearchPromptResource::processRequest(RequestD
 	std::string getRandomPageQuery = "SELECT id, name FROM entities WHERE awaits_creation=FALSE ORDER BY random() LIMIT 1;";
 
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
-	auto result = work.exec (getRandomPageQuery);
+	auto result = conn.exec (getRandomPageQuery);
 
 	if (result.size() > 0) {
 		auto row = result[0];

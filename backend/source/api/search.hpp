@@ -63,20 +63,20 @@ class PromptToken {
 class Searcher {
 	private:
 		static std::set <std::string> getKeywordsFromPrompt (std::string prompt);
-		static std::string getSqlListOfKeywords (std::set <std::string> &keywords, pqxx::work &work);
+		static std::string getSqlListOfKeywords (std::set <std::string> &keywords, OwnedConnection &work);
 		static std::string getTableForType (std::string type);
 	public:
 		static std::vector <SearchResult> findAll (std::string prompt);
-		static std::vector <SearchResult> findAllWithWork (std::string prompt, pqxx::work &work);
+		static std::vector <SearchResult> findAllWithWork (std::string prompt, OwnedConnection &work);
 
 		static std::vector <PrimitiveSearchResult> findEntities (std::string prompt);
-		static std::vector <PrimitiveSearchResult> findEntitiesWithWork (std::string prompt, pqxx::work &work);
+		static std::vector <PrimitiveSearchResult> findEntitiesWithWork (std::string prompt, OwnedConnection &work);
 
-		static std::vector <PrimitiveSearchResult> findByTypeWithWork (std::string prompt, std::string type, pqxx::work &work);
+		static std::vector <PrimitiveSearchResult> findByTypeWithWork (std::string prompt, std::string type, OwnedConnection &work);
 		static std::vector <PrimitiveSearchResult> findByType (std::string prompt, std::string type);
 
 		static std::map <std::string, PromptToken> analysePrompt (std::string prompt);
-		static void indexWithWork (pqxx::work &work, std::string type, std::string url, std::string prompt, std::string name, std::string desc, std::string imgPath);
+		static void indexWithWork (OwnedConnection &work, std::string type, std::string url, std::string prompt, std::string name, std::string desc, std::string imgPath);
 		
 		static nlohmann::json sliceOfSearchResultVector (const std::vector <SearchResult> &vec, int start, int end);
 

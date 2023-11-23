@@ -50,7 +50,7 @@ UQEI_ptr UpdateQueryElement <ParticipantEntity>::make (std::string jsonElementNa
 	return std::make_shared <UpdateQueryElement <ParticipantEntity>> (jsonElementName, sqlColName, sqlTableName);
 }
 
-std::string UpdateQueryElement <ParticipantEntity>::getWrappedValue (const nlohmann::json &value, pqxx::work &w) {
+std::string UpdateQueryElement <ParticipantEntity>::getWrappedValue (const nlohmann::json &value, OwnedConnection &w) {
 	ParticipantEntity pe;
 	from_json (value, pe);
 	return std::to_string (pe.entityId);
@@ -85,7 +85,7 @@ std::vector <ParticipantEntity> EventType::getParticipantsFromJson (nlohmann::js
 	return this->getParameter <std::vector <ParticipantEntity>> ("participants", data);
 }
 
-void EventType::addParticipants (const int eventId, const std::vector <ParticipantEntity> &participants, pqxx::work &work) {
+void EventType::addParticipants (const int eventId, const std::vector <ParticipantEntity> &participants, OwnedConnection &work) {
 	if (participants.size() == 0) return;
 	std::string addParticipantsQuery = "INSERT INTO participation (event_id, entity_id) VALUES ";
 	bool notFirst = false;
@@ -102,7 +102,7 @@ void EventType::addParticipants (const int eventId, const std::vector <Participa
 	}
 }
 
-std::vector <ParticipantEntity> EventType::getParticipantsForEvent (int eventId, pqxx::work &work) {
+std::vector <ParticipantEntity> EventType::getParticipantsForEvent (int eventId, OwnedConnection &work) {
 	std::string getParticipantsQuery = std::string (
 		"SELECT awaits_creation, entities.id, name "
 		"FROM participation INNER JOIN entities ON participation.entity_id=entities.id "
@@ -124,7 +124,7 @@ std::vector <ParticipantEntity> EventType::getParticipantsForEvent (int eventId,
 	return participants;
 }
 
-nlohmann::json EventType::formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, std::string startDate, nlohmann::json &data) {
+nlohmann::json EventType::formGetEventResponse (OwnedConnection &work, int eventId, std::string desc, int sortIndex, std::string startDate, nlohmann::json &data) {
 	return nlohmann::json {
 		{"id", eventId},
 		{"type", this->getTypeName()},
@@ -139,14 +139,14 @@ nlohmann::json EventType::formGetEventResponse (pqxx::work &work, int eventId, s
 	};
 }
 
-nlohmann::json EventType::formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, std::string startDate, std::string endDate, nlohmann::json &data) {
+nlohmann::json EventType::formGetEventResponse (OwnedConnection &work, int eventId, std::string desc, int sortIndex, std::string startDate, std::string endDate, nlohmann::json &data) {
 	auto resp = formGetEventResponse (work, eventId, desc, sortIndex, startDate, data);
 	resp ["end_date"] = endDate;
 	return resp;
 }
 
 
-void EventType::ensureParticipantion (pqxx::work &work, int eventId, ParticipantEntity &pe) {
+void EventType::ensureParticipantion (OwnedConnection &work, int eventId, ParticipantEntity &pe) {
 	pe.updateId ();
 	std::string query = "INSERT INTO participation (event_id, entity_id) VALUES ("s
 		+ std::to_string (eventId) + ","
@@ -154,7 +154,7 @@ void EventType::ensureParticipantion (pqxx::work &work, int eventId, Participant
 	work.exec (query);
 }
 
-void EventType::updateParticipants (pqxx::work &work, int eventId, std::vector <ParticipantEntity> pes) {
+void EventType::updateParticipants (OwnedConnection &work, int eventId, std::vector <ParticipantEntity> pes) {
 	std::set <int> mustHave;
 
 	for (auto &i: pes) {
@@ -201,11 +201,11 @@ nlohmann::json EventType::getEventDescriptor () {
 void EventType::deleteEvent (int id) {
 	std::string deleteEventQuery = std::string("DELETE FROM events WHERE id=") + std::to_string(id) + ";";
 	auto conn = database.connect();
-	pqxx::work work(*conn.conn);
-	auto res = work.exec (deleteEventQuery);
+	
+	auto res = conn.exec (deleteEventQuery);
 	if (res.affected_rows() > 1) throw std::logic_error ("EventType::deleteEvent: res.affected_rows() > 1");
 	if (res.affected_rows() == 0) throw UserSideEventException ("Не существует события с заданным id");
-	work.commit();
+	conn.commit();
 }
 
 
@@ -242,10 +242,9 @@ void EventManager::addUserEventContribution (int userId, int eventId) {
 		"VALUES (" + std::to_string (userId) + ",CURRENT_DATE," + std::to_string (eventId) + ")";
 	
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
 
-	work.exec (addContributionQuery);
-	work.commit ();
+	conn.exec (addContributionQuery);
+	conn.commit ();
 }
 
 
@@ -291,10 +290,9 @@ std::shared_ptr <EventType> EventManager::getEventTypeById (int eventId) {
 	std::string getEventTypeByIdQuery = std::string () +
 		"SELECT type FROM events WHERE id=" + std::to_string (eventId) + ";";
 
-	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
+	auto conn = database.connect();\
 
-	auto res = work.exec (getEventTypeByIdQuery);
+	auto res = conn.exec (getEventTypeByIdQuery);
 	if (res.size() == 0) throw UserSideEventException ("Нет события с выбранным id");
 
 	std::string typeName = res[0][0].as <std::string>();
@@ -323,8 +321,7 @@ nlohmann::json EventManager::getEventsForEntity (int entityId) {
 
 	{ // {} used as a safety measure to avoid keeping `conn` and `work` in scope after calling `conn.release()`
 		auto conn = database.connect ();
-		pqxx::work work (*conn.conn);
-		result = work.exec (getEventListQuery);
+		result = conn.exec (getEventListQuery);
 	}
 
 	std::vector <int> eventIds;
@@ -368,8 +365,7 @@ nlohmann::json EventManager::getAvailableEventDescriptors () {
 std::vector <EventManager::EventReportReason> EventManager::getEventReportReasons () {
 	std::string getEventReportReasonsQuery = "SELECT id, name FROM event_report_reasons;";
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
-	auto result = work.exec (getEventReportReasonsQuery);
+	auto result = conn.exec (getEventReportReasonsQuery);
 	
 	std::vector <EventManager::EventReportReason> eventReportReasons;
 
@@ -406,9 +402,8 @@ void EventManager::reportEvent (int id, int reasonId, int byUser) {
 		+ std::to_string (reasonId) + ");";
 	try {
 		auto conn = database.connect();
-		pqxx::work work (*conn.conn);
-		work.exec (reportEventQuery);
-		work.commit();
+		conn.exec (reportEventQuery);
+		conn.commit();
 	} catch (pqxx::sql_error &e) {
 		logger << "EventManager::reportEvent: " << e.what() << std::endl;
 		throw UserSideEventException ("No such id"); // ?

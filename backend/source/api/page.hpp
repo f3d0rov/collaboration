@@ -49,9 +49,9 @@ class EntityData {
 class CreatePageResource: public ApiResource {
 	public:
 		CreatePageResource (mg_context *ctx, std::string uri);
-		int createEntity (pqxx::work &work, std::string type, std::string name, std::string desc, std::string startDate, std::string endDate, int uid);
-		static int createEmptyEntityWithWork (pqxx::work &work, const std::string &name);
-		int createTypedEntity (pqxx::work &work, int entityId, std::string type);
+		int createEntity (OwnedConnection &work, std::string type, std::string name, std::string desc, std::string startDate, std::string endDate, int uid);
+		static int createEmptyEntityWithWork (OwnedConnection &work, const std::string &name);
+		int createTypedEntity (OwnedConnection &work, int entityId, std::string type);
 
 		static std::string pageUrlForTypedEntity (std::string type, int id);
 		std::unique_ptr <ApiResponse> processRequest (RequestData &rd, nlohmann::json body) override;
@@ -84,7 +84,7 @@ class UploadPictureResource: public Resource {
 	public:
 		UploadPictureResource (mg_context *ctx, std::string uri, std::filesystem::path savePath);
 
-		void setEntityPicture (pqxx::work &work, int entityId, std::string path);
+		void setEntityPicture (OwnedConnection &work, int entityId, std::string path);
 		std::unique_ptr <_Response> processRequest (RequestData &rd) override;
 };
 
@@ -95,9 +95,9 @@ class EntityDataResource: public ApiResource {
 	public:
 		EntityDataResource (mg_context *ctx, std::string uri, std::string picsUri);
 		static bool entityCreated (int id);
-		static int getEntityByNameWithWork (pqxx::work &work, const std::string &name);
+		static int getEntityByNameWithWork (OwnedConnection &work, const std::string &name);
 		static int getEntityByName (const std::string &name);
-		static EntityData getEntityDataByIdWithWork (pqxx::work &work, int id);
+		static EntityData getEntityDataByIdWithWork (OwnedConnection &work, int id);
 		static EntityData getEntityDataById (int id);
 		std::unique_ptr <ApiResponse> processRequest (RequestData &rd, nlohmann::json body) override;
 };

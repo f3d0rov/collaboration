@@ -33,12 +33,12 @@ std::string hashForPassword (std::string password, std::string salt);
 class UserLoginResource: public ApiResource {
 	private:
 
-		std::unique_ptr<ApiResponse> successfulLogin (pqxx::work& work, int uid, std::string device_ip, std::string username);
+		std::unique_ptr<ApiResponse> successfulLogin (OwnedConnection& work, int uid, std::string device_ip, std::string username);
 	public:
 		UserLoginResource (mg_context* ctx, std::string uri);
 
-		static std::string generateUniqueSessionId (pqxx::work& work);
-		static std::string authUserWithWork (int uid, std::string device_ip, pqxx::work &work);
+		static std::string generateUniqueSessionId (OwnedConnection& work);
+		static std::string authUserWithWork (int uid, std::string device_ip, OwnedConnection &work);
 		static std::string authUser (int uid, std::string device_ip);
 
 		std::unique_ptr<ApiResponse> processRequest (RequestData &rd, nlohmann::json body) override;

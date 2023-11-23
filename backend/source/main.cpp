@@ -113,16 +113,15 @@ void setupDatabase () {
 
 void clearTimedoutPendingEmailConfirmations () {
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
 
 	std::string removeBadUsersQuery = std::string ()
 		+ "DELETE FROM users WHERE uid in "
 			+ "(SELECT uid FROM pending_email_confirmation WHERE valid_until < CURRENT_TIMESTAMP);";
-	auto result = work.exec (removeBadUsersQuery);
+	auto result = conn.exec (removeBadUsersQuery);
 	if (result.affected_rows() > 0) {
 		logger << "Очистил " << result.affected_rows() << " пользователей, не подтвердивших свой адрес почты." << std::endl;
 	}
-	work.commit();
+	conn.commit();
 }
 
 void occasionalTasks () {
@@ -152,7 +151,8 @@ int main (int argc, const char *argv[]) {
 				ArgOption ("", "remake-db", "Удалить и заново создать базу данных"),
 				ArgOption ("", "smtp-config", "Путь к файлу .json с данными для подключения к SMTP-серверу", true),
 				ArgOption ("", "no-smtp", "Не отправлять письма"),
-				ArgOption ("", "no-cache", "Не кешировать веб-ресурсы")
+				ArgOption ("", "no-cache", "Не кешировать веб-ресурсы"),
+				ArgOption ("", "log-sql", "Сохранять в логах все исполненные SQL-запросы")
 			}
 		);
 
@@ -185,6 +185,7 @@ int main (int argc, const char *argv[]) {
 
 	std::string frontendDir = argParser.getArgValue ("index", DEFAULT_INDEX_DIRECTORY_PATH);
 	common.frontendDir = frontendDir;
+	common.logSql = argParser.hasArg ("log-sql");
 	if (!argParser.hasArg ("index")) chdirToExecutableDirectory (argv[0]);
 	
 	database.init (

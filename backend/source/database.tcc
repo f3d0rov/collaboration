@@ -4,7 +4,7 @@
 
 
 template <class T>
-std::string wrapType (const T &t, pqxx::work &work) {
+std::string wrapType (const T &t, OwnedConnection &work) {
 	throw std::logic_error ("std::string EventType::wrapType<T> вызван с непредусмотренным типом данных");
 }
 
@@ -36,6 +36,6 @@ std::string UpdateQueryElement<T>::getJsonElementName () const {
 }
 
 template <class T>
-std::string UpdateQueryElement<T>::getWrappedValue (const nlohmann::json &value, pqxx::work &w) {
+std::string UpdateQueryElement<T>::getWrappedValue (const nlohmann::json &value, OwnedConnection &w) {
 	return wrapType <T> (value.get<T>(), w);
 }

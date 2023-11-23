@@ -37,8 +37,12 @@ class OwnedConnection {
 	private:
 		int _connId = -1;
 		Database *_db = nullptr;
+
+		void logQuery (std::string_view query);
+
 	public:
 		std::shared_ptr <pqxx::connection> conn;
+		std::unique_ptr <pqxx::work> work;
 
 		OwnedConnection (Database *db, int connId, std::shared_ptr <pqxx::connection> conn);
 		OwnedConnection (const OwnedConnection& conn) = delete; // Can't copy a connection
@@ -47,7 +51,14 @@ class OwnedConnection {
 
 		void release ();
 
-		pqxx::connection *operator->();
+		pqxx::connection *operator-> ();
+		int id ();
+
+		pqxx::result exec (std::string query);
+		pqxx::result exec0 (std::string query);
+		pqxx::row exec1 (std::string query);
+		std::string quote (std::string raw);
+		void commit ();
 };
 
 
@@ -106,9 +117,9 @@ class Database {
 extern Database database;
 
 
-template <class T> 	std::string wrapType (const T &t, pqxx::work &work);
-template <>			std::string wrapType <int> (const int &t, pqxx::work &work);
-template <>			std::string wrapType <std::string> (const std::string &s, pqxx::work &work);
+template <class T> 	std::string wrapType (const T &t, OwnedConnection &work);
+template <>			std::string wrapType <int> (const int &t, OwnedConnection &work);
+template <>			std::string wrapType <std::string> (const std::string &s, OwnedConnection &work);
 
 
 
@@ -119,10 +130,10 @@ class UpdateQueryElementInterface {
 		virtual std::string getSqlColName () const = 0;
 		virtual std::string getSqlTableName () const = 0;
 		virtual std::string getJsonElementName () const = 0;
-		virtual std::string getWrappedValue (const nlohmann::json &j, pqxx::work &w) = 0;
+		virtual std::string getWrappedValue (const nlohmann::json &j, OwnedConnection &w) = 0;
 
 		virtual bool isPresentIn (const nlohmann::json &j);
-		std::string getQuery (const nlohmann::json &value, bool notFirst, pqxx::work &w);
+		std::string getQuery (const nlohmann::json &value, bool notFirst, OwnedConnection &w);
 };
 
 typedef std::shared_ptr <UpdateQueryElementInterface> UQEI_ptr;
@@ -142,7 +153,7 @@ class UpdateQueryElement: public UpdateQueryElementInterface {
 		std::string getSqlColName () const override;
 		std::string getSqlTableName () const override;
 		std::string getJsonElementName () const override;
-		virtual std::string getWrappedValue (const nlohmann::json &value, pqxx::work &w) override;
+		virtual std::string getWrappedValue (const nlohmann::json &value, OwnedConnection &w) override;
 };
 
 // Converts JSON object to a set of `UPDATE ... SET x=fromJson, y=fromJson...;` queries
@@ -175,12 +186,12 @@ class UpdateQueryGenerator {
 		
 
 		std::map <std::string, UpdateQueryGenerator::SingleTableQuery> _generateSTQS ();
-		void _parseJson (const nlohmann::json &j, std::map <std::string, UpdateQueryGenerator::SingleTableQuery> &stqs, pqxx::work &w);
+		void _parseJson (const nlohmann::json &j, std::map <std::string, UpdateQueryGenerator::SingleTableQuery> &stqs, OwnedConnection &w);
 		std::string _generateFinalQuery (std::map <std::string, UpdateQueryGenerator::SingleTableQuery> &stqs);
 
 	public:
 		UpdateQueryGenerator (std::vector <UQEI_ptr> &&elems, const std::vector <UpdateQueryGenerator::TableColumnValue> &keys);
-		std::string queryFor (const nlohmann::json input, pqxx::work &w);
+		std::string queryFor (const nlohmann::json input, OwnedConnection &w);
 };
 
 

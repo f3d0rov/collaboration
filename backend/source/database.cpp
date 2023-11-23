@@ -13,10 +13,11 @@ conn (dbconn.conn) {
 
 OwnedConnection::OwnedConnection (Database *db, int connId, std::shared_ptr <pqxx::connection> conn):
 _db (db), _connId (connId), conn (conn) {
-	
+	work = std::make_unique <pqxx::work> (*conn);
 }
 
-OwnedConnection::OwnedConnection (OwnedConnection&& conn) {
+OwnedConnection::OwnedConnection (OwnedConnection&& conn):
+work (std::move (conn.work)) {
 	std::swap (this->_connId, conn._connId);
 	std::swap (this->_db, conn._db);
 	std::swap (this->conn, conn.conn);
@@ -37,6 +38,37 @@ void OwnedConnection::release () {
 
 pqxx::connection *OwnedConnection::operator->() {
 	return this->conn.get();
+}
+void OwnedConnection::logQuery (std::string_view query) {
+	if (common.logSql) logger << "SQL QUERY [" << this->_connId << "]: " << query << std::endl;
+}
+
+int OwnedConnection::id () {
+	return this->_connId;
+}
+
+pqxx::result OwnedConnection::exec (std::string query) {
+	this->logQuery (query);
+	return this->work->exec (query);
+}
+
+pqxx::result OwnedConnection::exec0 (std::string query) {
+	this->logQuery (query);
+	return this->work->exec0 (query);
+}
+
+pqxx::row OwnedConnection::exec1 (std::string query) {
+	this->logQuery (query);
+	return this->work->exec1 (query);
+}
+
+std::string OwnedConnection::quote (std::string raw) {
+	return this->work->quote (raw);
+}
+
+void OwnedConnection::commit () {
+	this->work->commit();
+	if (common.logSql) logger << "SQL COMMIT [" << this->_connId << "]" << std::endl;
 }
 
 
@@ -167,10 +199,10 @@ Database database;
 void execSqlFile (std::string path) {
 	std::string file = readFile (path);
 	auto conn = database.connect ();
-	pqxx::work work (*conn.conn);
+	
 	try {
-		work.exec (file);
-		work.commit ();
+		conn.exec (file);
+		conn.commit ();
 	} catch (std::exception &e) {
 		logger << "Ошибка при исполнении файла '" + path + "': " + e.what() << std::endl;
 		throw;
@@ -179,12 +211,12 @@ void execSqlFile (std::string path) {
 
 
 template <>
-std::string wrapType <int> (const int &t, pqxx::work &work) {
+std::string wrapType <int> (const int &t, OwnedConnection &work) {
 	return std::to_string (t);
 }
 
 template <>
-std::string wrapType <std::string> (const std::string &s, pqxx::work &work) {
+std::string wrapType <std::string> (const std::string &s, OwnedConnection &work) {
 	return work.quote (s);
 }
 
@@ -197,7 +229,7 @@ bool UpdateQueryElementInterface::isPresentIn (const nlohmann::json &j) {
 	return j.contains (this->getJsonElementName());
 }
 
-std::string UpdateQueryElementInterface::getQuery (const nlohmann::json &j, bool notFirst, pqxx::work &w) {
+std::string UpdateQueryElementInterface::getQuery (const nlohmann::json &j, bool notFirst, OwnedConnection &w) {
 	std::string comma = notFirst ? "," : "";
 	return comma + this->getSqlColName() + "=" + this->getWrappedValue (j.at (this->getJsonElementName()), w);
 }
@@ -261,7 +293,7 @@ std::map <std::string, UpdateQueryGenerator::SingleTableQuery> UpdateQueryGenera
 	return stqs;
 }
 
-void UpdateQueryGenerator::_parseJson (const nlohmann::json &j, std::map <std::string, UpdateQueryGenerator::SingleTableQuery> &stqs, pqxx::work &w) {
+void UpdateQueryGenerator::_parseJson (const nlohmann::json &j, std::map <std::string, UpdateQueryGenerator::SingleTableQuery> &stqs, OwnedConnection &w) {
 	for (auto &elem: this->_elems) {
 		if (elem->isPresentIn (j)) {
 			UpdateQueryGenerator::SingleTableQuery &stq = stqs.at (elem->getSqlTableName());
@@ -282,7 +314,7 @@ std::string UpdateQueryGenerator::_generateFinalQuery (std::map <std::string, Up
 	return finalQuery;
 }
 
-std::string UpdateQueryGenerator::queryFor (const nlohmann::json input, pqxx::work &w) {
+std::string UpdateQueryGenerator::queryFor (const nlohmann::json input, OwnedConnection &w) {
 	std::map <std::string, UpdateQueryGenerator::SingleTableQuery> stqs (this->_generateSTQS ());
 	this->_parseJson (input, stqs, w);
 	return this->_generateFinalQuery (stqs);

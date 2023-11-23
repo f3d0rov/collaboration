@@ -166,7 +166,7 @@ int Resource::_processRequest (mg_connection* conn) {
 		std::string body = this->_readRequestBody (conn);
 
 		// Report incoming connection
-		logger << method << " " << uri << " -> " << this->_uri << " from " << ri->remote_addr << ":" << ri->remote_port << ", body: " << body.length() << " bytes" << std::endl;
+		logger << std::endl << method << " " << uri << " -> " << this->_uri << " from " << ri->remote_addr << ":" << ri->remote_port << ", body: " << body.length() << " bytes" << std::endl;
 		
 		RequestData rd;
 		rd.body = body;

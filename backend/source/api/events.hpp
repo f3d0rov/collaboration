@@ -47,7 +47,7 @@ class UpdateQueryElement <ParticipantEntity>: public UpdateQueryElement <int> {
 		UpdateQueryElement (std::string jsonElementName, std::string sqlColName, std::string sqlTableName);
 		static UQEI_ptr make (std::string jsonElementName, std::string sqlColName, std::string sqlTableName);
 		
-		std::string getWrappedValue (const nlohmann::json &value, pqxx::work &w) override;
+		std::string getWrappedValue (const nlohmann::json &value, OwnedConnection &w) override;
 };
 
 
@@ -73,14 +73,14 @@ class EventType {
 		template <class T> T getParameter (std::string name, nlohmann::json &data);
 
 		std::vector <ParticipantEntity> getParticipantsFromJson (nlohmann::json &data);
-		void addParticipants (const int eventId, const std::vector <ParticipantEntity> &participants, pqxx::work &work);
-		std::vector <ParticipantEntity> getParticipantsForEvent (int eventId, pqxx::work &work);
+		void addParticipants (const int eventId, const std::vector <ParticipantEntity> &participants, OwnedConnection &work);
+		std::vector <ParticipantEntity> getParticipantsForEvent (int eventId, OwnedConnection &work);
 	
-		nlohmann::json formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, std::string startDate, nlohmann::json &data);
-		nlohmann::json formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, std::string startDate, std::string endDate, nlohmann::json &data);
+		nlohmann::json formGetEventResponse (OwnedConnection &work, int eventId, std::string desc, int sortIndex, std::string startDate, nlohmann::json &data);
+		nlohmann::json formGetEventResponse (OwnedConnection &work, int eventId, std::string desc, int sortIndex, std::string startDate, std::string endDate, nlohmann::json &data);
 	
-		void ensureParticipantion (pqxx::work &work, int eventId, ParticipantEntity &pe);
-		void updateParticipants (pqxx::work &work, int eventId, std::vector <ParticipantEntity> pe);
+		void ensureParticipantion (OwnedConnection &work, int eventId, ParticipantEntity &pe);
+		void updateParticipants (OwnedConnection &work, int eventId, std::vector <ParticipantEntity> pe);
 
 	public:
 		virtual std::string getTypeName () const = 0;

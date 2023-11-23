@@ -13,7 +13,7 @@ ApiResource (ctx, uri) {
 
 }
 
-std::string UserLoginResource::generateUniqueSessionId (pqxx::work& work) {
+std::string UserLoginResource::generateUniqueSessionId (OwnedConnection& work) {
 	int len = 10;
 	std::string sid;
 
@@ -34,7 +34,7 @@ std::string UserLoginResource::generateUniqueSessionId (pqxx::work& work) {
 	return sid;
 }
 
-std::string UserLoginResource::authUserWithWork (int uid, std::string ip, pqxx::work &work) {
+std::string UserLoginResource::authUserWithWork (int uid, std::string ip, OwnedConnection &work) {
 	std::string sessionId = UserLoginResource::generateUniqueSessionId (work);
 
 	std::string checkEmailConfirmed = std::string() 
@@ -64,15 +64,14 @@ std::string UserLoginResource::authUserWithWork (int uid, std::string ip, pqxx::
 
 std::string UserLoginResource::authUser (int uid, std::string device_ip) {
 	auto conn = database.connect ();
-	pqxx::work work (*conn.conn);
 
-	auto sessionId = UserLoginResource::authUserWithWork (uid, device_ip, work);
+	auto sessionId = UserLoginResource::authUserWithWork (uid, device_ip, conn);
 
-	work.commit();
+	conn.commit();
 	return sessionId;
 }
 
-std::unique_ptr<ApiResponse> UserLoginResource::successfulLogin (pqxx::work& work, int uid, std::string device_ip, std::string username) {
+std::unique_ptr<ApiResponse> UserLoginResource::successfulLogin (OwnedConnection& work, int uid, std::string device_ip, std::string username) {
 	std::string sessionId = UserLoginResource::authUserWithWork (uid, device_ip, work);
 	auto res = std::make_unique<ApiResponse> (nlohmann::json{ {"username", username}, {"uid", uid}, {"status", "success"}}, 200);
 	res->setCookie ("username", username, false, 60*60*24*365);
@@ -95,9 +94,8 @@ std::unique_ptr<ApiResponse> UserLoginResource::processRequest (RequestData &rd,
 	}
 
 	auto conn = database.connect();
-	auto work = pqxx::work (*conn.conn);
 
-	std::string qUsername = work.quote (username);
+	std::string qUsername = conn.quote (username);
 	// std::string qDevice_id = work.quote (device_id);
 
 	std::string getUserdataQuery = std::string ("")
@@ -109,7 +107,7 @@ std::unique_ptr<ApiResponse> UserLoginResource::processRequest (RequestData &rd,
 	int uid;
 
 	try {
-		auto row = work.exec1 (getUserdataQuery);
+		auto row = conn.exec1 (getUserdataQuery);
 		pass_hash = row[0].as <std::string>();
 		pass_salt = row[1].as <std::string>();
 		uid = row[2].as <int>();
@@ -124,12 +122,12 @@ std::unique_ptr<ApiResponse> UserLoginResource::processRequest (RequestData &rd,
 	std::string attemptHash = hashForPassword (password, pass_salt);
 	if (attemptHash == pass_hash) {
 		// Success!
-		auto result = this->successfulLogin (work, uid, rd.ip, username);
-		work.commit();
+		auto result = this->successfulLogin (conn, uid, rd.ip, username);
+		conn.commit();
 		return result;
 	}
 
-	work.commit ();
+	conn.commit ();
 	return std::make_unique<ApiResponse>(nlohmann::json{{"status", "incorrect_password"}}, 200);
 }
 
@@ -146,14 +144,13 @@ std::unique_ptr<ApiResponse> UserLogoutResource::processRequest (RequestData& rd
 	std::string session_id = rd.setCookies["session_id"];
 
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
 
 	std::string invalidateSessionQuery = std::string ()
 		+ "DELETE FROM user_login "
-		+ "WHERE session_id=" + work.quote (session_id) + ";";
+		+ "WHERE session_id=" + conn.quote (session_id) + ";";
 
-	auto res = work.exec (invalidateSessionQuery);
-	work.commit ();
+	auto res = conn.exec (invalidateSessionQuery);
+	conn.commit ();
 
 	auto response = std::make_unique<ApiResponse>(200);
 	response->setCookie ("session_id", "x", true, 0);
@@ -169,12 +166,11 @@ ApiResource (ctx, uri) {
 
 bool CheckUsernameAvailability::isAvailable (std::string username) {
 	auto conn = database.connect ();
-	pqxx::work work (*conn.conn);
-	std::string checkAvailabilityQuery = std::string ("SELECT uid FROM users WHERE username=") + work.quote (lowercase(username)) + ";";
-	auto res = work.exec (checkAvailabilityQuery);
+	std::string checkAvailabilityQuery = std::string ("SELECT uid FROM users WHERE username=") + conn.quote (lowercase(username)) + ";";
+	auto res = conn.exec (checkAvailabilityQuery);
 	bool free = res.size() == 0;
 
-	work.commit();
+	conn.commit();
 	return free;
 }
 
@@ -205,12 +201,11 @@ ApiResource (ctx, uri) {
 
 bool CheckEmailAvailability::isAvailable (std::string email) {
 	auto conn = database.connect ();
-	pqxx::work work (*conn.conn);
-	std::string checkAvailabilityQuery = std::string ("SELECT uid FROM users WHERE email=") + work.quote (lowercase(email)) + ";";
-	auto res = work.exec (checkAvailabilityQuery);
+	std::string checkAvailabilityQuery = std::string ("SELECT uid FROM users WHERE email=") + conn.quote (lowercase(email)) + ";";
+	auto res = conn.exec (checkAvailabilityQuery);
 	bool available = res.size() == 0;
 
-	work.commit();
+	conn.commit();
 	return available;
 }
 
@@ -299,23 +294,22 @@ std::unique_ptr<ApiResponse> UserRegisterResource::processRequest (RequestData &
 	std::string pass_hash = hashForPassword (password, pass_salt);
 
 	auto conn = database.connect ();
-	pqxx::work work (*conn.conn);
 
 	std::string createUserQuery = std::string ("")
 		+ "INSERT INTO users "
 		+ "(username, email, pass_hash, pass_salt) "
 		+ "VALUES ("
-			/* username */	+ work.quote (escapeHTML(username)) + ","
-			/* email */		+ work.quote (email) + ","
-			/* pass_hash */ + work.quote (pass_hash) + ","
-			/* pass_salt */ + work.quote (pass_salt)
+			/* username */	+ conn.quote (escapeHTML(username)) + ","
+			/* email */		+ conn.quote (email) + ","
+			/* pass_hash */ + conn.quote (pass_hash) + ","
+			/* pass_salt */ + conn.quote (pass_salt)
 		+ ");";
 	
-	work.exec (createUserQuery);
+	conn.exec (createUserQuery);
 
 	std::string getUserIdQuery = std::string ("")
-		+ "SELECT uid FROM users WHERE username=" + work.quote (username) + ";";
-	auto user = work.exec1 (getUserIdQuery);
+		+ "SELECT uid FROM users WHERE username=" + conn.quote (username) + ";";
+	auto user = conn.exec1 (getUserIdQuery);
 	int uid = user[0].as<int>();
 
 	std::string confirmationId = randomizer.hex (128);
@@ -324,10 +318,10 @@ std::unique_ptr<ApiResponse> UserRegisterResource::processRequest (RequestData &
 		+ "(uid, confirmation_id, valid_until) "
 		+ "VALUES ("
 		+ std::to_string (uid) + ","
-		+ work.quote (confirmationId) + ","
+		+ conn.quote (confirmationId) + ","
 		+ "CURRENT_TIMESTAMP + interval '2 hours');";
-	work.exec (awaitEmailConfirmationQuery);
-	work.commit();
+	conn.exec (awaitEmailConfirmationQuery);
+	conn.commit();
 
 	mailer.sendHtmlLetter (
 		email,
@@ -358,35 +352,34 @@ std::unique_ptr<_Response> ConfirmRegistrationResource::processRequest (RequestD
 	std::string id = rd.query["id"];
 
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
 
 	std::string checkIdQuery = std::string()
 		+ "SELECT uid "
 		+ "FROM pending_email_confirmation "
-		+ "WHERE confirmation_id=" + work.quote (id)
+		+ "WHERE confirmation_id=" + conn.quote (id)
 		+ " AND valid_until > CURRENT_TIMESTAMP;";
-	auto result = work.exec (checkIdQuery);
+	auto result = conn.exec (checkIdQuery);
 	if (result.size() == 0) return response;
 
 	int uid = result[0].at(0).as <int>();
 	std::string removeId = std::string() 
 		+ "DELETE FROM pending_email_confirmation "
-		+ "WHERE confirmation_id=" + work.quote (id);
-	work.exec (removeId);
+		+ "WHERE confirmation_id=" + conn.quote (id);
+	conn.exec (removeId);
 
-	std::string sessionId = UserLoginResource::authUserWithWork (uid, rd.ip, work);
+	std::string sessionId = UserLoginResource::authUserWithWork (uid, rd.ip, conn);
 	
 	std::string getUsernameByUid = std::string () 
 		+ "SELECT username "
 		+ "FROM users "
 		+ "WHERE uid=" + std::to_string (uid) + ";";
-	auto row = work.exec1 (getUsernameByUid);
+	auto row = conn.exec1 (getUsernameByUid);
 	std::string username = row.at(0).as <std::string> ();
 	
 	response->setCookie ("session_id", sessionId, true);
 	response->setCookie ("username", username, false);
 
-	work.commit();
+	conn.commit();
 	return response;
 }
 
@@ -405,7 +398,6 @@ UsernameUid CheckSessionResource::checkSessionId (std::string sessionId) {
 	}
 
 	auto conn = database.connect ();
-	pqxx::work work (*conn.conn);
 
 	UsernameUid uu;
 	uu.valid = false;
@@ -413,9 +405,9 @@ UsernameUid CheckSessionResource::checkSessionId (std::string sessionId) {
 	std::string checkSessionIdQuery = std::string ("")
 		+ "SELECT user_uid "
 		+ "FROM user_login "
-		+ "WHERE session_id=" + work.quote (sessionId) + ";";
+		+ "WHERE session_id=" + conn.quote (sessionId) + ";";
 
-	pqxx::result res = work.exec (checkSessionIdQuery);
+	pqxx::result res = conn.exec (checkSessionIdQuery);
 
 	if (res.size() == 0) return uu;
 	uu.uid = res[0][0].as <int>();
@@ -424,7 +416,7 @@ UsernameUid CheckSessionResource::checkSessionId (std::string sessionId) {
 		+ "FROM users "
 		+ "WHERE uid=" + std::to_string (uu.uid) + ";";
 	
-	pqxx::row unameRow = work.exec1 (getUsernameByUid);
+	pqxx::row unameRow = conn.exec1 (getUsernameByUid);
 	uu.username = unameRow[0].as <std::string>();
 	uu.permissionLevel = unameRow[1].as <int>();
 	uu.valid = true;
@@ -437,11 +429,11 @@ UsernameUid CheckSessionResource::checkSessionId (std::string sessionId) {
 	std::string setLastAccessTimestampSession = std::string()
 		+ "UPDATE user_login "
 		+ "SET last_access=CURRENT_TIMESTAMP "
-		+ "WHERE session_id=" + work.quote (sessionId) + ";";
+		+ "WHERE session_id=" + conn.quote (sessionId) + ";";
 
-	work.exec (setLastAccessTimestampUser);
-	work.exec (setLastAccessTimestampSession);
-	work.commit ();
+	conn.exec (setLastAccessTimestampUser);
+	conn.exec (setLastAccessTimestampSession);
+	conn.commit ();
 	return uu;
 }	
 

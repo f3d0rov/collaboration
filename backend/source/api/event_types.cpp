@@ -33,18 +33,16 @@ int SingleEntityRelatedEventType::createEvent (nlohmann::json &rawData) {
 	SingleEntityRelatedEventType::Data data = this->getParameter <SingleEntityRelatedEventType::Data> ("data", rawData);
 
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
-
 	// TODO: verify entity type is correct via this->entityTypeApplicable
 
 	std::string addEventQuery = std::string ()
 		+ "INSERT INTO events (sort_index, type, description) VALUES ("
 		+ /* sort_index */ 	"0,"
-		+ /* type */		work.quote (this->getTypeName()) + ","
-		+ /* desc */		work.quote (data.description)
+		+ /* type */		conn.quote (this->getTypeName()) + ","
+		+ /* desc */		conn.quote (data.description)
 		+ ") RETURNING id;";
 	
-	auto res = work.exec (addEventQuery);
+	auto res = conn.exec (addEventQuery);
 	int eventId = res[0][0].as <int>();
 
 
@@ -52,15 +50,15 @@ int SingleEntityRelatedEventType::createEvent (nlohmann::json &rawData) {
 		+ "INSERT INTO single_entity_related_events (id, entity_id, event_date) VALUES ("
 		+ /* id */			std::to_string (eventId) + ","
 		+ /* entity_id */	std::to_string (data.entity.entityId) + ","
-		+ /* event_date */	work.quote (data.date)
+		+ /* event_date */	conn.quote (data.date)
 		+ ");";
 	
-	work.exec (addEventDataQuery);
+	conn.exec (addEventDataQuery);
 
-	this->addParticipants (eventId, participants, work);
-	this->ensureParticipantion (work, eventId, data.entity); // Related entity considered a participant
+	this->addParticipants (eventId, participants, conn);
+	this->ensureParticipantion (conn, eventId, data.entity); // Related entity considered a participant
 
-	work.commit();
+	conn.commit();
 	
 	return eventId;
 }
@@ -75,8 +73,8 @@ nlohmann::json SingleEntityRelatedEventType::getEvent (int id) {
 			"WHERE events.id=" + std::to_string (id) + ";";
 	
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
-	auto res = work.exec (getEventDataQuery);
+	
+	auto res = conn.exec (getEventDataQuery);
 	if (res.size() == 0) throw UserSideEventException ("Не существует события с заданным id");
 	auto row = res[0];
 
@@ -90,13 +88,12 @@ nlohmann::json SingleEntityRelatedEventType::getEvent (int id) {
 	nlohmann::json dataJson;
 	to_json (dataJson, data);
 
-	return this->formGetEventResponse (work, id, "{description}", row["sort_index"].as <int>(), data.date, dataJson);
+	return this->formGetEventResponse (conn, id, "{description}", row["sort_index"].as <int>(), data.date, dataJson);
 }
 
 int SingleEntityRelatedEventType::updateEvent (nlohmann::json &data) {
 	int eventId = this->getParameter<int> ("id", data);
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
 
 	if (data.contains ("data")) {
 		UpdateQueryGenerator qGen (
@@ -111,25 +108,24 @@ int SingleEntityRelatedEventType::updateEvent (nlohmann::json &data) {
 			}
 		);
 
-		std::string updateQuery = qGen.queryFor (data.at ("data"), work);
-		work.exec (updateQuery);
-		logger << "SingleEntityRelatedEventType::updateEvent updateQuery = '" << updateQuery << "'" << std::endl;
+		std::string updateQuery = qGen.queryFor (data.at ("data"), conn);
+		conn.exec (updateQuery);
 	}
 
 	if (data.contains ("participants")) {
 		std::vector <ParticipantEntity> pes;
 		pes = this->getParameter <std::vector <ParticipantEntity>> ("participants", data);
-		int mustHaveEntityId = this->getRelatedEntityForEvent (work, eventId);
+		int mustHaveEntityId = this->getRelatedEntityForEvent (conn, eventId);
 		pes.push_back (ParticipantEntity{true, mustHaveEntityId, ""});
-		this->updateParticipants (work, eventId, pes);
+		this->updateParticipants (conn, eventId, pes);
 	}
 
-	work.commit();
+	conn.commit();
 	return eventId;
 }
 
 
-int SingleEntityRelatedEventType::getRelatedEntityForEvent (pqxx::work &work, int eventId) {
+int SingleEntityRelatedEventType::getRelatedEntityForEvent (OwnedConnection &work, int eventId) {
 	std::string query = "SELECT entity_id FROM single_entity_related_events WHERE id="s + std::to_string (eventId) + ";";
 	auto result = work.exec (query);
 	if (result.size() == 0)
@@ -264,27 +260,26 @@ int SinglePublicationEventType::createEvent (nlohmann::json &rawData) {
 	SinglePublicationEventType::Data data = this->getParameter <SinglePublicationEventType::Data> ("data", rawData);
 
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
 
 	std::string createEventQuery = std::string()
 		+ "INSERT INTO events (type, description) VALUES ("
-		+ /* type */	work.quote (this->getTypeName()) + ","
-		+ /* desc */	work.quote (data.description) + ") RETURNING id;";
-	auto res = work.exec1 (createEventQuery);
+		+ /* type */	conn.quote (this->getTypeName()) + ","
+		+ /* desc */	conn.quote (data.description) + ") RETURNING id;";
+	auto res = conn.exec1 (createEventQuery);
 	int eventId = res[0].as <int>();
 
-	this->addParticipants (eventId, participants, work);
+	this->addParticipants (eventId, participants, conn);
 
 	std::string addSongQuery = std::string()
 		+ "INSERT INTO songs (title, author, release, release_date) VALUES ("
-		+ /* title */ 	work.quote (data.song) + ","
+		+ /* title */ 	conn.quote (data.song) + ","
 		+ /* author */	std::to_string (data.author.entityId) + ","
 		+ /* release */	std::to_string (eventId) + ","
-		+ /* date */ 	work.quote (data.date)
+		+ /* date */ 	conn.quote (data.date)
 		+ ");";
-	work.exec (addSongQuery);
+	conn.exec (addSongQuery);
 
-	work.commit();
+	conn.commit();
 	return eventId;
 }
 
@@ -298,10 +293,9 @@ nlohmann::json SinglePublicationEventType::getEvent (int id) {
 		"WHERE events.id=") + std::to_string (id) + ";";
 
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
 
 
-	auto result = work.exec (getEventQuery);
+	auto result = conn.exec (getEventQuery);
 	if (result.size() == 0) throw UserSideEventException ("Не существует события с заданным id");
 	auto row = result[0];
 
@@ -316,13 +310,12 @@ nlohmann::json SinglePublicationEventType::getEvent (int id) {
 	nlohmann::json dataJson;
 	to_json (dataJson, data);
 
-	return this->formGetEventResponse (work, id, "{description}", row.at ("sort_index").as <int>(), data.date, dataJson);
+	return this->formGetEventResponse (conn, id, "{description}", row.at ("sort_index").as <int>(), data.date, dataJson);
 }
 
 int SinglePublicationEventType::updateEvent (nlohmann::json &data) {
 	int eventId = this->getParameter<int> ("id", data);
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
 
 	if (data.contains ("data")) {
 		UpdateQueryGenerator qGen (
@@ -338,24 +331,23 @@ int SinglePublicationEventType::updateEvent (nlohmann::json &data) {
 			}
 		);
 
-		std::string updateQuery = qGen.queryFor (data.at ("data"), work);
-		logger << "SinglePublicationEventType::updateEvent updateQuery: '" << updateQuery << "'" << std::endl;
-		work.exec (updateQuery);
+		std::string updateQuery = qGen.queryFor (data.at ("data"), conn);
+		conn.exec (updateQuery);
 	}
 	
 	if (data.contains ("participants")) {
 		std::vector <ParticipantEntity> pes;
 		pes = this->getParameter <std::vector <ParticipantEntity>> ("participants", data);
-		int mustHaveEntityId = this->getAuthorForEvent (work, eventId);
+		int mustHaveEntityId = this->getAuthorForEvent (conn, eventId);
 		pes.push_back (ParticipantEntity{true, mustHaveEntityId, ""});
-		this->updateParticipants (work, eventId, pes);
+		this->updateParticipants (conn, eventId, pes);
 	}
 
-	work.commit();
+	conn.commit();
 	return eventId;
 }
 
-int SinglePublicationEventType::getAuthorForEvent (pqxx::work &work, int eventId) {
+int SinglePublicationEventType::getAuthorForEvent (OwnedConnection &work, int eventId) {
 	std::string query = "SELECT author FROM songs WHERE id="s + std::to_string (eventId) + ";";
 	auto result = work.exec (query);
 	if (result.size() == 0)

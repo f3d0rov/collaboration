@@ -6,7 +6,7 @@ ApiResource (ctx, uri) {
 
 }
 
-int CreatePageResource::createEntity (pqxx::work &work, std::string type, std::string name, std::string desc, std::string startDate, std::string endDate, int uid) {
+int CreatePageResource::createEntity (OwnedConnection &work, std::string type, std::string name, std::string desc, std::string startDate, std::string endDate, int uid) {
 	std::string checkExistenceQuery = std::string()
 		+ "SELECT id, awaits_creation FROM entities "
 		+ "WHERE name=" + work.quote (name) + ";";
@@ -53,13 +53,13 @@ int CreatePageResource::createEntity (pqxx::work &work, std::string type, std::s
 	}
 }
 
-int CreatePageResource::createEmptyEntityWithWork (pqxx::work &work, const std::string &name) {
+int CreatePageResource::createEmptyEntityWithWork (OwnedConnection &work, const std::string &name) {
 	std::string insertEmptyEntityQuery = "INSERT INTO entities (name) VALUES (" + work.quote (name) + ") RETURNING id;";
 	auto res = work.exec1 (insertEmptyEntityQuery);
 	return res[0].as <int>();
 }
 
-int CreatePageResource::createTypedEntity (pqxx::work &work, int entityId, std::string type) {
+int CreatePageResource::createTypedEntity (OwnedConnection &work, int entityId, std::string type) {
 	const std::map <std::string /* type */, std::string /* table */> typeToTableName = {
 		{"person", "personalities"},
 		{"band", "bands"},
@@ -113,20 +113,19 @@ std::unique_ptr<ApiResponse> CreatePageResource::processRequest (RequestData &rd
 	if (!allowedTypes.contains (type)) return std::make_unique <ApiResponse> (nlohmann::json{}, 400);
 	
 	auto conn = database.connect ();
-	pqxx::work work (*conn.conn);
 
 	// Check if already mentioned
-	int entityId = this->createEntity (work, type, name, description, startDate, endDate, user.uid);
+	int entityId = this->createEntity (conn, type, name, description, startDate, endDate, user.uid);
 	if (entityId < 0) {
 		return std::make_unique <ApiResponse> (nlohmann::json{{"status", "already_exists"}}, 200);
 	}
-	int pageId = this->createTypedEntity (work, entityId, type);
+	int pageId = this->createTypedEntity (conn, entityId, type);
 
 	std::string url = CreatePageResource::pageUrlForTypedEntity (type, entityId);
 	// Index created page
-	Searcher::indexWithWork (work, type, url, name + " " + description, name, description, "");
+	Searcher::indexWithWork (conn, type, url, name + " " + description, name, description, "");
 
-	work.commit ();
+	conn.commit ();
 	logger << "Создана страница '" << name << "'" << std::endl;
 	auto response = std::make_unique <ApiResponse> (
 		nlohmann::json {
@@ -168,15 +167,14 @@ std::unique_ptr <ApiResponse> RequestPictureChangeResource::processRequest (Requ
 	std::string id = randomizer.hex (128);
 	
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
 
 	std::string createRequest = std::string("INSERT INTO entity_photo_upload_links (id, entity_id, valid_until) ")
 		+ "VALUES ("
-			/* id */ 			+ work.quote (id) + ","
-			/* entity_id */		+ work.quote (entityId) + ","
+			/* id */ 			+ conn.quote (id) + ","
+			/* entity_id */		+ std::to_string (entityId) + ","
 			/* valid_until */	+ "CURRENT_TIMESTAMP + INTERVAL '5 minutes');";
-	auto result = work.exec (createRequest);
-	work.commit();
+	auto result = conn.exec (createRequest);
+	conn.commit();
 	return std::make_unique <ApiResponse> (nlohmann::json {{"url", "/" + this->_uploadUrl + "?id=" + id}});
 }
 
@@ -187,7 +185,7 @@ Resource (ctx, uri), _savePath (savePath) {
 
 }
 
-void UploadPictureResource::setEntityPicture (pqxx::work &work, int entityId, std::string path) {
+void UploadPictureResource::setEntityPicture (OwnedConnection &work, int entityId, std::string path) {
 	std::string checkForPic = std::string ()
 		+ "SELECT picture_path FROM entities WHERE id=" + std::to_string (entityId) + ";";
 	auto res = work.exec1 (checkForPic);
@@ -214,13 +212,12 @@ std::unique_ptr <_Response> UploadPictureResource::processRequest (RequestData &
 	if (!user.valid) return std::make_unique <Response> (401);
 
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
 
 	std::string id = rd.query ["id"];
 	std::string checkRequest = std::string ()
 		+ "SELECT entity_id FROM entity_photo_upload_links "
-			"WHERE id=" + work.quote (id) + " AND valid_until > CURRENT_TIMESTAMP;";
-	auto result = work.exec (checkRequest);
+			"WHERE id=" + conn.quote (id) + " AND valid_until > CURRENT_TIMESTAMP;";
+	auto result = conn.exec (checkRequest);
 
 	if (result.size() == 0) return std::make_unique <ApiResponse> (404);
 	int entityId = result[0][0].as <int>();
@@ -253,8 +250,8 @@ std::unique_ptr <_Response> UploadPictureResource::processRequest (RequestData &
 	delete[] buffer;
 
 	logger << "Фото сущности сохранено в: " << filename << std::endl;
-	this->setEntityPicture (work, entityId, filename);
-	work.commit();
+	this->setEntityPicture (conn, entityId, filename);
+	conn.commit();
 
 	return std::make_unique <Response> (200);
 }
@@ -270,12 +267,11 @@ ApiResource (ctx, uri), _pics (picsUri) {
 bool EntityDataResource::entityCreated (int id) {
 	std::string query = "SELECT 1 FROM entities WHERE awaits_creation=FALSE AND id=" + std::to_string (id) + ";";
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
-	auto res = work.exec (query);
+	auto res = conn.exec (query);
 	return res.size() > 0;
 }
 
-int EntityDataResource::getEntityByNameWithWork (pqxx::work &work, const std::string &name) {
+int EntityDataResource::getEntityByNameWithWork (OwnedConnection &work, const std::string &name) {
 	std::string checkEntityExistenceQuery = "SELECT id FROM entities WHERE name="s + work.quote (name) + ";";
 	auto checkRes = work.exec (checkEntityExistenceQuery);
 	if (checkRes.size() == 0) return CreatePageResource::createEmptyEntityWithWork (work, name);
@@ -284,14 +280,13 @@ int EntityDataResource::getEntityByNameWithWork (pqxx::work &work, const std::st
 
 int EntityDataResource::getEntityByName (const std::string &name) {
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
-	auto id = EntityDataResource::getEntityByNameWithWork (work, name);
-	work.commit();
+	auto id = EntityDataResource::getEntityByNameWithWork (conn, name);
+	conn.commit();
 	return id;
 }
 
 
-EntityData EntityDataResource::getEntityDataByIdWithWork (pqxx::work &work, int id) {
+EntityData EntityDataResource::getEntityDataByIdWithWork (OwnedConnection &work, int id) {
 	EntityData ed;
 	std::string getEntityDataByIdQuery = 
 		"SELECT name, description, type, start_date, end_date, picture_path, awaits_creation, created_by, created_on FROM entities WHERE id="s + std::to_string (id) + ";";
@@ -322,8 +317,7 @@ EntityData EntityDataResource::getEntityDataByIdWithWork (pqxx::work &work, int 
 
 EntityData EntityDataResource::getEntityDataById (int id) {
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
-	return EntityDataResource::getEntityDataByIdWithWork (work, id);
+	return EntityDataResource::getEntityDataByIdWithWork (conn, id);
 }
 
 std::unique_ptr <ApiResponse> EntityDataResource::processRequest (RequestData &rd, nlohmann::json body) {
@@ -345,9 +339,8 @@ std::unique_ptr <ApiResponse> EntityDataResource::processRequest (RequestData &r
 		+ "WHERE id=" + std::to_string (id) + ";";
 
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
 
-	pqxx::result result = work.exec (getEntityDataQuery);
+	pqxx::result result = conn.exec (getEntityDataQuery);
 	auto response = std::make_unique <ApiResponse> ();
 
 	if (result.size() == 0) {

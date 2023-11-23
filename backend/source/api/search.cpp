@@ -79,7 +79,7 @@ std::set <std::string> Searcher::getKeywordsFromPrompt (std::string prompt) {
 	return result;
 }
 
-std::string Searcher::getSqlListOfKeywords (std::set <std::string> &keywords, pqxx::work &work) {
+std::string Searcher::getSqlListOfKeywords (std::set <std::string> &keywords, OwnedConnection &work) {
 	std::string result;
 
 	bool notFirst = false;
@@ -102,7 +102,7 @@ std::string Searcher::getTableForType (std::string type) {
 }
 
 
-std::vector <SearchResult> Searcher::findAllWithWork (std::string prompt, pqxx::work &work) {
+std::vector <SearchResult> Searcher::findAllWithWork (std::string prompt, OwnedConnection &work) {
 	auto keywords = Searcher::getKeywordsFromPrompt (prompt);
 	if (keywords.size() == 0) return {};
 	std::string keywordList = Searcher::getSqlListOfKeywords (keywords, work);
@@ -126,22 +126,20 @@ std::vector <SearchResult> Searcher::findAllWithWork (std::string prompt, pqxx::
 
 std::vector <SearchResult> Searcher::findAll (std::string prompt) {
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
-	auto result = Searcher::findAllWithWork (prompt, work);
-	work.commit ();
+	auto result = Searcher::findAllWithWork (prompt, conn);
+	conn.commit ();
 	return result;
 }
 
 
 std::vector <PrimitiveSearchResult> Searcher::findEntities (std::string prompt) {
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
-	auto result = Searcher::findEntitiesWithWork (prompt, work);
-	work.commit ();
+	auto result = Searcher::findEntitiesWithWork (prompt, conn);
+	conn.commit ();
 	return result;
 }
 
-std::vector <PrimitiveSearchResult> Searcher::findEntitiesWithWork (std::string prompt, pqxx::work &work) {
+std::vector <PrimitiveSearchResult> Searcher::findEntitiesWithWork (std::string prompt, OwnedConnection &work) {
 	auto keywords = Searcher::getKeywordsFromPrompt (prompt);
 	if (keywords.size() == 0) return {};
 	std::string keywordList = Searcher::getSqlListOfKeywords (keywords, work);
@@ -163,7 +161,7 @@ std::vector <PrimitiveSearchResult> Searcher::findEntitiesWithWork (std::string 
 	return results;
 }
 
-std::vector <PrimitiveSearchResult> Searcher::findByTypeWithWork (std::string prompt, std::string type, pqxx::work &work) {
+std::vector <PrimitiveSearchResult> Searcher::findByTypeWithWork (std::string prompt, std::string type, OwnedConnection &work) {
 
 	auto keywords = Searcher::getKeywordsFromPrompt (prompt);
 	if (keywords.size() == 0) return {};
@@ -188,9 +186,8 @@ std::vector <PrimitiveSearchResult> Searcher::findByTypeWithWork (std::string pr
 
 std::vector <PrimitiveSearchResult> Searcher::findByType (std::string prompt, std::string type) {
 	auto conn = database.connect();
-	pqxx::work work (*conn.conn);
-	auto result = Searcher::findByTypeWithWork (prompt, type, work);
-	work.commit ();
+	auto result = Searcher::findByTypeWithWork (prompt, type, conn);
+	conn.commit ();
 	return result;
 }
 
@@ -220,7 +217,7 @@ std::map <std::string, PromptToken> Searcher::analysePrompt (std::string prompt)
 }
 
 
-void Searcher::indexWithWork (pqxx::work &work, std::string type, std::string url, std::string prompt, std::string name, std::string desc, std::string imgPath) {
+void Searcher::indexWithWork (OwnedConnection &work, std::string type, std::string url, std::string prompt, std::string name, std::string desc, std::string imgPath) {
 	auto keywords = Searcher::analysePrompt (prompt);
 	std::string insertIndexedRes = std::string() 
 		+ "INSERT INTO indexed_resources (url, title, description, type, picture_path)"
