@@ -71,7 +71,7 @@ ApiResponsePtr GetEntityEventsResource::processRequest (RequestData &rd, nlohman
 	} catch (UserSideEventException &e) {
 		return makeApiResponse (nlohmann::json {{"error", e.what()}}, 400);
 	} catch (std::exception &e) {
-		logger << "CreateEntityEventResource::processRequest: " << e.what() << std::endl;
+		logger << "GetEntityEventsResource::processRequest: " << e.what() << std::endl;
 		return makeApiResponse (500);
 	}
 }
@@ -95,7 +95,7 @@ ApiResponsePtr UpdateEntityEventResource::processRequest (RequestData &rd, nlohm
 	} catch (UserSideEventException &e) {
 		return makeApiResponse (nlohmann::json {{"error", e.what()}}, 400);
 	} catch (std::exception &e) {
-		logger << "CreateEntityEventResource::processRequest: " << e.what() << std::endl;
+		logger << "UpdateEntityEventResource::processRequest: " << e.what() << std::endl;
 		return makeApiResponse (500);
 	}
 }
@@ -121,7 +121,7 @@ ApiResponsePtr DeleteEntityEventResource::processRequest (RequestData &rd, nlohm
 	} catch (UserSideEventException &e) {
 		return makeApiResponse (nlohmann::json {{"error", e.what()}}, 400);
 	} catch (std::exception &e) {
-		logger << "CreateEntityEventResource::processRequest: " << e.what() << std::endl;
+		logger << "DeleteEntityEventResource::processRequest: " << e.what() << std::endl;
 		return makeApiResponse (500);
 	}
 }

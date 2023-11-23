@@ -58,6 +58,7 @@ int SingleEntityRelatedEventType::createEvent (nlohmann::json &rawData) {
 	work.exec (addEventDataQuery);
 
 	this->addParticipants (eventId, participants, work);
+	this->ensureParticipantion (work, eventId, data.entity); // Related entity considered a participant
 
 	work.commit();
 	
@@ -115,8 +116,27 @@ int SingleEntityRelatedEventType::updateEvent (nlohmann::json &data) {
 		logger << "SingleEntityRelatedEventType::updateEvent updateQuery = '" << updateQuery << "'" << std::endl;
 	}
 
+	if (data.contains ("participants")) {
+		std::vector <ParticipantEntity> pes;
+		pes = this->getParameter <std::vector <ParticipantEntity>> ("participants", data);
+		int mustHaveEntityId = this->getRelatedEntityForEvent (work, eventId);
+		pes.push_back (ParticipantEntity{true, mustHaveEntityId, ""});
+		this->updateParticipants (work, eventId, pes);
+	}
+
 	work.commit();
 	return eventId;
+}
+
+
+int SingleEntityRelatedEventType::getRelatedEntityForEvent (pqxx::work &work, int eventId) {
+	std::string query = "SELECT entity_id FROM single_entity_related_events WHERE id="s + std::to_string (eventId) + ";";
+	auto result = work.exec (query);
+	if (result.size() == 0)
+		throw std::runtime_error ("SingleEntityRelatedEventType::getRelatedEntityForEvent: нет события с id="s + std::to_string (eventId));
+	else {
+		return result.at(0).at(0).as <int> ();
+	}
 }
 
 
@@ -322,11 +342,28 @@ int SinglePublicationEventType::updateEvent (nlohmann::json &data) {
 		logger << "SinglePublicationEventType::updateEvent updateQuery: '" << updateQuery << "'" << std::endl;
 		work.exec (updateQuery);
 	}
+	
+	if (data.contains ("participants")) {
+		std::vector <ParticipantEntity> pes;
+		pes = this->getParameter <std::vector <ParticipantEntity>> ("participants", data);
+		int mustHaveEntityId = this->getAuthorForEvent (work, eventId);
+		pes.push_back (ParticipantEntity{true, mustHaveEntityId, ""});
+		this->updateParticipants (work, eventId, pes);
+	}
 
 	work.commit();
 	return eventId;
 }
 
+int SinglePublicationEventType::getAuthorForEvent (pqxx::work &work, int eventId) {
+	std::string query = "SELECT author FROM songs WHERE id="s + std::to_string (eventId) + ";";
+	auto result = work.exec (query);
+	if (result.size() == 0)
+		throw std::runtime_error ("SinglePublicationEventType::getAuthorForEvent: нет события с id="s + std::to_string (eventId));
+	else {
+		return result.at(0).at(0).as <int> ();
+	}
+}
 
 void from_json (const nlohmann::json &j, SinglePublicationEventType::Data &d) {
 	d.author = j.at ("author").get <ParticipantEntity>();

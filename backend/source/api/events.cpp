@@ -145,6 +145,46 @@ nlohmann::json EventType::formGetEventResponse (pqxx::work &work, int eventId, s
 	return resp;
 }
 
+
+void EventType::ensureParticipantion (pqxx::work &work, int eventId, ParticipantEntity &pe) {
+	pe.updateId ();
+	std::string query = "INSERT INTO participation (event_id, entity_id) VALUES ("s
+		+ std::to_string (eventId) + ","
+		+ std::to_string (pe.entityId) + ") ON CONFLICT DO NOTHING;";
+	work.exec (query);
+}
+
+void EventType::updateParticipants (pqxx::work &work, int eventId, std::vector <ParticipantEntity> pes) {
+	std::set <int> mustHave;
+
+	for (auto &i: pes) {
+		mustHave.insert (i.entityId);
+		this->ensureParticipantion (work, eventId, i);
+	}
+
+	std::string checkParticipantsQuery = "SELECT entity_id FROM participation WHERE event_id="s + std::to_string (eventId) + ";";
+	auto allParticipants = work.exec (checkParticipantsQuery);
+
+	std::string removeExceessParticipantsQuery = "DELETE FROM participation WHERE event_id="s + std::to_string (eventId)
+		+ "AND entity_id IN (";
+	bool foundSome = false;
+
+	for (int i = 0; i < allParticipants.size(); i++) {
+		auto row = allParticipants [i];
+		int entityId = row.at (0).as <int>();
+		if (mustHave.contains (entityId)) continue;
+		removeExceessParticipantsQuery += (foundSome ? ","s : ""s) + std::to_string (entityId);
+		foundSome = true;
+	}
+
+	if (foundSome) {
+		removeExceessParticipantsQuery += ");";
+		logger << "EventType::updateParticipants removeExceessParticipantsQuery: " << removeExceessParticipantsQuery << std::endl;
+		work.exec (removeExceessParticipantsQuery);
+	}
+}
+
+
 nlohmann::json EventType::getEventDescriptor () {
 	auto inputs = this->getInputs ();
 	for (int i = 0; i < inputs.size(); i++) {

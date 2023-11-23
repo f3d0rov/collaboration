@@ -79,6 +79,9 @@ class EventType {
 		nlohmann::json formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, std::string startDate, nlohmann::json &data);
 		nlohmann::json formGetEventResponse (pqxx::work &work, int eventId, std::string desc, int sortIndex, std::string startDate, std::string endDate, nlohmann::json &data);
 	
+		void ensureParticipantion (pqxx::work &work, int eventId, ParticipantEntity &pe);
+		void updateParticipants (pqxx::work &work, int eventId, std::vector <ParticipantEntity> pe);
+
 	public:
 		virtual std::string getTypeName () const = 0;
 		virtual std::string getDisplayName () const = 0;

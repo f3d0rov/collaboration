@@ -35,6 +35,8 @@ class SingleEntityRelatedEventType: virtual public EventType {
 		virtual std::string getRelatedEntityType () const = 0;
 		virtual std::string getRelatedEntityPromptString () const = 0;
 		virtual std::string getDatePrompt () const = 0;
+
+		int getRelatedEntityForEvent (pqxx::work &work, int eventId);
 };
 
 void from_json (const nlohmann::json &j, SingleEntityRelatedEventType::Data &d);
@@ -99,6 +101,8 @@ class SinglePublicationEventType: public AllEntitiesEventType {
 		int createEvent (nlohmann::json &data) override;
 		nlohmann::json getEvent (int id) override;
 		int updateEvent (nlohmann::json &data) override;
+
+		int getAuthorForEvent (pqxx::work &work, int eventId);
 };
 
 void from_json (const nlohmann::json &j, SinglePublicationEventType::Data &d);

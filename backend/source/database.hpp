@@ -111,7 +111,7 @@ template <>			std::string wrapType <int> (const int &t, pqxx::work &work);
 template <>			std::string wrapType <std::string> (const std::string &s, pqxx::work &work);
 
 
-// Converts JSON object to a set of `UPDATE ... SET x=fromJson, y=fromJson...;` queries
+
 class UpdateQueryElementInterface {
 	public:
 		~UpdateQueryElementInterface ();
@@ -145,6 +145,7 @@ class UpdateQueryElement: public UpdateQueryElementInterface {
 		virtual std::string getWrappedValue (const nlohmann::json &value, pqxx::work &w) override;
 };
 
+// Converts JSON object to a set of `UPDATE ... SET x=fromJson, y=fromJson...;` queries
 class UpdateQueryGenerator {
 	public:
 		struct TableColumnValue {
