@@ -253,10 +253,12 @@ class EventDisplayObject {
 	}
 
 	reportEntry () {
+		if (!demandAuth()) return;
 		this.eventsView.eventReporter.reportEvent (this.event.id);
 	}
 
 	editEntry () {
+		if (!demandAuth()) return;
 		this.eventsView.entity.editEvent (this);
 	}
 
