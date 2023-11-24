@@ -63,7 +63,7 @@ pqxx::row OwnedConnection::exec1 (std::string query) {
 }
 
 std::string OwnedConnection::quote (std::string raw) {
-	return this->work->quote (raw);
+	return this->work->quote (escapeHTML(raw));
 }
 
 std::string OwnedConnection::quoteDontEscapeHtml (std::string raw) {
