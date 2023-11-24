@@ -615,9 +615,37 @@ class Entity {
 
 let localEntity = new Entity;
 
+function showBackground (img) {
+	img.classList.add ("loaded");
+}
+
+function displayBackgroundOnLoad () {
+	let img = document.querySelector (".sickBackground");
+	if (img.complete) {
+		showBackground (img);
+	} else {
+		img.addEventListener ('load', () => { showBackground (img); });
+		if (img.complete) showBackground (img); // Just making sure
+	}
+}
+
+function setBgSrc (src) {
+	let img = document.querySelector (".sickBackground");
+	img.setAttribute ("src", src);
+}
+
 window.addEventListener (
 	'load',
-	(ev) => {
-		localEntity.pullData ();
+	async (ev) => {
+		displayBackgroundOnLoad ();
+		await localEntity.pullData ();
+		switch (localEntity.entityData.type) {
+			case "person":
+				setBgSrc ("/resources/person_bg.jpg");
+				break;
+			default: // case "band":
+				setBgSrc ("/resources/band_bg.jpg");
+				break;
+		}
 	}
 );

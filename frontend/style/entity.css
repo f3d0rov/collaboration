@@ -4,6 +4,9 @@ body {
 	overflow: auto;
 }
 
+.page {
+	background-color: #130d0ddd;
+}
 
 .veil {
 	position: fixed;
