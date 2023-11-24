@@ -38,7 +38,22 @@ function setupSearch () {
 	searchInput.addEventListener ('keydown', (ev) => { if (ev.key == "Enter") search(); });
 }
 
+function showBackground (img) {
+	img.classList.add ("loaded");
+}
+
+function displayBackgroundOnLoad () {
+	let img = document.querySelector (".sickBackground");
+	if (img.complete) {
+		showBackground (img);
+	} else {
+		img.addEventListener ('load', () => { showBackground (img); });
+		if (img.complete) showBackground (img); // Just making sure
+	}
+}
+
 function setupIndex (ev) {
+	displayBackgroundOnLoad();
 	displaySearchSuggestion();
 	setupSearch();
 }

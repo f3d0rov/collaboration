@@ -2,14 +2,40 @@
 body {
 	overflow-y: hidden;
 	overflow-x: hidden;
+
+	background-color: #1a0000;
+	/* background-image: url("/resources/background.jpg"); */
+	/* background-repeat: no-repeat;
+	background-size: cover;
+	background-attachment: fixed;
+	background-position: center; */
+}
+
+.sickBackground {
+	position: fixed;
+	left: 0;
+	top: 0;
+	width: 100vw;
+	height: 100vh;
+
+	opacity: 0;
+	
+	z-index: -100;
+	transition: opacity 4s cubic-bezier(.57,.4,.16,1.05), scale 4s cubic-bezier(.57,.4,.16,1.05);
+
+}
+
+.sickBackground.loaded {
+	opacity: 1;
+	scale: 105%;
 }
 
 
 .titleText {
 	margin-left: auto;
 	margin-right: auto;
-	margin-top: 10%;
-	margin-bottom: 3%;
+	margin-top: 15vh;
+	margin-bottom: 20vh;
 
 	width: 100%;
 	text-align: center;
@@ -47,10 +73,14 @@ body {
 }
 
 .search {
-	width: 100%;
+	width: fit-content;
 	text-align: center;
-
 	font-size: 30px;
+	background-color: rgba(0,0,0,0.2);
+	border-radius: 10px;
+
+	margin-left: auto;
+	margin-right: auto;
 }
 
 .searchBoxGroup {
@@ -66,7 +96,7 @@ body {
 	width: 600px;
 	padding: 3px;
 	
-	background-color: #330b0b;
+	background-color: #260909;
 	color: white;
 
 	border-radius: 5px;
@@ -75,13 +105,15 @@ body {
 }
 
 #searchButton {
-	display: inline-block;
-
+	display: inline-flex;
+	align-items: center;
+	justify-items: center;
+	justify-content: center;
 	width: 40px;
 	height: 40px;
 	
 	line-height: 40px;
-	background-color: #330b0b;
+	background-color: #260909;
 	border-radius: 3px;
 	
 	text-align: center;
@@ -102,8 +134,14 @@ body {
 }
 
 #searchIcon {
-	width: 40px;
-	height: 40px;
+	width: 30px;
+	height: 30px;
+	opacity: 0.5;
+	transition: opacity 0.2s ease-in-out;
+}
+
+#searchButton:hover #searchIcon {
+	opacity: 1;
 }
 
 .userCard {
