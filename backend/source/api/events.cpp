@@ -300,7 +300,6 @@ std::shared_ptr <EventType> EventManager::getEventTypeById (int eventId) {
 }
 
 int EventManager::createEvent (nlohmann::json &data, int byUser) {
-	// TODO: check user creds, add user contrib
 	int id = this->getEventTypeFromJson (data)->createEvent (data);
 	this->addUserEventContribution (byUser, id);
 	return id;
@@ -341,14 +340,12 @@ nlohmann::json EventManager::getEventsForEntity (int entityId) {
 }
 
 int EventManager::updateEvent (nlohmann::json &data, int byUser) {
-	// TODO: check user creds, add user contrib
 	auto id = this->getEventTypeFromJson (data)->updateEvent (data);
 	this->addUserEventContribution (byUser, id);
 	return id;
 }
 
 void EventManager::deleteEvent (int eventId, int byUser) {
-	// TODO: check user creds, add user contrib
 	this->getEventTypeById (eventId)->deleteEvent (eventId);
 	this->addUserEventContribution (byUser, eventId);
 }

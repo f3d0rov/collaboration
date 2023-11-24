@@ -57,7 +57,7 @@ class OwnedConnection {
 		pqxx::result exec (std::string query);
 		pqxx::result exec0 (std::string query);
 		pqxx::row exec1 (std::string query);
-		std::string quote (std::string raw); // TODO: <- embed escapeHTML into this
+		std::string quote (std::string raw);
 		std::string quoteDontEscapeHtml (std::string raw);
 		void commit ();
 };
