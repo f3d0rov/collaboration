@@ -52,35 +52,35 @@ _valid (ud._valid) {
 
 }
 
-int UserData::id () {
+int UserData::id () const {
 	return this->_id;
 }
 
-std::string UserData::username () {
+std::string UserData::username () const {
 	return this->_username;
 }
 
-std::string UserData::email () {
+std::string UserData::email () const {
 	return this->_email;
 }
 
-int UserData::accessLevel () {
+int UserData::accessLevel () const {
 	return this->_accessLevel;
 }
 
-std::string UserData::lastActionDate () {
+std::string UserData::lastActionDate () const {
 	return this->_lastActionDate;
 }
 
-bool UserData::hasAccessLevel (int level) {
+bool UserData::hasAccessLevel (int level) const {
 	return this->_valid && (this->_accessLevel <= level);
 }
 
-bool UserData::valid () {
+bool UserData::valid () const {
 	return this->_valid;
 }
 
-UserData::operator int() {
+UserData::operator int() const {
 	return this->_valid ? this->_id : -1;
 }
 

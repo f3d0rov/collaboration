@@ -31,16 +31,16 @@ class UserData {
 		UserData (UserData &&ud);
 		UserData (const UserData &ud);
 
-		int id ();
-		std::string username ();
-		std::string email ();
-		int accessLevel ();
-		std::string lastActionDate ();
-		bool valid ();
+		int id () const;
+		std::string username () const;
+		std::string email () const;
+		int accessLevel () const;
+		std::string lastActionDate () const;
+		bool valid () const;
+ 
+		bool hasAccessLevel (int level) const;
 
-		bool hasAccessLevel (int level);
-
-		operator int(); // returns id or -1 if not valid
+		operator int() const; // returns id or -1 if not valid
 };
 
 
