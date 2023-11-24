@@ -111,13 +111,10 @@ void RequestData::setQueryVariables (const char* queryString) {
 	} while (!last);
 }
 
-
-
-RequestTooBigException::RequestTooBigException (std::string w):
-std::runtime_error (w) {
-
+std::string RequestData::getCookie (std::string name, std::string defaultValue) {
+	if (!this->setCookies.contains (name)) return defaultValue;
+	return this->setCookies.at (name);
 }
-
 
 
 
@@ -173,6 +170,8 @@ int Resource::_processRequest (mg_connection* conn) {
 		rd.method = method;
 		rd.uri = uri;
 		rd.ip = ri->remote_addr;
+		
+		UserManager::get().updateUserLastActionTime (rd.getCookie (SESSION_ID));
 
 		const char *cookie = mg_get_header(conn, "Cookie");
 		rd.setCookiesFromString (cookie);
@@ -200,7 +199,9 @@ int Resource::_processRequest (mg_connection* conn) {
 		mg_write (conn, respBody.c_str(), respBody.length());
 		return response->status;
 
-	} catch (std::exception& e) {
+	} catch (UserMistakeException &e) {
+		mg_send_http_error (conn, e.statusCode(), "%s", e.what());
+	} catch (std::exception &e) {
 		logger << "Internal error while processing request: " << e.what() << std::endl;
 		std::string response = "Server had an unexpected error while processing the request.";
 		mg_send_http_error (conn, 500, "%s", response.c_str());

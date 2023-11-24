@@ -111,11 +111,11 @@ class ReportEntityEventResource: public ApiResource {
 };
 
 
-class GetEntityEventReportListResource : public ApiResource {
-	public:
-		GetEntityEventReportListResource (mg_context *ctx, std::string uri);
-		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
-};
+// class GetEntityEventReportListResource : public ApiResource {
+// 	public:
+// 		GetEntityEventReportListResource (mg_context *ctx, std::string uri);
+// 		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
+// };
 
 class EventReportTypesResource: public ApiResource {
 	public:

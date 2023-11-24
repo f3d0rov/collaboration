@@ -109,3 +109,18 @@ class Common {
 };
 
 extern Common common;
+
+
+class RequestTooBigException: public std::runtime_error {
+	public:
+		RequestTooBigException (std::string w = "Принятый запрос превышает допустимый размер");
+};
+
+
+class UserMistakeException: public std::runtime_error {
+	private:
+		int _suggestedStatusCode;
+	public:
+		UserMistakeException (std::string w = "Пользовательская ошибка", int suggestedStatusCode = 400);
+		int statusCode();
+};

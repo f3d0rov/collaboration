@@ -41,3 +41,13 @@ class ApiResource: public Resource {
 
 		virtual ApiResponsePtr processRequest(RequestData &rd, nlohmann::json body) = 0;
 };
+
+template <class T>
+T getParameter (std::string name, nlohmann::json &j) {
+	if (!j.contains (name)) throw UserMistakeException ("В json-объекте отсутствует поле '"s + name + "'");
+	try {
+		return j[name].get <T> ();
+	} catch (nlohmann::json::exception &e) {
+		throw UserMistakeException ("Невозможно привести к корректному типу поле '"s + name + "'");
+	}
+}

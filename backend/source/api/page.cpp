@@ -80,44 +80,42 @@ std::string CreatePageResource::pageUrlForTypedEntity (std::string type, int id)
 
 std::unique_ptr<ApiResponse> CreatePageResource::processRequest (RequestData &rd, nlohmann::json body) {
 	logger << "Создаем страницу" << std::endl;
-	if (rd.method != "POST") return std::make_unique <ApiResponse> (nlohmann::json{}, 405);
+	if (rd.method != "POST") return makeApiResponse (nlohmann::json{}, 405);
 
-	if (!rd.setCookies.contains ("session_id")) return std::make_unique <ApiResponse> (nlohmann::json{}, 401);
-	auto user = CheckSessionResource::checkSessionId (rd.setCookies["session_id"]);
-	if (!user.valid) return std::make_unique <ApiResponse> (nlohmann::json{}, 401);
+	auto &userManager = UserManager::get();
+
+	auto user = userManager.getUserDataBySessionId (rd.getCookie(SESSION_ID));
+	if (!user.valid()) return makeApiResponse (nlohmann::json{}, 401);
 
 	if (!(
 		   body.contains ("type")
 		&& body.contains ("name")
 		&& body.contains ("description")
 		&& body.contains ("start_date")
-	)) return std::make_unique <ApiResponse> (nlohmann::json{}, 400);
+	)) return makeApiResponse (nlohmann::json{}, 400);
 
 	std::string type, name, description, startDate, endDate;
 	bool hasEndDate = false;
 
-	try {
-		type = body ["type"].get <std::string>();
-		name = body ["name"].get <std::string>();
-		description = body ["description"].get <std::string>();
-		startDate = body ["start_date"].get <std::string>();
-		if (body.contains ("end_date")) {
-			hasEndDate = true;
-			endDate = body ["end_date"].get <std::string>();
-		}
-	} catch (nlohmann::json::exception &e) {
-		return std::make_unique <ApiResponse> (nlohmann::json{}, 400);
+	type = getParameter <std::string> ("type", body);
+	name = getParameter <std::string> ("name", body);
+	description = getParameter <std::string> ("description", body);
+	startDate = getParameter <std::string> ("start_date", body);
+	if (body.contains ("end_date")) {
+		endDate = getParameter <std::string> ("end_date", body);
+		hasEndDate = true;
 	}
+	
 
 	const std::set <std::string> allowedTypes = { "person", "band" };
-	if (!allowedTypes.contains (type)) return std::make_unique <ApiResponse> (nlohmann::json{}, 400);
+	if (!allowedTypes.contains (type)) return makeApiResponse (nlohmann::json{}, 400);
 	
 	auto conn = database.connect ();
 
 	// Check if already mentioned
-	int entityId = this->createEntity (conn, type, name, description, startDate, endDate, user.uid);
+	int entityId = this->createEntity (conn, type, name, description, startDate, endDate, user.id());
 	if (entityId < 0) {
-		return std::make_unique <ApiResponse> (nlohmann::json{{"status", "already_exists"}}, 200);
+		return makeApiResponse (nlohmann::json{{"status", "already_exists"}}, 200);
 	}
 	int pageId = this->createTypedEntity (conn, entityId, type);
 
@@ -127,7 +125,7 @@ std::unique_ptr<ApiResponse> CreatePageResource::processRequest (RequestData &rd
 
 	conn.commit ();
 	logger << "Создана страница '" << name << "'" << std::endl;
-	auto response = std::make_unique <ApiResponse> (
+	auto response = makeApiResponse (
 		nlohmann::json {
 			{"status", "success"},
 			{"entity", entityId},
@@ -145,24 +143,18 @@ ApiResource (ctx, uri), _uploadUrl (uploadUrl) {
 
 }
 
-std::unique_ptr <ApiResponse> RequestPictureChangeResource::processRequest (RequestData &rd, nlohmann::json body) {
-	if (rd.method != "POST") return std::make_unique <ApiResponse> (405);
-	if (!body.contains ("entity_id")) return std::make_unique <ApiResponse> (400);
-	if (!rd.setCookies.contains ("session_id")) return std::make_unique <ApiResponse> (401);
+ApiResponsePtr RequestPictureChangeResource::processRequest (RequestData &rd, nlohmann::json body) {
+	if (rd.method != "POST") return makeApiResponse (405);
 
-	auto user = CheckSessionResource::checkSessionId (rd.setCookies ["session_id"]);
-	if (!user.valid) return std::make_unique <ApiResponse> (401);
+	auto &userManager = UserManager::get();
+	auto user = userManager.getUserDataBySessionId (rd.getCookie(SESSION_ID));
+	if (!user.valid()) return makeApiResponse (nlohmann::json{}, 401);
 
-	int entityId;
-	try {
-		entityId = body ["entity_id"].get <int> ();
-	} catch (nlohmann::json::exception &e) {
-		return std::make_unique <ApiResponse> (400);
-	}
+	int entityId = getParameter <int> ("entity_id", body);
 
 	// Check that entity exists
 	if (!EntityDataResource::entityCreated (entityId))
-		return std::make_unique <ApiResponse> (nlohmann::json{{"status", "entity_not_found"}}, 404);
+		return makeApiResponse (nlohmann::json{{"status", "entity_not_found"}}, 404);
 
 	std::string id = randomizer.hex (128);
 	
@@ -175,7 +167,7 @@ std::unique_ptr <ApiResponse> RequestPictureChangeResource::processRequest (Requ
 			/* valid_until */	+ "CURRENT_TIMESTAMP + INTERVAL '5 minutes');";
 	auto result = conn.exec (createRequest);
 	conn.commit();
-	return std::make_unique <ApiResponse> (nlohmann::json {{"url", "/" + this->_uploadUrl + "?id=" + id}});
+	return makeApiResponse (nlohmann::json {{"url", "/" + this->_uploadUrl + "?id=" + id}});
 }
 
 
@@ -205,11 +197,10 @@ void UploadPictureResource::setEntityPicture (OwnedConnection &work, int entityI
 
 std::unique_ptr <_Response> UploadPictureResource::processRequest (RequestData &rd) {
 	if (rd.method != "PUT") return std::make_unique <Response> (405);
-	if (rd.body.length() > 8 * 1024 * 1024) return std::make_unique <Response> (400);
-	if (!rd.setCookies.contains ("session_id")) return std::make_unique <Response> (401);
 
-	auto user = CheckSessionResource::checkSessionId (rd.setCookies ["session_id"]);
-	if (!user.valid) return std::make_unique <Response> (401);
+	auto &userManager = UserManager::get();
+	auto user = userManager.getUserDataBySessionId (rd.getCookie(SESSION_ID));
+	if (!user.valid()) return makeApiResponse (nlohmann::json{}, 401);
 
 	auto conn = database.connect();
 
@@ -219,7 +210,7 @@ std::unique_ptr <_Response> UploadPictureResource::processRequest (RequestData &
 			"WHERE id=" + conn.quote (id) + " AND valid_until > CURRENT_TIMESTAMP;";
 	auto result = conn.exec (checkRequest);
 
-	if (result.size() == 0) return std::make_unique <ApiResponse> (404);
+	if (result.size() == 0) return makeApiResponse (404);
 	int entityId = result[0][0].as <int>();
 
 
@@ -320,17 +311,19 @@ EntityData EntityDataResource::getEntityDataById (int id) {
 	return EntityDataResource::getEntityDataByIdWithWork (conn, id);
 }
 
-std::unique_ptr <ApiResponse> EntityDataResource::processRequest (RequestData &rd, nlohmann::json body) {
-	if (rd.method != "POST") return std::make_unique <ApiResponse> (nlohmann::json{}, 405);
-	if (!body.contains ("id")) return std::make_unique <ApiResponse> (nlohmann::json{}, 400);
+ApiResponsePtr EntityDataResource::processRequest (RequestData &rd, nlohmann::json body) {
+	if (rd.method != "POST") return makeApiResponse (nlohmann::json{}, 405);
+	if (!body.contains ("id")) return makeApiResponse (nlohmann::json{}, 400);
 
-	auto user = CheckSessionResource::checkSessionId (rd.setCookies ["session_id"]);
+	auto &userManager = UserManager::get();
+	auto user = userManager.getUserDataBySessionId (rd.getCookie(SESSION_ID));
+
 
 	int id;
 	try {
 		id = body["id"].get <int>();
 	} catch (nlohmann::json::exception &e) {
-		return std::make_unique <ApiResponse> (nlohmann::json{}, 400);
+		return makeApiResponse (nlohmann::json{}, 400);
 	}
 
 	std::string getEntityDataQuery = std::string()
@@ -341,7 +334,7 @@ std::unique_ptr <ApiResponse> EntityDataResource::processRequest (RequestData &r
 	auto conn = database.connect();
 
 	pqxx::result result = conn.exec (getEntityDataQuery);
-	auto response = std::make_unique <ApiResponse> ();
+	auto response = makeApiResponse ();
 
 	if (result.size() == 0) {
 		response->body ["redirect"] = std::string("/");
@@ -352,7 +345,7 @@ std::unique_ptr <ApiResponse> EntityDataResource::processRequest (RequestData &r
 	pqxx::row row = result[0];
 
 	if (row["awaits_creation"].as <bool>()) {
-		if (user.valid) {
+		if (user.valid()) {
 			response->body ["redirect"] = std::string("/create?q=") + queryString (row["name"].as <std::string>());
 		} else {
 			response->body ["redirect"] = std::string("/");

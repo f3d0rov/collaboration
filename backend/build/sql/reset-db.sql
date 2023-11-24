@@ -1,3 +1,4 @@
+drop table if exists event_report_reasons cascade;
 drop table if exists single_entity_related_events cascade;
 drop table if exists search_index cascade;
 drop table if exists indexed_resources cascade;

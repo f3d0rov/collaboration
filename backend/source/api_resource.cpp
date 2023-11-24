@@ -42,7 +42,11 @@ std::unique_ptr<_Response> ApiResource::processRequest (RequestData &rd) {
 			return std::make_unique<Response> ("Bad JSON", 400);
 		}
 	}
-	auto resp = this->processRequest (rd, json);
+	try {
+		auto resp = this->processRequest (rd, json);
+		return resp;
+	} catch (UserMistakeException &e) {
+		return makeApiResponse (nlohmann::json {{"error", e.what()}}, e.statusCode());
+	}
 	// logger << this->uri() << ": " << resp->getBody() << std::endl;
-	return resp;
 }

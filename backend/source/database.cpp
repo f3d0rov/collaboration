@@ -66,6 +66,10 @@ std::string OwnedConnection::quote (std::string raw) {
 	return this->work->quote (raw);
 }
 
+std::string OwnedConnection::quoteDontEscapeHtml (std::string raw) {
+	return this->work->quote (raw);
+}
+
 void OwnedConnection::commit () {
 	this->work->commit();
 	if (common.logSql) logger << "SQL COMMIT [" << this->_connId << "]" << std::endl;

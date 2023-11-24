@@ -244,3 +244,23 @@ ScopedProtector::~ScopedProtector () {
 }
 
 Common common;
+
+
+
+RequestTooBigException::RequestTooBigException (std::string w):
+std::runtime_error (w) {
+
+}
+
+UserMistakeException::UserMistakeException (std::string w, int statusCode):
+std::runtime_error (w), _suggestedStatusCode (statusCode) {
+
+}
+
+
+
+
+
+int UserMistakeException::statusCode() {
+	return this->_suggestedStatusCode;
+}
