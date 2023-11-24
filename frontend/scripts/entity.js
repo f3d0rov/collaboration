@@ -637,7 +637,6 @@ function setBgSrc (src) {
 window.addEventListener (
 	'load',
 	async (ev) => {
-		displayBackgroundOnLoad ();
 		await localEntity.pullData ();
 		switch (localEntity.entityData.type) {
 			case "person":
@@ -647,5 +646,6 @@ window.addEventListener (
 				setBgSrc ("/resources/band_bg.jpg");
 				break;
 		}
+		displayBackgroundOnLoad ();
 	}
 );
