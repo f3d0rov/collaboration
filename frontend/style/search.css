@@ -1,4 +1,8 @@
 
+.page {
+	background-color: #130d0ddd;
+}
+
 .searchAwait {
 	display: none;
 }
@@ -40,7 +44,7 @@
 
 	border-radius: 10px;
 
-	background-color: #361a1a;
+	background-color: #361a1aaa;
 	box-shadow: rgb(74, 0, 0) 0 4px 15px;
 
 	font-size: 26px;
@@ -51,6 +55,7 @@
 
 .searchResult:hover {
 	background-color: #351b1b;
+	opacity: 1;
 	box-shadow: rgb(97, 0, 0) 0 4px 10px;
 	cursor: pointer;
 }

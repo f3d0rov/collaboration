@@ -91,7 +91,24 @@ async function displaySearchResults (ev) {
 	document.getElementById ("searchAwait").classList.remove ("ondisplay");
 }
 
+function showBackground (img) {
+	img.classList.add ("loaded");
+}
+
+function displayBackgroundOnLoad () {
+	let img = document.querySelector (".sickBackground");
+	if (img.complete) {
+		showBackground (img);
+	} else {
+		img.addEventListener ('load', () => { showBackground (img); });
+		if (img.complete) showBackground (img); // Just making sure
+	}
+}
+
 window.addEventListener (
 	'load',
-	displaySearchResults
+	() => {
+		displayBackgroundOnLoad ();
+		displaySearchResults ();
+	}
 );
