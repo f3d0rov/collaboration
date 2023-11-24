@@ -22,7 +22,7 @@ body {
 	
 	z-index: -100;
 	transition: opacity 4s cubic-bezier(.57,.4,.16,1.05), scale 4s cubic-bezier(.57,.4,.16,1.05);
-
+	object-fit: cover;
 }
 
 .sickBackground.loaded {
@@ -76,7 +76,8 @@ body {
 	width: fit-content;
 	text-align: center;
 	font-size: 30px;
-	background-color: rgba(0,0,0,0.2);
+	background-color: rgba(0,0,0,0.4);
+	box-shadow: black 0 0 64px;
 	border-radius: 10px;
 
 	margin-left: auto;
