@@ -1,5 +1,5 @@
 
-#include "eventResources.hpp"
+#include "event_resources.hpp"
 
 
 GetEntityEventDescriptorsResource::GetEntityEventDescriptorsResource (mg_context *ctx, std::string uri):

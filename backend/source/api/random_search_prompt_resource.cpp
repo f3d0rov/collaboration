@@ -1,5 +1,5 @@
 
-#include "randomSearchPromptResource.hpp"
+#include "random_search_prompt_resource.hpp"
 
 
 RandomSearchPromptResource::RandomSearchPromptResource (mg_context* ctx, std::string uri):

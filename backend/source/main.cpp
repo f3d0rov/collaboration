@@ -16,14 +16,14 @@
 #include "web_resource.hpp"
 #include "api_resource.hpp"
 
-#include "api/randomSearchPromptResource.hpp"
+#include "api/random_search_prompt_resource.hpp"
 #include "api/search.hpp"
 #include "api/user_auth.hpp"
 #include "api/page.hpp"
 
 #include "api/events.hpp"
 #include "api/event_types.hpp"
-#include "api/eventResources.hpp"
+#include "api/event_resources.hpp"
 
 
 #define DEFAULT_PORT "8080"
