@@ -54,6 +54,22 @@ create table event_reports (
 );
 
 
+CREATE TABLE uploaded_resources (
+	id SERIAL PRIMARY KEY,
+	path VARCHAR (64) UNIQUE DEFAULT NULL,
+	mime VARCHAR (16) DEFAULT NULL,
+	uploaded_by INT REFERENCES users(uid) DEFAULT NULL,
+	uploaded_on DATE DEFAULT NULL
+);
+
+
+CREATE TABLE resource_upload_links (
+	id VARCHAR (128) PRIMARY KEY NOT NULL,
+	resource_id INT REFERENCES uploaded_resources (id) NOT NULL,
+	valid_until TIMESTAMP NOT NULL
+);
+
+
 CREATE TABLE entities (
 	id SERIAL PRIMARY KEY NOT NULL,
 	type VARCHAR (16) NOT NULL DEFAULT '',
@@ -63,7 +79,7 @@ CREATE TABLE entities (
 	start_date DATE NOT NULL DEFAULT '01-01-1970',
 	end_date DATE,
 
-	picture_path VARCHAR (256),
+	picture INT REFERENCES uploaded_resources (id),
 	awaits_creation BOOLEAN DEFAULT TRUE,
 	created_by INT REFERENCES users (uid),
 	created_on DATE
@@ -101,22 +117,24 @@ create table bands (
 );
 
 CREATE TABLE albums (
-	id SERIAL PRIMARY KEY,
-	name VARCHAR (256) NOT NULL,
-	description TEXT,
-
-	author INT REFERENCES entities (id) ON DELETE SET NULL
+	id INT REFERENCES events (id) PRIMARY KEY,
+	title VARCHAR (256) NOT NULL,
+	author INT REFERENCES entities (id) ON DELETE CASCADE,
+	release_date date,
+	picture_path varchar (256)
 );
 
-create table songs (
-	id serial primary key not null,
-	title varchar (128) not null,
+CREATE TABLE songs (
+	id SERIAL PRIMARY KEY NOT NULL,
+	title VARCHAR (128) NOT NULL,
 
-	author INT REFERENCES entities(id) ON DELETE SET NULL,
-	album int references albums(id) on delete CASCADE default NULL, -- null for singles
+	author INT REFERENCES entities(id) ON DELETE CASCADE,
+
+	album INT REFERENCES albums(id) ON DELETE CASCADE DEFAULT NULL, -- null for singles
+	album_index INT DEFAULT 0,
 	
-	release int references events(id) on delete CASCADE default NULL,
-	release_date date
+	release INT REFERENCES events(id) ON DELETE CASCADE DEFAULT NULL,
+	release_date DATE
 );
 
 create table concerts (
@@ -152,5 +170,5 @@ CREATE TABLE single_entity_related_events (
 INSERT INTO event_report_reasons (name) 
 VALUES 
 	('Недостоверные данные'),
-	('Спам')
+	('Спам');
 

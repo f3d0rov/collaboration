@@ -1,3 +1,5 @@
+// TODO: this but better
+
 #pragma once
 
 #include <set>
@@ -7,6 +9,7 @@
 #include "../api_resource.hpp"
 #include "user_auth.hpp"
 #include "search.hpp"
+#include "resource_upload.hpp"
 
 
 class EntityData;
@@ -71,21 +74,6 @@ class RequestPictureChangeResource: public ApiResource {
 	public:
 		RequestPictureChangeResource (mg_context *ctx, std::string uri, std::string uploadUrl);
 		std::unique_ptr <ApiResponse> processRequest (RequestData &rd, nlohmann::json body) override;
-};
-
-
-/***********
- * PUT @ /uploadpic?id=aFKJBSDFJJ124asdf...
- * data:image/png;base64,JASFLjfnkalff....
-*/
-class UploadPictureResource: public Resource {
-	private:
-		std::filesystem::path _savePath;
-	public:
-		UploadPictureResource (mg_context *ctx, std::string uri, std::filesystem::path savePath);
-
-		void setEntityPicture (OwnedConnection &work, int entityId, std::string path);
-		std::unique_ptr <_Response> processRequest (RequestData &rd) override;
 };
 
 

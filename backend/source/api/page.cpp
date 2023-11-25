@@ -120,6 +120,14 @@ std::unique_ptr<ApiResponse> CreatePageResource::processRequest (RequestData &rd
 	int pageId = this->createTypedEntity (conn, entityId, type);
 
 	std::string url = CreatePageResource::pageUrlForTypedEntity (type, entityId);
+
+	auto &resourceManager = UploadedResourcesManager::get();
+	auto resourceData = resourceManager.createUploadableResource ();
+
+	std::string setPicResourceQuery = 
+		"UPDATE entities SET picture="s + std::to_string(resourceData.resourceId) + " WHERE id=" + std::to_string (entityId) + ";";
+	conn.exec (setPicResourceQuery);
+
 	// Index created page
 	Searcher::indexWithWork (conn, type, url, name + " " + description, name, description, "");
 
@@ -129,7 +137,8 @@ std::unique_ptr<ApiResponse> CreatePageResource::processRequest (RequestData &rd
 		nlohmann::json {
 			{"status", "success"},
 			{"entity", entityId},
-			{"url", url}
+			{"url", url},
+			{"upload_url",  resourceManager.getUploadUrl(resourceData.uploadId)}
 		},
 		200
 	);
@@ -151,100 +160,20 @@ ApiResponsePtr RequestPictureChangeResource::processRequest (RequestData &rd, nl
 	if (!user.valid()) return makeApiResponse (nlohmann::json{}, 401);
 
 	int entityId = getParameter <int> ("entity_id", body);
-
 	// Check that entity exists
 	if (!EntityDataResource::entityCreated (entityId))
 		return makeApiResponse (nlohmann::json{{"status", "entity_not_found"}}, 404);
-
-	std::string id = randomizer.hex (128);
 	
+	std::string getResourceId = "SELECT picture FROM entities WHERE id="s + std::to_string (entityId) + ";";
 	auto conn = database.connect();
+	auto row = conn.exec1 (getResourceId);
+	int resourceId = row.at(0).as <int>();
 
-	std::string createRequest = std::string("INSERT INTO entity_photo_upload_links (id, entity_id, valid_until) ")
-		+ "VALUES ("
-			/* id */ 			+ conn.quote (id) + ","
-			/* entity_id */		+ std::to_string (entityId) + ","
-			/* valid_until */	+ "CURRENT_TIMESTAMP + INTERVAL '5 minutes');";
-	auto result = conn.exec (createRequest);
-	conn.commit();
-	return makeApiResponse (nlohmann::json {{"url", "/" + this->_uploadUrl + "?id=" + id}});
-}
-
-
-
-UploadPictureResource::UploadPictureResource (mg_context *ctx, std::string uri, std::filesystem::path savePath):
-Resource (ctx, uri), _savePath (savePath) {
-
-}
-
-void UploadPictureResource::setEntityPicture (OwnedConnection &work, int entityId, std::string path) {
-	std::string checkForPic = std::string ()
-		+ "SELECT picture_path FROM entities WHERE id=" + std::to_string (entityId) + ";";
-	auto res = work.exec1 (checkForPic);
-	if (!res[0].is_null()) {
-		std::filesystem::path oldPath = this->_savePath / std::filesystem::path(res[0].as <std::string>());
-		std::error_code ec;
-		std::filesystem::remove (oldPath, ec);
-		if (ec) {
-			logger << "Ошибка при попытке удалить файл: '" << oldPath << "' #" << ec << std::endl;
-		}
-	}
-	std::string setPicPath = std::string()
-		+ "UPDATE entities SET picture_path=" + work.quote (path) + " WHERE id=" + std::to_string (entityId) + ";";
-	auto updateRes = work.exec (setPicPath);
-	if (updateRes.affected_rows() != 1) throw std::runtime_error ("UploadPictureResource::setEntityPicture::updateRes.affected_rows() != 1");
-}
-
-std::unique_ptr <_Response> UploadPictureResource::processRequest (RequestData &rd) {
-	if (rd.method != "PUT") return std::make_unique <Response> (405);
-
-	auto &userManager = UserManager::get();
-	auto user = userManager.getUserDataBySessionId (rd.getCookie(SESSION_ID));
-	if (!user.valid()) return makeApiResponse (nlohmann::json{}, 401);
-
-	auto conn = database.connect();
-
-	std::string id = rd.query ["id"];
-	std::string checkRequest = std::string ()
-		+ "SELECT entity_id FROM entity_photo_upload_links "
-			"WHERE id=" + conn.quote (id) + " AND valid_until > CURRENT_TIMESTAMP;";
-	auto result = conn.exec (checkRequest);
-
-	if (result.size() == 0) return makeApiResponse (404);
-	int entityId = result[0][0].as <int>();
-
-
-	std::string headerEnd = ";base64,";
-	int origin = rd.body.find (headerEnd) + headerEnd.length();
-	logger << "pos: " << origin << std::endl;
-
-	int mimeStart = rd.body.find ("data:");
-	std::string mime = rd.body.substr (mimeStart + 5, rd.body.find (";", mimeStart + 5) - mimeStart - 5);
-	logger << mime << std::endl;
+	auto &resourceManager = UploadedResourcesManager::get();
+	std::string uploadId = resourceManager.generateUploadIdForResource (resourceId);
 	
-	size_t decodedLen = rd.body.length() * 3 / 4;
-	unsigned char *buffer = new unsigned char[decodedLen];
-	if (-1 != mg_base64_decode (rd.body.c_str() + origin, rd.body.length() - origin, buffer, &decodedLen)) {
-		logger << "UploadPictureResource::processRequest не смог декодировать данные в формате Base64" << std::endl;
-		return std::make_unique <Response> (500);
-	}
-
-	std::filesystem::path filename = std::filesystem::path (randomizer.hex(64) + ".png");
-	std::ofstream of (this->_savePath / filename, std::ios::binary | std::ios::out);
-	if (!of.is_open()) {
-		logger << "Не смог открыть файл для записи: " << filename << std::endl;
-		return std::make_unique <Response> (500);
-	}
-
-	of.write ((const char *) buffer, decodedLen);
-	of.close();
-	delete[] buffer;
-
-	logger << "Фото сущности сохранено в: " << filename << std::endl;
-	this->setEntityPicture (conn, entityId, filename);
 	conn.commit();
-
-	return std::make_unique <Response> (200);
+	return makeApiResponse (nlohmann::json {{"url", resourceManager.getUploadUrl(uploadId)}});
 }
 
 
@@ -280,13 +209,16 @@ int EntityDataResource::getEntityByName (const std::string &name) {
 EntityData EntityDataResource::getEntityDataByIdWithWork (OwnedConnection &work, int id) {
 	EntityData ed;
 	std::string getEntityDataByIdQuery = 
-		"SELECT name, description, type, start_date, end_date, picture_path, awaits_creation, created_by, created_on FROM entities WHERE id="s + std::to_string (id) + ";";
+		"SELECT name, description, type, start_date, end_date, path, awaits_creation, created_by, created_on "
+		"FROM entities LEFT OUTER JOIN uploaded_resources ON entities.picture=uploaded_resources.id "
+		"WHERE entities.id="s + std::to_string (id) + ";";
 	auto result = work.exec (getEntityDataByIdQuery);
 	if (result.size() == 0) {
 		ed.valid = false;
 		return ed;
 	} else {
 		auto row = result[0];
+		ed.valid = true;
 
 		ed.id = id;
 		ed.name = row ["name"].as <std::string>();
@@ -298,7 +230,10 @@ EntityData EntityDataResource::getEntityDataByIdWithWork (OwnedConnection &work,
 		
 		ed.created = !(row["awaits_creation"].as <bool>());
 
-		if (!row["picture_path"].is_null()) ed.picturePath = row["picture_path"].as <std::string>();
+		if (!row.at("path").is_null()) {
+			UploadedResourcesManager &mgr = UploadedResourcesManager::get();
+			ed.picturePath = mgr.getDownloadUrl(row.at("path").as <std::string>());
+		}
 		if (!row["created_by"].is_null()) ed.createdBy = row["created_by"].as <int>();
 		if (!row["created_on"].is_null()) ed.createdOn = row["created_on"].as <std::string>();
 
@@ -319,34 +254,33 @@ ApiResponsePtr EntityDataResource::processRequest (RequestData &rd, nlohmann::js
 	auto user = userManager.getUserDataBySessionId (rd.getCookie(SESSION_ID));
 
 
-	int id;
-	try {
-		id = body["id"].get <int>();
-	} catch (nlohmann::json::exception &e) {
-		return makeApiResponse (nlohmann::json{}, 400);
-	}
+	int id = getParameter <int> ("id", body);
 
-	std::string getEntityDataQuery = std::string()
-		+ "SELECT type, name, description, start_date, end_date, picture_path, awaits_creation, created_by "
-		+ "FROM entities "
-		+ "WHERE id=" + std::to_string (id) + ";";
+	// std::string getEntityDataQuery = std::string()
+	// 	+ "SELECT type, name, description, start_date, end_date, picture_path, awaits_creation, created_by "
+	// 	+ "FROM entities "
+	// 	+ "WHERE id=" + std::to_string (id) + ";";
 
-	auto conn = database.connect();
+	// auto conn = database.connect();
 
-	pqxx::result result = conn.exec (getEntityDataQuery);
+	// pqxx::result result = conn.exec (getEntityDataQuery);
 	auto response = makeApiResponse ();
 
-	if (result.size() == 0) {
+	auto data = this->getEntityDataById (id);
+
+	// if (result.size() == 0) {
+	if (data.valid == false) {
 		response->body ["redirect"] = std::string("/");
 		return response;
 	}
-	if (result.size() > 1) throw std::logic_error ("EntityDataResource::processRequest found duplicate ids");
+	// if (result.size() > 1) throw std::logic_error ("EntityDataResource::processRequest found duplicate ids");
 	
-	pqxx::row row = result[0];
+	// pqxx::row row = result[0];
 
-	if (row["awaits_creation"].as <bool>()) {
+	// if (row["awaits_creation"].as <bool>()) {
+	if (!data.created) {
 		if (user.valid()) {
-			response->body ["redirect"] = std::string("/create?q=") + queryString (row["name"].as <std::string>());
+			response->body ["redirect"] = std::string("/create?q=") + queryString (data.name);
 		} else {
 			response->body ["redirect"] = std::string("/");
 		}
@@ -355,15 +289,26 @@ ApiResponsePtr EntityDataResource::processRequest (RequestData &rd, nlohmann::js
 
 
 	response->body ["entity_id"] = id;
-	response->body ["name"] = row ["name"].as <std::string>();
+
+	// response->body ["name"] = row ["name"].as <std::string>();
 
 
-	response->body ["description"] = row ["description"].as <std::string>();
-	response->body ["start_date"] = row ["start_date"].as <std::string>();
-	response->body ["type"] = row ["type"].as <std::string>();
-	if (!row ["end_date"].is_null()) response->body ["end_date"] = row ["end_date"].as <std::string>();
-	if (!row ["picture_path"].is_null()) response->body ["picture_path"] = this->_pics + "/" + row ["picture_path"].as <std::string>();
-	response->body ["created_by"] = row ["created_by"].as <int>();
+	// response->body ["description"] = row ["description"].as <std::string>();
+	// response->body ["start_date"] = row ["start_date"].as <std::string>();
+	// response->body ["type"] = row ["type"].as <std::string>();
+	// if (!row ["end_date"].is_null()) response->body ["end_date"] = row ["end_date"].as <std::string>();
+	// if (!row ["picture_path"].is_null()) response->body ["picture_path"] = this->_pics + "/" + row ["picture_path"].as <std::string>();
+	// response->body ["created_by"] = row ["created_by"].as <int>();
 
+
+	response->body ["name"] = data.name;
+
+
+	response->body ["description"] = data.description;
+	response->body ["start_date"] = data.startDate;
+	response->body ["type"] = data.type;
+	if (data.endDate.has_value()) response->body ["end_date"] = data.endDate.value();
+	if (data.picturePath.has_value()) response->body ["picture_path"] = data.picturePath.value();
+	if (data.createdBy.has_value()) response->body ["created_by"] = data.createdBy.value();
 	return response;
 }

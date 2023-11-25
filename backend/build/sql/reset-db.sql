@@ -10,6 +10,7 @@ drop table if exists participation cascade;
 drop table if exists personalities cascade;
 drop table if exists entity_reports cascade;
 drop table if exists entity_photo_upload_links cascade;
+drop table if exists uploaded_resources;
 drop table if exists entities cascade;
 drop table if exists event_reports cascade;
 drop table if exists user_event_contributions cascade;

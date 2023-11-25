@@ -24,6 +24,7 @@
 #include "api/events.hpp"
 #include "api/event_types.hpp"
 #include "api/event_resources.hpp"
+#include "api/albums.hpp"
 
 
 #define DEFAULT_PORT "8080"
@@ -227,7 +228,9 @@ int main (int argc, const char *argv[]) {
 		logger << "Кэширование файлов и ресурсов отключено." << std::endl;
 	}
 
-	std::filesystem::path entityPics = "./user/";
+	auto &uploadResourceManager = UploadedResourcesManager::get();
+	std::filesystem::path userdataFolder = "./user/";
+	uploadResourceManager.setDirectory (userdataFolder);
 
 	EventManager &eventManager = EventManager::getManager();
 	BandFoundationEventType *bfe = new BandFoundationEventType{};
@@ -236,6 +239,7 @@ int main (int argc, const char *argv[]) {
 	eventManager.registerEventType (std::make_shared <BandJoinEventType>());
 	eventManager.registerEventType (std::make_shared <BandLeaveEventType>());
 	eventManager.registerEventType (std::make_shared <SinglePublicationEventType>());
+	eventManager.registerEventType (std::make_shared <AlbumEventType>());
 	logger << "Зарегистрированно типов событий: " << eventManager.size() << std::endl;
 
 	SharedDirectory sharedFiles (ctx, frontendDir, true, dontCache);
@@ -243,6 +247,7 @@ int main (int argc, const char *argv[]) {
 	WebResource personPage (ctx, "e", frontendDir + "/entity.html", dontCache);
 	WebResource searchPage (ctx, "search", frontendDir + "/search.html", dontCache);
 	WebResource createPage (ctx, "create", frontendDir + "/create_page.html", dontCache);
+	WebResource albumPage (ctx, "a", frontendDir + "/album.html", dontCache);
 
 	Resource api404 (ctx, "api");
 
@@ -262,12 +267,14 @@ int main (int argc, const char *argv[]) {
 	CheckSessionResource checkSessionResource 			(ctx, "api/u/whoami");
 
 	CreatePageResource createPageApiResource 			(ctx, "api/create");
-	UploadPictureResource setEntityPictureResource 		(ctx, "api/entitypic", entityPics);
-	RequestPictureChangeResource requestPicChange 		(ctx, "api/askchangepic", std::string(setEntityPictureResource.uri()));
+	UploadResource uploadResource 						(ctx, "api/upload");
+	uploadResourceManager.setUploadUrl (std::string(uploadResource.uri()));
+	RequestPictureChangeResource requestPicChange 		(ctx, "api/askchangepic", std::string(uploadResource.uri()));
 
 	DynamicDirectory userPics 							(ctx, "imgs", "./user/");
+	uploadResourceManager.setDownloadUri (std::string(userPics.uri()));
 
-	EntityDataResource EntityDataResource 				(ctx, "api/p", std::string(userPics.uri()));
+	EntityDataResource EntityDataResource 				(ctx, "api/p", std::string(uploadResource.uri()));
 
 	GetEntityEventDescriptorsResource eventDescriptorsResource (ctx, "api/events/types");
 	CreateEntityEventResource createEntityEventResource	(ctx, "api/events/create");
@@ -276,6 +283,8 @@ int main (int argc, const char *argv[]) {
 	DeleteEntityEventResource deleteEntityEventResource (ctx, "api/events/delete");
 	EventReportTypesResource eventReportTypesResource 	(ctx, "api/events/report_types");
 	ReportEntityEventResource reportEventResource 		(ctx, "api/events/report");
+
+	AlbumDataResource albumDataResource 				(ctx, "api/albums/get");
 
 	while (1) { // Ждем входящие подключения
 		occasionalTasks ();	
