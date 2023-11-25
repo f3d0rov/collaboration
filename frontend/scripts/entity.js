@@ -27,6 +27,7 @@ class EntityDataView {
 
 	updateElements () {
 		let entityData = this.entity.entityData;
+		document.title = entityData.name + " - COLLABORATION.";
 		this.entityNameElem.innerHTML = entityData.name;
 		this.entityDatesElem.innerHTML = this.formDate (entityData);
 		this.entityDescriptionElem.innerHTML = entityData.description;
