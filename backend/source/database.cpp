@@ -12,7 +12,7 @@ conn (dbconn.conn) {
 }
 
 OwnedConnection::OwnedConnection (Database *db, int connId, std::shared_ptr <pqxx::connection> conn):
-_db (db), _connId (connId), conn (conn) {
+_connId (connId), _db (db), conn (conn) {
 	work = std::make_unique <pqxx::work> (*conn);
 }
 

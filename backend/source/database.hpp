@@ -118,7 +118,7 @@ class Database {
 extern Database database;
 
 
-template <class T> 	std::string wrapType (const T &t, OwnedConnection &work);
+template <class T> 	std::string wrapType (const T &t, OwnedConnection &work) = delete;
 template <>			std::string wrapType <int> (const int &t, OwnedConnection &work);
 template <>			std::string wrapType <std::string> (const std::string &s, OwnedConnection &work);
 
@@ -126,7 +126,7 @@ template <>			std::string wrapType <std::string> (const std::string &s, OwnedCon
 
 class UpdateQueryElementInterface {
 	public:
-		~UpdateQueryElementInterface ();
+		virtual ~UpdateQueryElementInterface ();
 
 		virtual std::string getSqlColName () const = 0;
 		virtual std::string getSqlTableName () const = 0;

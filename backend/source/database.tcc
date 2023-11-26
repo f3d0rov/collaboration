@@ -3,10 +3,10 @@
 #include "database.hpp"
 
 
-template <class T>
-std::string wrapType (const T &t, OwnedConnection &work) {
-	throw std::logic_error ("std::string EventType::wrapType<T> вызван с непредусмотренным типом данных");
-}
+// template <class T>
+// std::string wrapType (const T &t, OwnedConnection &work) {
+// 	throw std::logic_error ("std::string EventType::wrapType<T> вызван с непредусмотренным типом данных");
+// }
 
 template <class T>
 UpdateQueryElement<T>::UpdateQueryElement (std::string jsonElementName, std::string sqlColName, std::string sqlTableName):
