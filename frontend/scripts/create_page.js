@@ -33,30 +33,19 @@ async function tryCreatePage (ev) {
 	console.log (respBody);
 	if (respBody["status"] == "success") {
 		let imageSelector = document.getElementById ("imageSelector");
-		if (imageSelector.value != 0) await uploadImage(respBody.entity);
+		if (imageSelector.value != 0) await uploadImage(respBody.entity, respBody.upload_url);
 		window.location.href = respBody.url;
 	}
 }
 
-async function uploadImage (entityId) {
+async function uploadImage (entityId, url) {
 	let imageSelector = document.getElementById ("imageSelector");
 	let file = imageSelector.files[0];
 	if (checkImage (file) == false) return;
-
-	let getUploadUrlFetch = await fetch (
-		"/api/askchangepic",
-		{
-			"method": "POST",
-			"body": JSON.stringify ({ "entity_id": entityId })
-		}
-	);
-
-	let uploadUrl = await getUploadUrlFetch.json();
-	
 	let imageBox = document.getElementById ('image');
 	
 	let resp = await fetch (
-		uploadUrl.url,
+		url,
 		{
 			"method": "PUT",
 			"body": imageBox.getAttribute ("src")

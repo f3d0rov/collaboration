@@ -252,15 +252,15 @@ std::runtime_error (w) {
 
 }
 
-UserMistakeException::UserMistakeException (std::string w, int statusCode):
-std::runtime_error (w), _suggestedStatusCode (statusCode) {
+UserMistakeException::UserMistakeException (std::string w, int statusCode, std::string errorCode):
+std::runtime_error (w), _suggestedStatusCode (statusCode), _errorCode (errorCode) {
 
 }
 
-
-
-
-
 int UserMistakeException::statusCode() {
 	return this->_suggestedStatusCode;
+}
+
+std::string UserMistakeException::errorCode() {
+	return this->_errorCode;
 }

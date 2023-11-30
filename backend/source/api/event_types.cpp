@@ -285,11 +285,13 @@ int SinglePublicationEventType::createEvent (nlohmann::json &rawData) {
 
 nlohmann::json SinglePublicationEventType::getEvent (int id) {
 	std::string getEventQuery = std::string (
-		"SELECT sort_index, events.description,"
-		"songs.title, release_date,"
-		"author, entities.name, awaits_creation "
+		"SELECT events.sort_index, events.description,"
+		"songs.title, songs.release_date,"
+		"songs.author, entities.name, entities.awaits_creation, "
+		"songs.album, albums.author AS album_author "
 		"FROM events INNER JOIN songs ON events.id = songs.release "
 		"INNER JOIN entities ON songs.author = entities.id "
+		"LEFT OUTER JOIN albums ON albums.id=songs.album "
 		"WHERE events.id=") + std::to_string (id) + ";";
 
 	auto conn = database.connect();
@@ -310,7 +312,16 @@ nlohmann::json SinglePublicationEventType::getEvent (int id) {
 	nlohmann::json dataJson;
 	to_json (dataJson, data);
 
-	return this->formGetEventResponse (conn, id, "{description}", row.at ("sort_index").as <int>(), data.date, dataJson);
+	auto resp = this->formGetEventResponse (conn, id, "{description}", row.at ("sort_index").as <int>(), data.date, dataJson);
+
+	// If this single is in an album of the same author
+	if (row.at ("album_author").is_null() == false) {
+		if (data.author.entityId == row.at ("album_author").as <int>()) {
+			resp ["hidden"] = true;
+		}
+	}
+
+	return resp;
 }
 
 int SinglePublicationEventType::updateEvent (nlohmann::json &data) {
@@ -348,7 +359,7 @@ int SinglePublicationEventType::updateEvent (nlohmann::json &data) {
 }
 
 int SinglePublicationEventType::getAuthorForEvent (OwnedConnection &work, int eventId) {
-	std::string query = "SELECT author FROM songs WHERE id="s + std::to_string (eventId) + ";";
+	std::string query = "SELECT author FROM songs WHERE release="s + std::to_string (eventId) + ";";
 	auto result = work.exec (query);
 	if (result.size() == 0)
 		throw std::runtime_error ("SinglePublicationEventType::getAuthorForEvent: нет события с id="s + std::to_string (eventId));

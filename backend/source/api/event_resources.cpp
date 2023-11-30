@@ -14,8 +14,6 @@ ApiResponsePtr GetEntityEventDescriptorsResource::processRequest (RequestData &r
 }
 
 
-
-
 CreateEntityEventResource::CreateEntityEventResource (mg_context *ctx, std::string uri):
 ApiResource (ctx, uri) {
 

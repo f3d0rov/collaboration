@@ -89,7 +89,7 @@ void UploadedResourcesManager::clearUploadLink (std::string uploadId) {
 
 
 
-UploadedResourcesManager::GeneratedResource UploadedResourcesManager::createUploadableResource () {
+UploadedResourcesManager::GeneratedResource UploadedResourcesManager::createUploadableResource (bool genUploadLink) {
 	std::string query = "INSERT INTO uploaded_resources (path, uploaded_by, uploaded_on) VALUES (DEFAULT, DEFAULT, DEFAULT) RETURNING id;";
 	auto conn = database.connect ();
 	auto row = conn.exec1 (query);
@@ -99,7 +99,7 @@ UploadedResourcesManager::GeneratedResource UploadedResourcesManager::createUplo
 
 	UploadedResourcesManager::GeneratedResource gr;
 	gr.resourceId = id;
-	gr.uploadId = this->generateUploadIdForResource (id);
+	if (genUploadLink) gr.uploadId = this->generateUploadIdForResource (id);
 	return gr;
 }
 

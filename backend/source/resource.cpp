@@ -129,6 +129,10 @@ _uri (uri) {
 	);
 }
 
+Resource::~Resource() {
+
+}
+
 int Resource::_staticProcessRequest (mg_connection* conn, void *cbdata) {
 	return ((Resource*) cbdata)->_processRequest (conn);
 }

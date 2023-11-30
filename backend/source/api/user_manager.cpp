@@ -34,20 +34,20 @@ UserData::UserData (int uid, OwnedConnection &conn) {
 
 UserData::UserData (UserData &&ud):
 _username (ud._username),
-_email (ud._email),
-_lastActionDate (ud._lastActionDate),
-_accessLevel (ud._accessLevel),
 _id (ud._id),
+_accessLevel (ud._accessLevel),
+_lastActionDate (ud._lastActionDate),
+_email (ud._email),
 _valid (ud._valid) {
 
 }
 
 UserData::UserData (const UserData &ud):
 _username (ud._username),
-_email (ud._email),
-_lastActionDate (ud._lastActionDate),
-_accessLevel (ud._accessLevel),
 _id (ud._id),
+_accessLevel (ud._accessLevel),
+_lastActionDate (ud._lastActionDate),
+_email (ud._email),
 _valid (ud._valid) {
 
 }

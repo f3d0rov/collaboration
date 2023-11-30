@@ -75,6 +75,7 @@ class Resource {
 		
 	public:
 		Resource (mg_context *ctx, std::string uri);
+		virtual ~Resource();
 
 		virtual std::unique_ptr<_Response> processRequest (RequestData &rd);
 

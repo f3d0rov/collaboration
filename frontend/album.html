@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8">
 
-		<title> Поиск - COLLABORATION. </title>
+		<title> COLLABORATION. </title>
 		<link rel="icon" type="image/png" href="/resources/favicon.ico">
 
 		<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,14 +11,16 @@
 		<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald&display=swap" rel="stylesheet">
 		
 		<link rel="stylesheet" type="text/css" href="style/style.css">
-		<link rel="stylesheet" type="text/css" href="style/search.css">
+		<link rel="stylesheet" type="text/css" href="style/report.css">
+		<link rel="stylesheet" type="text/css" href="style/album.css">
 
-		<script src="scripts/userauth.js"></script>
-		<script src="scripts/header.js"></script>
-		<script src="scripts/search.js"></script>
+		<script src = "scripts/utils.js"></script>
+		<script src = "scripts/userauth.js"></script>
+		<script src = "scripts/header.js"></script>
+		<script src = "scripts/album.js"></script>
 	</head>
 	<body>
-		<img class="sickBackground" src = "resources/search_bg.jpg" alt="">
+		<img class = "sickBackground" src="/resources/album_bg.jpg">
 
 		<div class = "header">
 			<div class = "headerLogoContainer">
@@ -53,32 +55,92 @@
 			</div>
 		</div>
 
-		<div class = "page">
-			<div class = "searchAwait ondisplay" id = "searchAwait">
-				<img src="resources/spinner.svg">
-				Загружаем результаты запроса...
+		<div class = "veil" id = "veil"></div>
+		
+		<div class = "reportWindowVeil hiddenRep" id="reportWindowVeil"></div>
+		<div class = "reportWindow hiddenRep" id="reportWindow">
+			<div class = "reportWindowHeader"> Пожаловаться на событие </div>
+			<div class = "reportOptions">
+				<div class = "reportTypeOption noselect template" id="reportTypeOptionTemplate"> </div>
 			</div>
-			<div class = "searchResults">
-				<div class = "searchMetadata">
-					За <span id="searchTime" class = "data"> 12s </span> <span id = "resultsFound"></span>
-				</div>
-				<div class = "searchResult template" id = "searchResultTemplate">
-					<img src="" class = "resultIcon"/>
-					<div class = "vertResult">
-						<a href = "" class = "resultTitle"> Трент Резнор </a>
-						<div class = "resultDescription">Американский музыкант-мультиинструменталист и продюсер.</div>
+			<div class = "reportActions">
+				<div class = "reportAction noselect inactive" id = "sendReport"> Отправить </div>
+				<div class = "reportAction noselect" id = "cancelReport"> Отмена </div>
+			</div>
+		</div>
+
+		<div class = "page">
+			<div class = "albumHeader">
+				<img id = "albumImage" src="/resources/test.jpg">
+				<div class = "albumView">
+					<div class = "albumData">
+						<div class = "albumTitleBox"> <span id = "albumTitle"> ... </span> &VeryThinSpace; <span id = "author"> ... </span> </div>
+						<div id = "albumTools">
+							<span id = "albumDate"> ... </span>
+							<img src = "resources/lookup.svg" class = "inlineButton lookupEntry" id = "lookupAlbum"/>
+							<img src = "resources/edit.svg" class = "inlineButton editEntry" id = "editAlbum"/>
+							<img src = "resources/report.svg" class = "inlineButton reportEntry" id = "reportAlbum"/>
+						</div>
+						<div class = "description" id = "description"> 
+							...
+						</div>
 					</div>
 				</div>
+			</div>
+			<div class="tracklist" id="tracklist">
+				<div class="track template" id="trackTemplate">
+					<div class="trackIndex noselect"> 1 </div>
+					<div class="trackInfo">
+						<span class="trackName"> ??? </span>
+						<span class="trackAuthors"> ??? </span>
+					</div>
+					<img src="resources/lookup.svg" class="tracksInlineButton lookupEntry" />
+					<img src="resources/report.svg" class="tracksInlineButton reportEntry" />
+				</div>
 
-				<div class = "searchResult" id = "createPageResult">
-					<img src="resources/add.svg" class = "addIcon"/>
-					<div class = "vertResult">
-						<div class = "resultTitle"> Не нашел? Создай страницу сам! </a>
+				<div class="shadowTrack template" id = "shadowTrack"></div>
+
+				<div class="dragTrackVeil template" id = "dragTrackVeil"></div>
+			
+				<div class="editTrack template" id="editTrackTemplate">
+					<div class="trackIndex noselect"> 1 </div>
+					<input class="songInput">
+					<div class="removeTrack"> <img src="resources/bad.svg"  class = "removeTrackIcon"> </div>
+					<div class="participants BigBoxx">
+						<div class="participantInput template" id="participantInputTemplate">
+							<input class="participantName" value="">
+							<img class="removeParticipantIcon" src="resources/bad.svg">
+						</div>
+						<div class="participantSuggestionList template" id="participantSuggestionListTemplate">
+							<div class="participantSuggestion template" id="participantSuggestionTemplate"></div>
+						</div>
+						<div class="addParticipantButton noselect" id="addParticipantButton">
+							<img src="/resources/add.svg" />
+						</div>
+					</div>
+				</div>
+			</div>
+			
+			<div class = "editButtons template" id = "editButtons">
+				<div class="editorButton" id="addSongButton"  tabindex="0">
+					<img class="editorButtonIcon" src="/resources/add.svg">
+					Добавить трек
+				</div>
+
+				<div class="justifyRight">
+					<div class="editorButton" id="commitChangesButton" tabindex="0">
+						<img class="editorButtonIcon" src="/resources/ok.svg">
+						Сохранить
+					</div>
+
+					<div class="editorButton" id="discardChangesButton" tabindex="0">
+						<img class="editorButtonIcon" src="/resources/bad.svg">
+						Отменить
 					</div>
 				</div>
 			</div>
 		</div>
-		
+
 		<div class = "loginRegisterBg" id = "loginRegisterLayer">
 			<div class = "loginRegisterWindow" id = "loginRegisterWindow">
 				<div class = "loginRegisterWindowLogoContainer">
@@ -156,13 +218,15 @@
 				<div class = "registrationSuccessful" id = "registrationSuccessful">
 					<div class = "registrationSuccessfulMainLine"> Ты успешно зарегистрировался! </div>
 					<div> 
-						Осталось только подтвердить адрес твоей почты -
+						Осталось только подердить адрес твоей почты -
 						перейди по ссылке, которую мы тебе отправили (Письмо скорее всего попадет в спам)!
 						У тебя есть два часа, потом придется регистрироваться по новой.
 					</div>
 				</div>
 			</div>
 		</div>
+
+		<div class = "message hidden" id = "messageTemplate"></div>
 
 		<div class = "bottomLeftLinks"> 
 			<a href = "https://github.com/f3d0rov/collaboration"> <img src = "./resources/github-mark-white.svg" id = "github-link-image"> </a>

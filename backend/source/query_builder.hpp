@@ -19,7 +19,9 @@ class _QueryColumn {
 
 		virtual std::string query ();
 		void setResult (std::weak_ptr<pqxx::result> result);
-		pqxx::row::reference getRef (int index);
+
+		pqxx::row::reference getRef (int index = 0) const;
+		bool isNull (int index = 0) const;
 
 		std::string table () const;
 		std::string column () const;
@@ -32,7 +34,8 @@ template <class T>
 class QueryColumn: public _QueryColumn {
 	public:
 		QueryColumn (std::string table, std::string column, std::string alias = "");
-		T get (int index);
+		T get (int index = 0) const;
+		operator T () const;
 };
 
 

@@ -120,7 +120,9 @@ class RequestTooBigException: public std::runtime_error {
 class UserMistakeException: public std::runtime_error {
 	private:
 		int _suggestedStatusCode;
+		std::string _errorCode;
 	public:
-		UserMistakeException (std::string w = "Пользовательская ошибка", int suggestedStatusCode = 400);
+		UserMistakeException (std::string w = "Пользовательская ошибка", int suggestedStatusCode = 400, std::string errorCode = "");
 		int statusCode();
+		std::string errorCode();
 };

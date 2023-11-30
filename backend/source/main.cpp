@@ -26,6 +26,8 @@
 #include "api/event_resources.hpp"
 #include "api/albums.hpp"
 
+#include "api/song_manager.hpp"
+
 
 #define DEFAULT_PORT "8080"
 #define DEFAULT_HTTPS_PORT "443"
@@ -44,7 +46,7 @@ int logCivetwebMessage (const mg_connection *conn, const char *message) {
 }
 
 int initSSL (void *ssl_ctx, void *user_data) {
-	ssl_ctx_st *ctx = static_cast <ssl_ctx_st *> (ssl_ctx);
+	// ssl_ctx_st *ctx = static_cast <ssl_ctx_st *> (ssl_ctx);
 	return 0;
 }
 
@@ -95,7 +97,7 @@ mg_context *startCivetweb (ArgsParser &argParser) {
 	callbacks.init_ssl = initSSL;
 
 	mg_context *ctx = nullptr;
-	int err = 0;
+	// int err = 0;
 
 	mg_init_library (0); // Initialize Civetweb
 	ctx = mg_start (&callbacks, 0, civetwebOptions); // Start the webserver with callbacks and options
@@ -233,7 +235,6 @@ int main (int argc, const char *argv[]) {
 	uploadResourceManager.setDirectory (userdataFolder);
 
 	EventManager &eventManager = EventManager::getManager();
-	BandFoundationEventType *bfe = new BandFoundationEventType{};
 
 	eventManager.registerEventType (std::make_shared <BandFoundationEventType>());
 	eventManager.registerEventType (std::make_shared <BandJoinEventType>());
@@ -285,6 +286,7 @@ int main (int argc, const char *argv[]) {
 	ReportEntityEventResource reportEventResource 		(ctx, "api/events/report");
 
 	AlbumDataResource albumDataResource 				(ctx, "api/albums/get");
+	RequestAlbumImageChangeResource albumImageUploader	(ctx, "api/album/askchangepic");
 
 	while (1) { // Ждем входящие подключения
 		occasionalTasks ();	

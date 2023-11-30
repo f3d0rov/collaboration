@@ -333,7 +333,9 @@ nlohmann::json EventManager::getEventsForEntity (int entityId) {
 	events.reserve (eventIds.size());
 
 	for (const auto &i: eventIds) {
-		events.push_back (this->getEvent (i));
+		auto event = this->getEvent (i);
+		if (event.contains ("hidden")) continue;
+		events.push_back (event);
 	}
 
 	return nlohmann::json {{"events", events}};

@@ -12,7 +12,7 @@ PseudoRandomEngine::result_type Randomizer::operator() () {
 
 std::string Randomizer::hex (int len) {
 	std::stringstream res;
-	int i = 0;
+	
 	while (res.str().length() < len) {
 		res << std::hex << (*this)();
 	}

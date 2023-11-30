@@ -1,6 +1,14 @@
 
 #include "api_resource.hpp"
 
+
+void assertMethod (const RequestData &rd, std::string method) {
+	if (rd.method != method) throw UserMistakeException ("Method Not Allowed", 405, "method_not_allowed");
+}
+
+
+
+
 ApiResponse::ApiResponse () {
 
 }
@@ -27,10 +35,15 @@ std::string ApiResponse::getMime () {
 }
 
 
+
+
 ApiResource::ApiResource (mg_context* ctx, std::string uri):
 Resource (ctx, uri) {
 	logger << "Интерфейс API: \"/" << uri << "\"" << std::endl;
 }
+
+ApiResource::~ApiResource () = default;
+
 
 std::unique_ptr<_Response> ApiResource::processRequest (RequestData &rd) {
 	nlohmann::json json{};
@@ -46,7 +59,9 @@ std::unique_ptr<_Response> ApiResource::processRequest (RequestData &rd) {
 		auto resp = this->processRequest (rd, json);
 		return resp;
 	} catch (UserMistakeException &e) {
-		return makeApiResponse (nlohmann::json {{"error", e.what()}}, e.statusCode());
+		auto resp = makeApiResponse (nlohmann::json {{"error", e.what()}}, e.statusCode());
+		if (e.errorCode() != "") resp->body["error_code"] = e.errorCode();
+		return resp;
 	}
 	// logger << this->uri() << ": " << resp->getBody() << std::endl;
 }

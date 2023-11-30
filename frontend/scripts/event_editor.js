@@ -556,7 +556,7 @@ class EventGeneratorType {
  ***************************************************************************************************/
 
 
- class ParticipantEntityTemplates {
+class ParticipantEntityTemplates {
 	constructor (inputTemplate, suggestionListTemplate, suggestionTemplate, minInputElementWidth) {
 		this.input = inputTemplate;
 		this.suggestionList = suggestionListTemplate;

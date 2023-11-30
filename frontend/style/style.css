@@ -22,7 +22,7 @@ body {
 	color: white;
 	font-family: 'Oswald', sans-serif;
 
-	overflow-y: scroll;
+	overflow-y: auto;
 }
 
 .sickBackground {
@@ -43,6 +43,7 @@ body {
 	opacity: 1;
 	scale: 105%;
 }
+
 a {
 	text-decoration: none;
 }
@@ -173,6 +174,7 @@ a {
 	flex: 1 1 200px;
 	/* background-color: rgb(27, 0, 0); */
 	align-content: flex-end;
+	margin-right: 10px;
 	/* height: 40px; */
 }
 
@@ -225,6 +227,7 @@ a {
 	display: flex;
 	flex-flow: column;
 	flex: 1;
+	margin-right: 10px;
 
 	justify-content: end;
 	text-align: right;
@@ -261,7 +264,8 @@ a {
 
 .page {
 	display: block;
-	width: 80%;
+	width: 60%;
+	min-width: 800px;
 	/* height: 1250px; */
 	
 	background-color: #130d0d;

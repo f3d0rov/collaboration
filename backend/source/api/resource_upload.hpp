@@ -39,7 +39,7 @@ class UploadedResourcesManager {
 		void clearUploadLink (std::string uploadId);
 
 		// returns an upload URL
-		GeneratedResource createUploadableResource ();
+		GeneratedResource createUploadableResource (bool genUploadLink = true);
 		std::string generateUploadIdForResource (int id);
 		void removeResource (int id);
 
