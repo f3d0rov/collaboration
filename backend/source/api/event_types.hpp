@@ -103,6 +103,8 @@ class SinglePublicationEventType: public AllEntitiesEventType {
 		int updateEvent (nlohmann::json &data) override;
 
 		int getAuthorForEvent (OwnedConnection &work, int eventId);
+
+		static int getEventIdForSong (int songId);
 };
 
 void from_json (const nlohmann::json &j, SinglePublicationEventType::Data &d);

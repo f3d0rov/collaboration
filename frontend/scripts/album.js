@@ -383,17 +383,19 @@ class EditSongView {
 
 	getSongData () {
 		let data = {};
+		data.data = {};
 		data.participants = this.participantList.getParticipantsArray ();
-		data.song = this.nameInput.value;
+		data.data.song = this.nameInput.value;
 		if (this.songData == null) {
 			data.id = null;
+			data.data.date = this.aggrView.album.albumData.data.date;
+			data.data.description = "";
 		} else {
 			data.id = this.songData.id;
-
 		}
-		data.album = this.aggrView.album.albumData.id;
-		data.album_index = this.album_index;
-		data.author = data.participants.length > 0 ? data.participants[0] : this.aggrView.album.albumData.author; // Debatable
+		data.data.album = this.aggrView.album.albumData.id;
+		data.data.album_index = this.album_index;
+		data.data.author = data.participants.length > 0 ? data.participants[0] : this.aggrView.album.albumData.author; // Debatable
 		return data;
 	}
 
@@ -688,7 +690,7 @@ class AlbumView {
 		};
 
 		this.updateAlbumDataApiEndpoint = {
-			"uri": "",
+			"uri": "api/albums/update",
 			"method": "POST"
 		};
 
@@ -1025,14 +1027,18 @@ class AlbumView {
 		this.imgInput = null;
 	}
 
-	commitChanges () {
+	async commitChanges () {
 		let songs = this.getSongs ();
 
 		let requestData = {
+			id: this.albumData.id,
 			songs: songs
 		};
-
+		
 		this.uploadImage ();
+		
+		console.log (requestData);
+		let resp = await fetchApi (this.updateAlbumDataApiEndpoint, requestData);
 	}
 
 

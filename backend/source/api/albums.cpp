@@ -15,6 +15,14 @@ AlbumManager::AlbumManager () {
 }
 
 
+void AlbumManager::addSongToAlbumByReleaseId (int albumId, int release) {
+	std::string query = "UPDATE songs SET album=" + std::to_string (albumId) + " WHERE release=" + std::to_string (release) + ";";
+	auto conn = database.connect();
+	conn.exec (query);
+	conn.commit();
+}
+
+
 std::vector <nlohmann::json> AlbumManager::getSongsForAlbum (int albumId) {
 	std::string getSongsQuery =
 		"SELECT songs.id, songs.title, songs.author, entities.name, entities.awaits_creation, songs.album_index, release "
@@ -62,6 +70,23 @@ std::vector <nlohmann::json> AlbumManager::getSongsForAlbum (int albumId) {
 	}
 
 	return songsData;
+}
+
+std::vector <int> AlbumManager::getSongIdsForAlbum (int albumId) {
+	std::string getSongsQuery =
+		"SELECT songs.id "
+		"FROM songs WHERE album=" + std::to_string (albumId) + ";";
+
+	auto conn = database.connect();
+	auto results = conn.exec (getSongsQuery);
+	if (results.size() == 0) return {};
+
+	std::vector <int> songIds;
+	for (int i = 0; i < results.size(); i++) {
+		songIds.push_back (results.at (i).at (0).as <int>());
+	}
+
+	return songIds;
 }
 
 
@@ -279,3 +304,55 @@ ApiResponsePtr RequestAlbumImageChangeResource::processRequest (RequestData &rd,
 
 	return makeApiResponse (nlohmann::json {{"url", uploadUrl}}, 200);
 }
+
+
+
+
+UpdateAlbumResource::UpdateAlbumResource (mg_context *ctx, std::string uri):
+ApiResource (ctx, uri) {
+
+}
+
+ApiResponsePtr UpdateAlbumResource::processRequest (RequestData &rd, nlohmann::json body) {
+	assertMethod (rd, "POST");
+	auto &userMgr = UserManager::get();
+	if (!userMgr.isLoggedIn (rd.getCookie (SESSION_ID))) return makeApiResponse (401);
+	auto user = userMgr.getUserDataBySessionId (rd.getCookie (SESSION_ID));
+
+	int albumId = getParameter <int> ("id", body);
+
+	auto &albumMgr = AlbumManager::get();
+
+	if (body.contains ("songs") && body.at ("songs").is_array()) {
+		std::vector <int> currentSongIdsVector = albumMgr.getSongIdsForAlbum (albumId);
+		std::set <int> toRemove (currentSongIdsVector.begin(), currentSongIdsVector.end());
+		
+		EventManager &eventMgr = EventManager::getManager();
+		
+		for (auto &i: body.at ("songs")) {
+			i["type"] = "ep";
+			if (i.contains ("id") == false || i.at ("id").is_null()) {
+				// New song
+				eventMgr.createEvent (i, user.id());
+				// albumMgr.addSongToAlbumByReleaseId (albumId, release);
+
+			} else {
+				int songId = getParameter <int> ("id", i);
+				// Old song with song_id = id;
+				int eventId = SinglePublicationEventType::getEventIdForSong (songId);
+				i ["id"] = eventId; // Id field must refer to the event id if we transfer the data to the events system
+				eventMgr.updateEvent (i, user.id());
+				toRemove.erase (songId);
+			}
+		}
+
+		// Remove deleted songs
+		for (auto i: toRemove) {
+			int eventId = SinglePublicationEventType::getEventIdForSong (i);
+			eventMgr.deleteEvent (eventId, user.id());
+		}
+	}
+
+	return makeApiResponse (200);
+}
+

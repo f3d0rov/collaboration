@@ -95,7 +95,7 @@ void EventType::addParticipants (const int eventId, const std::vector <Participa
 		addParticipantsQuery += std::string("(") + eventIdStr + "," + std::to_string (i.entityId) + ")";
 		notFirst = true;
 	}
-	addParticipantsQuery += ";";
+	addParticipantsQuery += " ON CONFLICT (event_id, entity_id) DO NOTHING;";
 	auto res = work.exec (addParticipantsQuery);
 	if (res.affected_rows() != participants.size()) {
 		logger << "EventType::addParticipants: res.affected_rows() != participants.size()" << std::endl;
@@ -179,7 +179,6 @@ void EventType::updateParticipants (OwnedConnection &work, int eventId, std::vec
 
 	if (foundSome) {
 		removeExceessParticipantsQuery += ");";
-		logger << "EventType::updateParticipants removeExceessParticipantsQuery: " << removeExceessParticipantsQuery << std::endl;
 		work.exec (removeExceessParticipantsQuery);
 	}
 }
@@ -334,7 +333,19 @@ nlohmann::json EventManager::getEventsForEntity (int entityId) {
 
 	for (const auto &i: eventIds) {
 		auto event = this->getEvent (i);
+		bool skip = false;
+		if (event.contains ("hide_for_entities")) {
+			for (auto j: event.at ("hide_for_entities")) {
+				if (j.get <int>() == entityId) {
+					skip = true;
+					break;
+				}
+			}
+		}
+
+		if (skip) continue;
 		if (event.contains ("hidden")) continue;
+
 		events.push_back (event);
 	}
 
@@ -349,7 +360,7 @@ int EventManager::updateEvent (nlohmann::json &data, int byUser) {
 
 void EventManager::deleteEvent (int eventId, int byUser) {
 	this->getEventTypeById (eventId)->deleteEvent (eventId);
-	this->addUserEventContribution (byUser, eventId);
+	// this->addUserEventContribution (byUser, eventId); // Can't add a contribution for a deleted event
 }
 
 nlohmann::json EventManager::getAvailableEventDescriptors () {

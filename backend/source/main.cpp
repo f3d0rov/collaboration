@@ -291,6 +291,7 @@ int main (int argc, const char *argv[]) {
 	ReportEntityEventResource reportEventResource 		(ctx, "api/events/report");
 
 	AlbumDataResource albumDataResource 				(ctx, "api/albums/get");
+	UpdateAlbumResource updateAlbumResource				(ctx, "api/albums/update");
 	RequestAlbumImageChangeResource albumImageUploader	(ctx, "api/album/askchangepic");
 
 	while (1) { // Ждем входящие подключения

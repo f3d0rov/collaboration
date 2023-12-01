@@ -21,11 +21,13 @@ class AlbumManager {
 
 		static AlbumManager &get ();
 
-		int addSongToAlbum (int albumId, std::string songName); // returns song id
-		void removeSongFromAlbum (int albumId, int songId);
-		void setSongOrder (int songId, int orderIndex);
+		void addSongToAlbumByReleaseId (int albumId, int release); // returns song id
+		// void removeSongFromAlbum (int albumId, int songId);
+		// void setSongOrder (int songId, int orderIndex);
+		// void updateSongForAlbum (int albumId, nlohmann::json songData);
 
 		std::vector <nlohmann::json> getSongsForAlbum (int albumId);
+		std::vector <int> getSongIdsForAlbum (int albumId);
 		nlohmann::json getAlbumData (int albumId);
 
 		int getAlbumPictureResourceId (int id);
@@ -76,5 +78,12 @@ class AlbumDataResource: public ApiResource {
 class RequestAlbumImageChangeResource: public ApiResource {
 	public:
 		RequestAlbumImageChangeResource (mg_context *ctx, std::string uri);
+		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
+};
+
+
+class UpdateAlbumResource: public ApiResource {
+	public:
+		UpdateAlbumResource (mg_context *ctx, std::string uri);
 		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
 };
