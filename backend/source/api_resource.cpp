@@ -51,16 +51,20 @@ std::unique_ptr<_Response> ApiResource::processRequest (RequestData &rd) {
 		try {
 			json = nlohmann::json::parse (rd.body);
 		} catch (nlohmann::json::exception &e) {
-			logger << this->uri() << ": Bad JSON" << std::endl;
+			if (common.logApiOut) logger << "[API OUT] Bad JSON" << std::endl;
 			return std::make_unique<Response> ("Bad JSON", 400);
 		}
 	}
+
+	if (common.logApiIn) logger << "[API IN] " << json.dump(2) << std::endl;
 	try {
 		auto resp = this->processRequest (rd, json);
+		if (common.logApiOut) logger << "[API OUT] " << resp->body.dump(2) << std::endl;
 		return resp;
 	} catch (UserMistakeException &e) {
 		auto resp = makeApiResponse (nlohmann::json {{"error", e.what()}}, e.statusCode());
 		if (e.errorCode() != "") resp->body["error_code"] = e.errorCode();
+		if (common.logApiOut) logger << "[API OUT] " << resp->body.dump(2) << std::endl;
 		return resp;
 	}
 	// logger << this->uri() << ": " << resp->getBody() << std::endl;

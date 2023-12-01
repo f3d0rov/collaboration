@@ -106,6 +106,9 @@ class Common {
 		std::string frontendDir;
 		bool logSql;
 		int logOverflowLineLength = 120;
+
+		bool logApiIn = false;
+		bool logApiOut = false;
 };
 
 extern Common common;

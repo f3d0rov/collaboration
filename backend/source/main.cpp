@@ -156,7 +156,10 @@ int main (int argc, const char *argv[]) {
 				ArgOption ("", "no-smtp", "Не отправлять письма"),
 				ArgOption ("", "no-cache", "Не кешировать веб-ресурсы"),
 				ArgOption ("", "log-sql", "Сохранять в логах все исполненные SQL-запросы"),
-				ArgOption ("", "log-width", "Максимальная длина строки в логе (не считая временной отметки)", true)
+				ArgOption ("", "log-width", "Максимальная длина строки в логе (не считая временной отметки)", true),
+				ArgOption ("", "log-api-in", "Сохранять в логах запросы приходящих API-запросов"),
+				ArgOption ("", "log-api-out", "Сохранять в логах тела ответов API-запросов"),
+				ArgOption ("", "log-api", "Сохранять в логах запросы и ответы API-запросов"),
 			}
 		);
 
@@ -217,7 +220,9 @@ int main (int argc, const char *argv[]) {
 			return -1;
 		}
 	}
-	
+
+	common.logApiIn = argParser.hasArg ("log-api-in") || argParser.hasArg ("log-api");
+	common.logApiOut = argParser.hasArg ("log-api-out") || argParser.hasArg ("log-api");
 
 	mg_context* ctx = startCivetweb (argParser);
 	if (ctx == nullptr) {
