@@ -43,6 +43,7 @@ class ParticipantEntitySuggestionList {
 	}
 
 	resize () {
+		if (this.elem === null || this.elem === undefined) return;
 		let bbox = this.entity.elem.getBoundingClientRect();
 		let thisBox = this.elem.getBoundingClientRect ();
 		// Could set this.elem.style.bottom but it leads to .top being equal to -699 for whatever reason and element not being rendered within page bounds
@@ -386,11 +387,14 @@ class EditSongView {
 		data.song = this.nameInput.value;
 		if (this.songData == null) {
 			data.id = null;
+		} else {
+			data.id = this.songData.id;
+
 		}
 		data.album = this.aggrView.album.albumData.id;
 		data.album_index = this.album_index;
-		data.author = data.participants.length() > 0 ? data.participants[0] : this.aggrView.album.albumData.author; // Debatable
-		return this.songData;
+		data.author = data.participants.length > 0 ? data.participants[0] : this.aggrView.album.albumData.author; // Debatable
+		return data;
 	}
 
 	hide () {
@@ -570,6 +574,10 @@ class SongView {
 	setIndex (index) {
 		this.elem.querySelector ('.' + this.indexClass).innerHTML = index;
 	}
+
+	getSongData () {
+		return this.songData;
+	}
 }
 
 
@@ -634,7 +642,7 @@ class AggregatedSongView {
 
 	scrollIntoView () {
 		window.scroll ({
-			"top": this.currentView.elem.getBoundingClientRect().top,
+			"top": this.currentView.elem.getBoundingClientRect().top + window.scrollY,
 			"behavior": "smooth"
 		});
 	}
@@ -664,6 +672,10 @@ class AggregatedSongView {
 	updateSongData (songData) {
 		this.songData = songData;
 	}
+
+	getSongData () {
+		return this.currentView.getSongData ();
+	}
 };
 
 
@@ -674,6 +686,17 @@ class AlbumView {
 			"uri": "api/albums/get",
 			"method": "POST"
 		};
+
+		this.updateAlbumDataApiEndpoint = {
+			"uri": "",
+			"method": "POST"
+		};
+
+		this.requestAlbumPictureUploadLink = {
+			"uri": "api/album/askchangepic",
+			"method": "POST"
+		};
+
 		const params = new URLSearchParams (window.location.search);
 		this.id = parseInt (params.get ("id"));
 	}
@@ -688,12 +711,14 @@ class AlbumView {
 		console.log (this.albumData);
 
 		this.songs = this.albumData.songs;
+		this.picture = this.albumData.picture;
 
 		this.titleElem = document.getElementById ("albumTitle");
 		this.authorElem = document.getElementById ("author");
 		this.publicationDateElem = document.getElementById ("albumDate");
 		this.descriptionElem = document.getElementById ("description");
 		
+		this.albumImage = document.getElementById ('albumImage');
 		
 		this.editAlbumButton = document.getElementById ("editAlbum");
 		this.lookupAlbumButton = document.getElementById ("lookupAlbum");
@@ -704,10 +729,14 @@ class AlbumView {
 		this.lookupTrackButtonClass = 'lookupEntry';
 		this.reportTrackButtonClass = 'reportEntry';
 
+		this.uploadImageOverlay = document.getElementById ("uploadOverlay");
+
 		this.addSongButton = document.getElementById ("addSongButton");
 		this.commitChangesButton = document.getElementById ("commitChangesButton");
 		this.discardChangesButton = document.getElementById ("discardChangesButton");
 		this.editorButtons = document.getElementById ("editButtons");
+
+		this.imgInput = null;
 
 		this.constructInfoCard ();
 		this.constructSongs ();
@@ -720,6 +749,7 @@ class AlbumView {
 		this.authorElem.innerHTML = '<a href="/e?id=' + this.albumData.data.author.entity_id + '">' + this.albumData.data.author.name + "</a>";
 		this.publicationDateElem.innerHTML = dateToString (this.albumData.data.date);
 		this.descriptionElem.innerHTML = this.albumData.data.description;
+		this.albumImage.setAttribute ("src", this.picture);
 	}
 
 	insertSong (song) {
@@ -805,6 +835,8 @@ class AlbumView {
 		
 		this.discardChangesButton.addEventListener ('click', () => { this.discardChanges(); });
 		this.discardChangesButton.addEventListener ('keydown', (ev) => { if (ev.key == "Enter") this.discardChanges(); });
+
+		this.uploadImageOverlay.addEventListener ('click', () => { this.selectImage(); });
 	}
 
 	showEditButtons () {
@@ -818,6 +850,7 @@ class AlbumView {
 	editAlbum () {
 		if (!demandAuth())  return;
 		this.editAlbumButton.classList.add ("template");
+		this.uploadImageOverlay.classList.remove ("template");
 		let song = this.firstSong;
 		while (song != null) {
 			song.edit ();
@@ -829,6 +862,7 @@ class AlbumView {
 
 	viewAlbum () {
 		this.editAlbumButton.classList.remove ("template");
+		this.uploadImageOverlay.classList.add ("template");
 		this.hideEditButtons ();
 		
 		let song = this.firstSong;
@@ -880,14 +914,6 @@ class AlbumView {
 			this.firstSong = song;
 		}
 
-		console.log ("Order:");
-		let x = this.firstSong;
-		for (let i = 0; i < 5; i++) {
-			console.log(x.songData);
-			x = x.next;
-			if (x == null) break;
-		}
-
 		this.tracklist.insertBefore (song.elem(), song.next !== null ? song.next.elem() : null);
 		this.recalculateIndices();
 	}
@@ -921,10 +947,92 @@ class AlbumView {
 	discardChanges () {
 		this.constructSongs ();
 		this.viewAlbum ();
+		this.albumImage.setAttribute ("src", this.picture);
+		this.imgInput?.remove();
+		this.imgInput = null;
+	}
+
+	getSongs () {
+		let songs = [];
+		let s = this.firstSong;
+		while (s !== null) {
+			songs.push (s.getSongData());
+			s = s.next;
+		}
+		return songs;
+	}
+
+	
+	checkImage (file) {
+		if (!file.type.startsWith ("image/")) { // Wrong type
+			return false;
+		}
+		if (file.size > 4 * 1024 * 1024) { // 4 mb - too big
+			return false;
+		}
+		return true;
+	}
+
+	selectImage () {
+		if (this.imgInput === null) {
+			this.imgInput = document.createElement ("input");
+			this.imgInput.setAttribute ("type", "file");
+			this.imgInput.setAttribute ("accept", "image/*");
+
+			this.imgInput.addEventListener (
+				'change',
+				() => {
+					let file = this.imgInput.files[0];
+		
+					if (!this.checkImage (file)) {
+						this.imgInput.value = "";
+						return;
+					}
+					
+					this.albumImage.file = file;
+					const reader = new FileReader();
+					reader.onload = (e) => {
+						this.albumImage.setAttribute('src', e.target.result);
+						this.albumImage.classList.remove ('placeholder');
+					};
+					reader.readAsDataURL (file);
+				}
+			);
+		}
+
+		this.imgInput.click();
+	}
+
+	async uploadImage () {
+		if (this.imgInput === null) return;
+
+		let file = this.imgInput.files[0];
+		if (this.checkImage (file) == false) return;
+		
+		let reqBody = { id: this.albumData.id };
+		let url = (await fetchApi (this.requestAlbumPictureUploadLink, reqBody)).url;
+
+		let resp = await fetch (
+			url,
+			{
+				"method": "PUT",
+				"body": this.albumImage.getAttribute ("src"),
+				"credentials": 'same-origin'
+			}
+		);
+
+		console.log (resp.status);
+		this.imgInput = null;
 	}
 
 	commitChanges () {
-		
+		let songs = this.getSongs ();
+
+		let requestData = {
+			songs: songs
+		};
+
+		this.uploadImage ();
 	}
 
 

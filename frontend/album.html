@@ -71,7 +71,16 @@
 
 		<div class = "page">
 			<div class = "albumHeader">
-				<img id = "albumImage" src="/resources/test.jpg">
+				<div class = "imageBox">
+					<img id = "albumImage" class = "imageBoxBorder" src="/resources/spinner.svg">
+					<div id = "uploadOverlay" class = "imageBoxBorder template">
+						<img id = "uploadOverlayIcon" src="resources/upload.svg">
+						<div class = "uploadOverlayText noselect">
+							Изображение до 4 МБ.
+							[Пропорция 1:1]
+						</div>
+					</div>
+				</div>
 				<div class = "albumView">
 					<div class = "albumData">
 						<div class = "albumTitleBox"> <span id = "albumTitle"> ... </span> &VeryThinSpace; <span id = "author"> ... </span> </div>

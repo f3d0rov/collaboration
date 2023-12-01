@@ -71,6 +71,7 @@ nlohmann::json AlbumManager::getAlbumData (int albumId) {
 
 	// TODO: get album songs, return album songs
 	base ["songs"] = this->getSongsForAlbum (albumId);
+	base ["picture"] = this->getAlbumPictureUrl (albumId);
 	return base;
 }
 
@@ -80,6 +81,17 @@ int AlbumManager::getAlbumPictureResourceId (int id) {
 	auto result = conn.exec (query);
 	if (result.size() == 0) return -1;
 	return result.at (0).at (0).as <int>();
+}
+
+std::string AlbumManager::getAlbumPictureUrl (int albumId) {
+	int resource = this->getAlbumPictureResourceId (albumId);
+	auto &mgr = UploadedResourcesManager::get();
+	auto url = mgr.getDownloadUrl (resource);
+	if (url == "") {
+		return "resources/default_picture.svg";
+	} else {
+		return url;
+	}
 }
 
 

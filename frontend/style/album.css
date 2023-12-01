@@ -31,6 +31,17 @@ body {
 	justify-content: flex-start;
 }
 
+.imageBoxBorder {
+	border-top-left-radius: 15px;
+	border-bottom-right-radius: 15px;
+	border-top-right-radius: 5px;
+	border-bottom-left-radius: 5px;
+}
+
+.imageBox {
+	position: relative;
+}
+
 #albumImage {
 	width: 300px;
 	height: 300px;
@@ -41,14 +52,59 @@ body {
 
 	border: solid 1px;
 	border-color: white;
-	border-top-left-radius: 15px;
-	border-bottom-right-radius: 15px;
-	border-top-right-radius: 5px;
-	border-bottom-left-radius: 5px;
 
 	vertical-align: top;
 
 	background-color: #130d0ddd;
+}
+
+#uploadOverlay {
+	position: absolute;
+
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+
+	margin-left: 0;
+	margin-right: 0;
+
+	background-color: rgba(0, 0, 0, 0.5);
+	opacity: 0;
+
+	transition: opacity 0.2s ease-in-out;
+}
+
+#uploadOverlayIcon {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	left: 0;
+	top: 0;
+
+	scale: 0.2;
+
+	transition: scale 0.2s ease-in-out;
+}
+
+.uploadOverlayText {
+	position: absolute;
+	text-align: center;
+
+	left: 0;
+	bottom: 20px;
+	width: 100%;
+	
+	font-size: 24px;
+}
+
+#uploadOverlay:hover {
+	opacity: 1;
+	cursor: pointer;
+}
+
+#uploadOverlay:hover #uploadOverlayIcon {
+	scale: 0.53;
 }
 
 .albumView {
@@ -181,7 +237,7 @@ body {
 	transition: background-color 0.1s ease-in-out;
 }
 
-.track:hover {
+.track:hover, .editTrack:hover {
 	background-color: #200303;
 }
 
@@ -207,7 +263,7 @@ body {
 	cursor: grabbing;
 }
 
-.track:hover .trackIndex {
+.track:hover .trackIndex, .editTrack .trackIndex {
 	background-color: #5c0f0f;
 }
 
@@ -280,6 +336,8 @@ body {
 	margin-bottom: -3px;
 	margin-right: 20px;
 	margin-left: -3px;
+
+	z-index: 12;
 }
 
 .dragTrackVeil {

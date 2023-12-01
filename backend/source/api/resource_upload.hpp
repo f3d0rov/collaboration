@@ -34,6 +34,7 @@ class UploadedResourcesManager {
 
 		std::filesystem::path getPathForResource (int id);
 		std::optional <std::filesystem::path> getPathIfUploaded (int id);
+		std::optional <std::string> getFilenameIfUploaded (int id);
 		void setUploadData (int id, int userId, std::string mime);
 		int getIdByUploadId (std::string uploadId);
 		void clearUploadLink (std::string uploadId);
@@ -47,6 +48,7 @@ class UploadedResourcesManager {
 
 		void setDownloadUri (std::string uri);
 		std::string getDownloadUrl (std::string filename);
+		std::string getDownloadUrl (int resourceId);
 
 		void setUploadUrl (std::string uploadUrl);
 		std::string getUploadUrl (std::string uploadId);

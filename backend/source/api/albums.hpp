@@ -29,6 +29,7 @@ class AlbumManager {
 		nlohmann::json getAlbumData (int albumId);
 
 		int getAlbumPictureResourceId (int id);
+		std::string getAlbumPictureUrl (int albumId);
 };
 
 

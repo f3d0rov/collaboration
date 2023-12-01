@@ -48,7 +48,8 @@ async function uploadImage (entityId, url) {
 		url,
 		{
 			"method": "PUT",
-			"body": imageBox.getAttribute ("src")
+			"body": imageBox.getAttribute ("src"),
+			"credentials": "same-origin"
 		}
 	);
 	console.log (resp.status);
