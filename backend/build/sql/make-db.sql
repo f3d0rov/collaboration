@@ -78,11 +78,16 @@ CREATE TABLE entities (
 	description TEXT NOT NULL DEFAULT '',
 	start_date DATE NOT NULL DEFAULT '01-01-1970',
 	end_date DATE,
+	
+	CHECK (start_date <= CURRENT_DATE),
+	CHECK (end_date <= CURRENT_DATE),
+	CONSTRAINT valid_dates CHECK (start_date <= end_date), -- ? < vs <= - are there any one-day bands?
 
-	picture INT REFERENCES uploaded_resources (id),
+	picture INT REFERENCES uploaded_resources (id) ON DELETE SET NULL,
 	awaits_creation BOOLEAN DEFAULT TRUE,
 	created_by INT REFERENCES users (uid),
-	created_on DATE
+	created_on DATE,
+	CHECK (created_on <= CURRENT_DATE)
 );
 
 CREATE TABLE entity_photo_upload_links (
@@ -120,8 +125,9 @@ CREATE TABLE albums (
 	id INT REFERENCES events (id) PRIMARY KEY,
 	title VARCHAR (256) NOT NULL,
 	author INT REFERENCES entities (id) ON DELETE CASCADE,
-	release_date date,
-	picture_path varchar (256)
+	release_date DATE,
+	CHECK (release_date <= CURRENT_DATE),
+	picture INT REFERENCES uploaded_resources (id) ON DELETE SET NULL
 );
 
 CREATE TABLE songs (
@@ -134,7 +140,8 @@ CREATE TABLE songs (
 	album_index INT DEFAULT 0,
 	
 	release INT REFERENCES events(id) ON DELETE CASCADE DEFAULT NULL,
-	release_date DATE
+	release_date DATE NOT NULL
+	CHECK (release_date <= CURRENT_DATE)
 );
 
 create table concerts (
@@ -164,7 +171,8 @@ CREATE TABLE search_index (
 CREATE TABLE single_entity_related_events (
 	id INT PRIMARY KEY REFERENCES events ON DELETE CASCADE,
 	entity_id INT REFERENCES entities NOT NULL,
-	event_date DATE NOT NULL
+	event_date DATE NOT NULL,
+	CHECK (event_date <= CURRENT_DATE)
 );
 
 INSERT INTO event_report_reasons (name) 

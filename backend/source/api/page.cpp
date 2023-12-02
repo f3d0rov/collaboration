@@ -95,7 +95,6 @@ std::unique_ptr<ApiResponse> CreatePageResource::processRequest (RequestData &rd
 	)) return makeApiResponse (nlohmann::json{}, 400);
 
 	std::string type, name, description, startDate, endDate;
-	bool hasEndDate = false;
 
 	type = getParameter <std::string> ("type", body);
 	name = getParameter <std::string> ("name", body);
@@ -103,7 +102,6 @@ std::unique_ptr<ApiResponse> CreatePageResource::processRequest (RequestData &rd
 	startDate = getParameter <std::string> ("start_date", body);
 	if (body.contains ("end_date")) {
 		endDate = getParameter <std::string> ("end_date", body);
-		hasEndDate = true;
 	}
 	
 
@@ -117,7 +115,7 @@ std::unique_ptr<ApiResponse> CreatePageResource::processRequest (RequestData &rd
 	if (entityId < 0) {
 		return makeApiResponse (nlohmann::json{{"status", "already_exists"}}, 200);
 	}
-	int pageId = this->createTypedEntity (conn, entityId, type);
+	this->createTypedEntity (conn, entityId, type);
 
 	std::string url = CreatePageResource::pageUrlForTypedEntity (type, entityId);
 

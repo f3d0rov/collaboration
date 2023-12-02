@@ -9,7 +9,7 @@
 #include <iomanip>
 
 struct ArgOption {
-	std::string fullName, shortName;
+	std::string shortName, fullName;
 	std::string description;
 	bool hasParameter = false;
 

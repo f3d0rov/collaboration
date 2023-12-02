@@ -19,11 +19,16 @@ std::string _QueryColumn::query() {
 }
 
 
-pqxx::row::reference _QueryColumn::getRef (int index) {
+pqxx::row::reference _QueryColumn::getRef (int index) const {
 	if (std::shared_ptr<pqxx::result> result = this->_result.lock())
 		return result->at (index).at (this->_column);
 	throw std::logic_error ("QueryColumn<T>::get: переменная не была получена в запросе или запрос не был выполнен");
 }
+
+bool _QueryColumn::isNull (int index) const {
+	return this->getRef(index).is_null();
+}
+
 
 std::string _QueryColumn::table () const {
 	return this->_table;

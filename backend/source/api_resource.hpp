@@ -13,6 +13,9 @@ class ApiResponse;
 class ApiResource;
 
 
+void assertMethod (const RequestData &rd, std::string method);
+
+
 class ApiResponse: public _Response {
 	public:
 		nlohmann::json body;
@@ -37,10 +40,12 @@ ApiResponsePtr makeApiResponse (Args ...args) {
 class ApiResource: public Resource {
 	public:
 		ApiResource (mg_context* ctx, std::string uri);
+		virtual ~ApiResource ();
 		std::unique_ptr<_Response> processRequest (RequestData &rd) final;
 
 		virtual ApiResponsePtr processRequest(RequestData &rd, nlohmann::json body) = 0;
 };
+
 
 template <class T>
 T getParameter (std::string name, nlohmann::json &j) {

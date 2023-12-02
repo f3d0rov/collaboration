@@ -16,12 +16,12 @@ SearchResult::SearchResult () {
 }
 
 SearchResult::SearchResult (std::string type, std::string title, std::string url):
-type (type), title (title), url (url) {
+title (title), url (url), type (type) {
 
 }
 
 SearchResult::SearchResult (std::string type, std::string title, std::string url, std::string imgPath):
-type (type), title (title), url (url), imgPath (imgPath) {
+title (title), url (url), imgPath (imgPath), type (type)  {
 	
 }
 

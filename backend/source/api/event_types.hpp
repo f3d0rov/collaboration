@@ -103,25 +103,10 @@ class SinglePublicationEventType: public AllEntitiesEventType {
 		int updateEvent (nlohmann::json &data) override;
 
 		int getAuthorForEvent (OwnedConnection &work, int eventId);
+
+		static int getEventIdForSong (int songId);
 };
 
 void from_json (const nlohmann::json &j, SinglePublicationEventType::Data &d);
 void to_json (nlohmann::json &j, const SinglePublicationEventType::Data &d);
 
-
-#if 0
-
-class AlbumPublicationEventType: public AllEntitiesEventType {
-	public:
-		std::string getTypeName () const override;
-		std::string getDisplayName () const override;
-		std::string getTitleFormat () const override;
-
-		std::vector <InputTypeDescriptor> getInputs () const override;
-		
-		int createEvent (nlohmann::json &data) override;
-		nlohmann::json getEvent (int id) override;
-		void updateEvent (nlohmann::json &data) override;
-};
-
-#endif

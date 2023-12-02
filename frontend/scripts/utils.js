@@ -13,6 +13,7 @@ async function fetchApi (endpoint, body = {}) {
 	if (fRes.ok) {
 		return await fRes.json();
 	} else {
+		flashNetworkError();
 		console.log (await fRes.text());
 		return null;
 	}
@@ -60,6 +61,14 @@ function compareDates (a, b) {
 
 function getEntityUrl (id){ 
 	return '/e?id=' + id;
+}
+
+function getLookupUrl (str) {
+	let keys = str.split (' ');
+	if (keys.length == 0) return "https://developer.mozilla.org/en-US/docs/Web/JavaScript";
+	let res = "https://www.google.com/search?q=" + keys[0];
+	for (let i = 1; i < keys.length; i++) res += "+" + keys[i];
+	return res;
 }
 
 function getUrlForCreation (text) {
@@ -112,4 +121,20 @@ function message (text) {
 	setTimeout (() => { clone.classList.add ("ondisplay"); }, 100);
 	setTimeout (() => { clone.classList.add ("goingAway"); }, 5E3);
 	setTimeout (() => { clone.remove(); }, 5E3 + 400);
+}
+
+function unescape (str) {
+	let dict = {
+		"&lt;": '<',
+		"&gt;": '>',
+		"&quot;": '"',
+		"&#39;": "'"
+	};
+
+	let res = str;
+	for (let i in dict) {
+		res = res.replace (i, dict[i]);
+	}
+	
+	return res;
 }

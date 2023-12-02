@@ -51,16 +51,17 @@ class UpdateQueryElement <ParticipantEntity>: public UpdateQueryElement <int> {
 };
 
 
-struct InputTypeDescriptor {
-	std::string id;
-	std::string prompt;
-	std::string type;
-	bool optional = false;
+class InputTypeDescriptor {
+	public:
+		std::string id;
+		std::string prompt;
+		std::string type;
+		bool optional = false;
 
-	int order = 0;
+		int order = 0;
 
-	InputTypeDescriptor ();
-	InputTypeDescriptor (std::string id, std::string prompt, std::string type, bool optional = false);
+		InputTypeDescriptor ();
+		InputTypeDescriptor (std::string id, std::string prompt, std::string type, bool optional = false);
 };
 
 void to_json (nlohmann::json &j, const InputTypeDescriptor &pe);

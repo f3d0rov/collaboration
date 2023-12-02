@@ -52,6 +52,16 @@ std::filesystem::path UploadedResourcesManager::getPathForResource (int id) {
 }
 
 std::optional <std::filesystem::path> UploadedResourcesManager::getPathIfUploaded (int id) {
+	auto filename = this->getFilenameIfUploaded (id);
+
+	if (filename.has_value()) {
+		return this->_directory / filename.value();
+	} else {
+		return {};
+	}
+}
+
+std::optional <std::string> UploadedResourcesManager::getFilenameIfUploaded (int id) {
 	auto conn = database.connect ();
 	std::string checkQuery = "SELECT path FROM uploaded_resources WHERE id="s + std::to_string(id) + ";";
 	auto result = conn.exec (checkQuery);
@@ -59,7 +69,7 @@ std::optional <std::filesystem::path> UploadedResourcesManager::getPathIfUploade
 	if (result.size() == 0 || result.at(0).at(0).is_null()) {
 		return {};
 	} else {
-		return this->_directory / result.at (0).at (0).as <std::string>();
+		return result.at (0).at (0).as <std::string>();
 	}
 }
 
@@ -89,7 +99,7 @@ void UploadedResourcesManager::clearUploadLink (std::string uploadId) {
 
 
 
-UploadedResourcesManager::GeneratedResource UploadedResourcesManager::createUploadableResource () {
+UploadedResourcesManager::GeneratedResource UploadedResourcesManager::createUploadableResource (bool genUploadLink) {
 	std::string query = "INSERT INTO uploaded_resources (path, uploaded_by, uploaded_on) VALUES (DEFAULT, DEFAULT, DEFAULT) RETURNING id;";
 	auto conn = database.connect ();
 	auto row = conn.exec1 (query);
@@ -99,7 +109,7 @@ UploadedResourcesManager::GeneratedResource UploadedResourcesManager::createUplo
 
 	UploadedResourcesManager::GeneratedResource gr;
 	gr.resourceId = id;
-	gr.uploadId = this->generateUploadIdForResource (id);
+	if (genUploadLink) gr.uploadId = this->generateUploadIdForResource (id);
 	return gr;
 }
 
@@ -151,6 +161,13 @@ void UploadedResourcesManager::setDownloadUri (std::string uri) {
 std::string UploadedResourcesManager::getDownloadUrl (std::string filename) {
 	return this->_downloadUrl + "/" + filename;
 }
+
+std::string UploadedResourcesManager::getDownloadUrl (int resourceId) {
+	auto filename = this->getFilenameIfUploaded (resourceId);
+	if (filename.has_value()) return this->getDownloadUrl (filename.value());
+	else return "";
+}
+
 
 void UploadedResourcesManager::setUploadUrl (std::string uploadUrl) {
 	this->_uploadUrl = uploadUrl;

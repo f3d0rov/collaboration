@@ -258,6 +258,8 @@ std::vector <InputTypeDescriptor> SinglePublicationEventType::getInputs () const
 int SinglePublicationEventType::createEvent (nlohmann::json &rawData) {
 	auto participants = this->getParticipantsFromJson (rawData);
 	SinglePublicationEventType::Data data = this->getParameter <SinglePublicationEventType::Data> ("data", rawData);
+	int albumIndex = rawData["data"].contains ("album_index") ? getParameter <int> ("album_index", rawData ["data"]) : 0;
+	int albumId = rawData["data"].contains ("album") ? getParameter <int> ("album", rawData ["data"]) : 0;
 
 	auto conn = database.connect();
 
@@ -271,11 +273,13 @@ int SinglePublicationEventType::createEvent (nlohmann::json &rawData) {
 	this->addParticipants (eventId, participants, conn);
 
 	std::string addSongQuery = std::string()
-		+ "INSERT INTO songs (title, author, release, release_date) VALUES ("
+		+ "INSERT INTO songs (title, author, release, release_date, album, album_index) VALUES ("
 		+ /* title */ 	conn.quote (data.song) + ","
 		+ /* author */	std::to_string (data.author.entityId) + ","
 		+ /* release */	std::to_string (eventId) + ","
-		+ /* date */ 	conn.quote (data.date)
+		+ /* date */ 	conn.quote (data.date) + ","
+		+ /* album */	((albumId != 0) ? std::to_string (albumId) : "NULL") + ","
+		+ /* alb_indx */std::to_string (albumIndex)
 		+ ");";
 	conn.exec (addSongQuery);
 
@@ -285,11 +289,13 @@ int SinglePublicationEventType::createEvent (nlohmann::json &rawData) {
 
 nlohmann::json SinglePublicationEventType::getEvent (int id) {
 	std::string getEventQuery = std::string (
-		"SELECT sort_index, events.description,"
-		"songs.title, release_date,"
-		"author, entities.name, awaits_creation "
+		"SELECT events.sort_index, events.description,"
+		"songs.title, songs.release_date,"
+		"songs.author, entities.name, entities.awaits_creation, "
+		"songs.album, albums.author AS album_author "
 		"FROM events INNER JOIN songs ON events.id = songs.release "
 		"INNER JOIN entities ON songs.author = entities.id "
+		"LEFT OUTER JOIN albums ON albums.id=songs.album "
 		"WHERE events.id=") + std::to_string (id) + ";";
 
 	auto conn = database.connect();
@@ -310,7 +316,14 @@ nlohmann::json SinglePublicationEventType::getEvent (int id) {
 	nlohmann::json dataJson;
 	to_json (dataJson, data);
 
-	return this->formGetEventResponse (conn, id, "{description}", row.at ("sort_index").as <int>(), data.date, dataJson);
+	auto resp = this->formGetEventResponse (conn, id, "{description}", row.at ("sort_index").as <int>(), data.date, dataJson);
+
+	if (row.at ("album_author").is_null() == false) {
+		resp ["hide_for_entities"] = nlohmann::json::array();
+		resp ["hide_for_entities"].push_back (row.at ("album_author").as <int>());
+	}
+
+	return resp;
 }
 
 int SinglePublicationEventType::updateEvent (nlohmann::json &data) {
@@ -323,7 +336,9 @@ int SinglePublicationEventType::updateEvent (nlohmann::json &data) {
 				UpdateQueryElement <std::string>::make ("song", "title", "songs"),
 				UpdateQueryElement <std::string>::make ("date", "release_date", "songs"),
 				UpdateQueryElement <std::string>::make ("description", "description", "events"),
-				UpdateQueryElement <ParticipantEntity>::make ("author", "author", "songs")
+				UpdateQueryElement <ParticipantEntity>::make ("author", "author", "songs"),
+				UpdateQueryElement <int>::make ("album_index", "album_index", "songs"),
+				UpdateQueryElement <int>::make ("album", "album", "songs")
 			},
 			{
 				UpdateQueryGenerator::TableColumnValue {"events", "id", std::to_string (eventId)},
@@ -348,13 +363,20 @@ int SinglePublicationEventType::updateEvent (nlohmann::json &data) {
 }
 
 int SinglePublicationEventType::getAuthorForEvent (OwnedConnection &work, int eventId) {
-	std::string query = "SELECT author FROM songs WHERE id="s + std::to_string (eventId) + ";";
+	std::string query = "SELECT author FROM songs WHERE release="s + std::to_string (eventId) + ";";
 	auto result = work.exec (query);
 	if (result.size() == 0)
 		throw std::runtime_error ("SinglePublicationEventType::getAuthorForEvent: нет события с id="s + std::to_string (eventId));
 	else {
 		return result.at(0).at(0).as <int> ();
 	}
+}
+
+/* static */ int SinglePublicationEventType::getEventIdForSong (int songId) {
+	auto conn = database.connect();
+	std::string query = "SELECT release FROM songs WHERE id=" + std::to_string (songId) + ";";
+	auto row = conn.exec1 (query);
+	return row.at (0).as <int>();
 }
 
 void from_json (const nlohmann::json &j, SinglePublicationEventType::Data &d) {

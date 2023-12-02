@@ -9,8 +9,13 @@ _QueryColumn (table, column, alias) {
 }
 
 template <class T>
-T QueryColumn<T>::get (int index) {
+T QueryColumn<T>::get (int index) const {
 	return this->getRef (index).template as <T>();
+}
+
+template <class T>
+QueryColumn<T>::operator T () const {
+	return this->get();
 }
 
 

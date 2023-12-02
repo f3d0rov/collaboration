@@ -49,7 +49,7 @@ class TextFieldInput {
 	}
 
 	setValue (value) {
-		this.inputElem.value = value;
+		this.inputElem.value = unescape(value);
 	}
 
 	getId () {
@@ -193,7 +193,7 @@ class TextareaInput {
 	}
 
 	setValue (value) {
-		this.inputElem.value = value;
+		this.inputElem.value = unescape(value);
 	}
 
 	getId () {
@@ -378,7 +378,7 @@ class BandInput {
 
 	setValue (value) {
 		this.selectedItem = value.entity_id;
-		this.inputElem.value = value.name;
+		this.inputElem.value = unescape(value.name);
 	}
 
 	getId () {
@@ -556,7 +556,7 @@ class EventGeneratorType {
  ***************************************************************************************************/
 
 
- class ParticipantEntityTemplates {
+class ParticipantEntityTemplates {
 	constructor (inputTemplate, suggestionListTemplate, suggestionTemplate, minInputElementWidth) {
 		this.input = inputTemplate;
 		this.suggestionList = suggestionListTemplate;
@@ -693,7 +693,7 @@ class ParticipantEntityInput {
 
 		if (value !== null) {
 			this.selectedId = value.entity_id;
-			this.inp.value = value.name;
+			this.inp.value = unescape(value.name);
 			this.resizeParticipantInput (this.inp);
 		}
 	}
@@ -732,7 +732,7 @@ class ParticipantEntityInput {
 
 	selectItem (item) {
 		console.log ('Selected entity #' + item.id);
-		this.inp.value = item.title;
+		this.inp.value = unescape(item.title);
 		this.selectedId = item.id;
 		this.resizeParticipantInput (this.elem.querySelector ('input'));
 	}

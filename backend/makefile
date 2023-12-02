@@ -2,7 +2,7 @@
 CXX = clang++
 CC = clang
 DEBUG = -ggdb
-CXX_FLAGS = $(DEBUG) -std=c++20 -O3 
+CXX_FLAGS = $(DEBUG) -std=c++20 -O3 -Wall -Werror
 C_FLAGS=
 
 ODIR = obj
