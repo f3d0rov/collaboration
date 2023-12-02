@@ -353,6 +353,6 @@ ApiResponsePtr UpdateAlbumResource::processRequest (RequestData &rd, nlohmann::j
 		}
 	}
 
-	return makeApiResponse (200);
+	return makeApiResponse (nlohmann::json{{"status", "success"}}, 200);
 }
 

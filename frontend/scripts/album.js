@@ -585,7 +585,7 @@ class SongView {
 
 class AggregatedSongView {
 	constructor (songData, album) {
-		this.songData = songData;
+		this.songData = this.flatten (songData);
 		this.album = album;
 		if (songData !== null && ('participants' in this.songData == false))
 			this.songData.participants = [];
@@ -603,6 +603,15 @@ class AggregatedSongView {
 		} else {
 			this.basicView.construct (this.songData);
 		}
+	}
+
+	flatten (songData) {
+		if (songData !== null && 'data' in songData) {
+			for (let i in songData.data) {
+				songData [i] = songData.data[i];
+			}
+		}
+		return songData;
 	}
 
 	setNext (song) {
@@ -709,17 +718,11 @@ class AlbumView {
 	}
 
 	async initialize () {
-		this.albumData = await fetchApi (this.getAlbumDataApiEndpoint, {"id": this.id});
-		console.log (this.albumData);
-
-		this.songs = this.albumData.songs;
-		this.picture = this.albumData.picture;
-
 		this.titleElem = document.getElementById ("albumTitle");
 		this.authorElem = document.getElementById ("author");
 		this.publicationDateElem = document.getElementById ("albumDate");
 		this.descriptionElem = document.getElementById ("description");
-		
+
 		this.albumImage = document.getElementById ('albumImage');
 		
 		this.editAlbumButton = document.getElementById ("editAlbum");
@@ -738,12 +741,23 @@ class AlbumView {
 		this.discardChangesButton = document.getElementById ("discardChangesButton");
 		this.editorButtons = document.getElementById ("editButtons");
 
+		this.loadData();
+
+		this.setupEvents();
+		this.unveil();
+	}
+
+	async loadData () {
+		this.albumData = await fetchApi (this.getAlbumDataApiEndpoint, {"id": this.id});
+		console.log (this.albumData);
+
+		this.songs = this.albumData.songs;
+		this.picture = this.albumData.picture;
+		
 		this.imgInput = null;
 
 		this.constructInfoCard ();
 		this.constructSongs ();
-		this.setupEvents();
-		this.unveil();
 	}
 
 	constructInfoCard () {
@@ -751,7 +765,7 @@ class AlbumView {
 		this.authorElem.innerHTML = '<a href="/e?id=' + this.albumData.data.author.entity_id + '">' + this.albumData.data.author.name + "</a>";
 		this.publicationDateElem.innerHTML = dateToString (this.albumData.data.date);
 		this.descriptionElem.innerHTML = this.albumData.data.description;
-		this.albumImage.setAttribute ("src", this.picture);
+		this.albumImage.setAttribute ("src", this.picture + "?" + new Date().getTime());
 	}
 
 	insertSong (song) {
@@ -1023,8 +1037,15 @@ class AlbumView {
 			}
 		);
 
-		console.log (resp.status);
-		this.imgInput = null;
+		if (resp.status == 200) {
+			this.imgInput = null;
+			this.picture = this.albumImage.getAttribute ("src");
+		} else {
+			flashNetworkError();
+			console.log (resp);
+		}
+
+		// this.picture = 
 	}
 
 	async commitChanges () {
@@ -1035,10 +1056,27 @@ class AlbumView {
 			songs: songs
 		};
 		
-		this.uploadImage ();
+		await this.uploadImage ();
 		
 		console.log (requestData);
 		let resp = await fetchApi (this.updateAlbumDataApiEndpoint, requestData);
+		if (resp === null || resp === undefined) {
+			flashNetworkError();
+			console.log (resp);
+		} else if ('status' in resp) {
+			if (resp.status == 'success') {
+				await this.loadData();
+				this.viewAlbum();
+			} else {
+				message (resp.status);
+				console.log (resp);
+			}
+		} else if ('error' in resp) {
+			message (resp.error);
+		} else {
+			flashNetworkError();
+			console.log (resp);
+		}
 	}
 
 
