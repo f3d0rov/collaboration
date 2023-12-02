@@ -741,6 +741,8 @@ class AlbumView {
 		this.discardChangesButton = document.getElementById ("discardChangesButton");
 		this.editorButtons = document.getElementById ("editButtons");
 
+		this.addSongsPrompt = document.getElementById ("noTracksPrompt");
+
 		this.loadData();
 
 		this.setupEvents();
@@ -807,7 +809,7 @@ class AlbumView {
 
 		if (this.songs.length == 0) {
 			this.proposeAddingSongs ();
-			message ("Треков нет!");
+			this.addSongsPrompt.classList.remove ("template");
 			return;
 		}
 		
@@ -853,6 +855,9 @@ class AlbumView {
 		this.discardChangesButton.addEventListener ('keydown', (ev) => { if (ev.key == "Enter") this.discardChanges(); });
 
 		this.uploadImageOverlay.addEventListener ('click', () => { this.selectImage(); });
+
+		this.addSongsPrompt.addEventListener ('mouseenter', () => { this.addSongsPromptHoverStart(); });
+		this.addSongsPrompt.addEventListener ('mouseleave', () => { this.addSongsPromptHoverEnd(); })
 	}
 
 	showEditButtons () {
@@ -865,6 +870,7 @@ class AlbumView {
 	
 	editAlbum () {
 		if (!demandAuth())  return;
+		this.addSongsPrompt.classList.add ("template");
 		this.editAlbumButton.classList.add ("template");
 		this.uploadImageOverlay.classList.remove ("template");
 		let song = this.firstSong;
@@ -1090,6 +1096,16 @@ class AlbumView {
 	reportAlbum () {
 		if (!demandAuth()) return;
 	}
+	
+
+	addSongsPromptHoverStart () {
+		this.editAlbumButton.classList.add ("beacon");
+	}
+
+	addSongsPromptHoverEnd () {
+		this.editAlbumButton.classList.remove ("beacon");
+	}
+
 
 }
 
