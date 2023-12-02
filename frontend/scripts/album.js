@@ -135,7 +135,7 @@ class ParticipantEntityInput {
 
 		if (value !== null) {
 			this.selectedId = value.entity_id;
-			this.inp.value = value.name;
+			this.inp.value = unescape (value.name);
 			this.resizeParticipantInput (this.inp);
 		}
 	}
@@ -360,7 +360,7 @@ class EditSongView {
 		this.elem.querySelector ('.removeTrack').addEventListener ('click', () => { this.removeTrack(); });
 
 		if (this.songData != null) {
-			this.nameInput.value = this.songData.song;
+			this.nameInput.value = unescape(this.songData.song);
 			this.trackIndex.innerHTML = this.songData.album_index;
 			this.album_index = this.songData.album_index;
 			this.addParticipant (this.songData.author);

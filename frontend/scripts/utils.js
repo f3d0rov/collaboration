@@ -123,3 +123,18 @@ function message (text) {
 	setTimeout (() => { clone.remove(); }, 5E3 + 400);
 }
 
+function unescape (str) {
+	let dict = {
+		"&lt;": '<',
+		"&gt;": '>',
+		"&quot;": '"',
+		"&#39;": "'"
+	};
+
+	let res = str;
+	for (let i in dict) {
+		res = res.replace (i, dict[i]);
+	}
+	
+	return res;
+}
