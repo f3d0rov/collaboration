@@ -166,7 +166,22 @@ function setupDataInput () {
 	document.getElementById ("createPageButton").addEventListener ('click', tryCreatePage);
 }
 
+function showBackground (img) {
+	img.classList.add ("loaded");
+}
+
+function displayBackgroundOnLoad () {
+	let img = document.querySelector (".sickBackground");
+	if (img.complete) {
+		showBackground (img);
+	} else {
+		img.addEventListener ('load', () => { showBackground (img); });
+		if (img.complete) showBackground (img); // Just making sure
+	}
+}
+
 function setupPage () {
+	displayBackgroundOnLoad();
 	setupPageTypeSelector();
 	setupImageInput();
 	setupDataInput();

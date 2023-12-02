@@ -6,6 +6,7 @@ body {
 
 .page {
 	background-color: #130d0ddd;
+	box-shadow: black 0 0 10px;
 }
 
 .veil {

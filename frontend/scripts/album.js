@@ -738,6 +738,9 @@ class AlbumView {
 
 		this.addSongButton = document.getElementById ("addSongButton");
 		this.commitChangesButton = document.getElementById ("commitChangesButton");
+		this.commitChangesIconOk = document.getElementById ("commitChangesIconOk");
+		this.commitChangesIconLoading = document.getElementById ("commitChangesIconLoading");
+		this.lockCommitChanges = false;
 		this.discardChangesButton = document.getElementById ("discardChangesButton");
 		this.editorButtons = document.getElementById ("editButtons");
 
@@ -861,6 +864,7 @@ class AlbumView {
 	}
 
 	showEditButtons () {
+		this.enableSubmitButton();
 		this.editorButtons.classList.remove ("template");
 	}
 	
@@ -967,6 +971,7 @@ class AlbumView {
 	}
 
 	discardChanges () {
+		if (this.lockCommitChanges) return;
 		this.constructSongs ();
 		this.viewAlbum ();
 		this.albumImage.setAttribute ("src", this.picture);
@@ -1025,6 +1030,18 @@ class AlbumView {
 		this.imgInput.click();
 	}
 
+	disableSubmitButtonForUpload () {
+		this.lockCommitChanges = true;
+		this.commitChangesIconLoading.classList.remove ("template");
+		this.commitChangesIconOk.classList.add ("template");
+	}
+
+	enableSubmitButton () {
+		this.lockCommitChanges = false;
+		this.commitChangesIconLoading.classList.add ("template");
+		this.commitChangesIconOk.classList.remove ("template");
+	}
+
 	async uploadImage () {
 		if (this.imgInput === null) return;
 
@@ -1055,6 +1072,9 @@ class AlbumView {
 	}
 
 	async commitChanges () {
+		if (this.lockCommitChanges) return;
+
+		this.disableSubmitButtonForUpload();
 		let songs = this.getSongs ();
 
 		let requestData = {
@@ -1083,6 +1103,8 @@ class AlbumView {
 			flashNetworkError();
 			console.log (resp);
 		}
+		
+		this.enableSubmitButton();
 	}
 
 
