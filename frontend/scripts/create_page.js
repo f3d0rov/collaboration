@@ -42,7 +42,7 @@ async function uploadImage (entityId, url) {
 	let imageSelector = document.getElementById ("imageSelector");
 	let file = imageSelector.files[0];
 	if (checkImage (file) == false) return;
-	let imageBox = document.getElementById ('image');
+	let imageBox = document.getElementById ('entityImage');
 	
 	let resp = await fetch (
 		url,
@@ -59,21 +59,21 @@ function processTypeSwitch (newType) {
 	console.log (newType);
 
 	if (newType == "person") {
-		document.getElementById ("image").classList.remove ("square");
+		document.getElementById ("imageBox").classList.remove ("square");
 		document.getElementById ('startDateName').innerHTML = "Дата рождения";
 		
 		document.getElementById ('aliveName').innerHTML = "Жив";
 		document.getElementById ('aliveBox').classList.remove ('hidden');
 		document.getElementById ('alive').dispatchEvent (new Event ('change'));
 	} else if (newType == "band") {
-		document.getElementById ("image").classList.add ("square");
+		document.getElementById ("imageBox").classList.add ("square");
 		document.getElementById ('startDateName').innerHTML = "Дата основания";
 		
 		document.getElementById ('aliveBox').classList.add ('hidden');
 		document.getElementById ('endDateName').classList.add ('hidden');
 		document.getElementById ('endDate').classList.add ('hidden');
 	} else /* newType == "album" */{
-		document.getElementById ("image").classList.add ("square");
+		document.getElementById ("imageBox").classList.add ("square");
 		document.getElementById ('startDateName').innerHTML = "Дата выпуска";
 
 		document.getElementById ('aliveBox').classList.add ('hidden');
@@ -121,7 +121,7 @@ function setupImageInput () {
 				return;
 			}
 			
-			let imageBox = document.getElementById ('image');
+			let imageBox = document.getElementById ('entityImage');
 			imageBox.file = file;
 			const reader = new FileReader();
 			reader.onload = (e) => {

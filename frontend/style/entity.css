@@ -25,6 +25,25 @@ body {
 	opacity: 0;
 }
 
+#entityHeader {
+	display: flex;
+
+}
+
+#entityImageBox {
+	display: flex;
+	width: fit-content;
+	justify-content: flex-start;
+}
+
+
+
+#entityInfoCard {
+	display: flex;
+	flex-flow: column;
+	padding-left: 10px;
+}
+
 #personImage {
 	width: 200px;
 	height: 300px;

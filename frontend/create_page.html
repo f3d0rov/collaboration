@@ -51,51 +51,53 @@
 			</div>
 		</div>
 
-		<div class = "page">
-			<div class = "typeSelector">
-				<div class = "typeSelectorPrompt">
-					Создаем страницу для:
-				</div> 
-				<div class = "typeSelectorButton selected" value = "person"> Личности </div>
-				<div class = "typeSelectorButton" value = "band"> Группы </div>
-			</div>
+		<div class = "page typeSelector">
+			<div class = "typeSelectorPrompt">
+				Создаем страницу для:
+			</div> 
+			<div class = "typeSelectorButton selected" value = "person"> Личности </div>
+			<div class = "typeSelectorButton" value = "band"> Группы </div>
 		</div>
 
-		<div class = "page">
-			<div>
-				<div class = "photoAndData">
-					<div class = "imageBox" id = "imageBox">
-						<img src="resources/upload.svg" id = "image" class = "placeholder">
-						<div> Загрузить изображение </div>
-						<input type = "file" id = "imageSelector" accept="image/*"/>
-					</div>
-					<div class = "dataCard">
-						<table class = "dataCardTable">
-							<tr>
-								<td class = "dataType"> Имя </td>
-								<td colspan="4"> <input id = "name"> </td>
-							</tr> 
-							<tr>
-								<td class = "dataType" id = "startDateName"> Дата рождения </td>
-								<td> <input type="date" class = "dateInput" id = "startDate"> </td>
-								<td class = "dataType" id = "aliveBox">
-									<input type="checkbox" class = "checkboxInput" id = "alive" checked>
-									<span id = "aliveName"> Жив </span>
-								</td>
-								<td class = "dataType" id = "endDateName" id = "endDate"> Дата смерти </td>
-								<td> <input type="date" class = "dateInput" id = "endDate"/> </td>
-							</tr>
-							<tr>
-								<td class = "dataType"> Краткое описание </td>
-								<td colspan="4">
-									<textarea class = "shortDescription" id = "description" rows="3"></textarea>
-								</td>
-							</tr>
-						</table>
-						<div class = "createPageButton" id = "createPageButton">
-							Создать страницу
+		<div class = "page photoAndData">
+			<div class = "imageBoxContainer">
+				<div class = "imageBox imageBoxBorder" id = "imageBox">
+					<img id = "entityImage" class = "imageBoxBorder" src="/resources/default_picture.svg">
+					<div id = "uploadOverlay" class = "imageBoxBorder">
+						<img id = "uploadOverlayIcon" src="resources/upload.svg">
+						<div class = "uploadOverlayText noselect">
+							Изображение до 4 МБ.
 						</div>
 					</div>
+					<input type = "file" id = "imageSelector" accept="image/*"/>
+				</div>
+			</div>
+			<div class = "dataCard">
+				<table class = "dataCardTable">
+					<tr>
+						<td class = "dataType"> Имя </td>
+						<td colspan="4"> <input id = "name"> </td>
+					</tr> 
+					<tr>
+						<td class = "dataType" id = "startDateName"> Дата рождения </td>
+						<td> <input type="date" class = "dateInput" id = "startDate"> </td>
+						<td class = "dataType" id = "aliveBox">
+							<input type="checkbox" class = "checkboxInput" id = "alive" checked>
+							<span id = "aliveName"> Жив </span>
+						</td>
+						<td class = "dataType" id = "endDateName" id = "endDate"> Дата смерти </td>
+						<td> <input type="date" class = "dateInput" id = "endDate"/> </td>
+					</tr>
+					<tr>
+						<td class = "dataType"> Краткое описание </td>
+						<td colspan="4">
+							<textarea class = "shortDescription" id = "description" rows="3"></textarea>
+						</td>
+					</tr>
+				</table>
+				<div class = "createPageButton" id = "createPageButton">
+					<img class = "createPageButtonIcon" src="resources/ok.svg">
+					Создать страницу
 				</div>
 			</div>
 		</div>
