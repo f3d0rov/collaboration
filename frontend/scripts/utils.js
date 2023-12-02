@@ -133,7 +133,8 @@ function unescape (str) {
 
 	let res = str;
 	for (let i in dict) {
-		res = res.replace (i, dict[i]);
+		res = res.replaceAll (i, dict[i]);
+		console.log (i);
 	}
 	
 	return res;
