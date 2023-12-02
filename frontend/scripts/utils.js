@@ -64,7 +64,7 @@ function getEntityUrl (id){
 }
 
 function getLookupUrl (str) {
-	let keys = str.split (' ');
+	let keys = unescape(str).split (' ');
 	if (keys.length == 0) return "https://developer.mozilla.org/en-US/docs/Web/JavaScript";
 	let res = "https://www.google.com/search?q=" + keys[0];
 	for (let i = 1; i < keys.length; i++) res += "+" + keys[i];
