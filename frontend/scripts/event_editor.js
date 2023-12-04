@@ -39,7 +39,7 @@ class TextFieldInput {
 		this.elem.classList.remove ('template');
 		this.inputElem = this.elem.querySelector ('.' + this.inputSubclass);
 		this.promptElem = this.elem.querySelector ('.' + this.promptSubclass);
-		this.promptElem.innerHTML = this.prompt;
+		this.promptElem.innerHTML = escapeHTML(this.prompt);
 
 		this.factory.insertInputElem (this.elem);
 	}
@@ -49,7 +49,7 @@ class TextFieldInput {
 	}
 
 	setValue (value) {
-		this.inputElem.value = unescape(value);
+		this.inputElem.value = value;
 	}
 
 	getId () {
@@ -131,7 +131,7 @@ class DateInput {
 		this.elem.classList.remove ('template');
 		this.inputElem = this.elem.querySelector ('.' + this.inputSubclass);
 		this.promptElem = this.elem.querySelector ('.' + this.promptSubclass);
-		this.promptElem.innerHTML = this.prompt;
+		this.promptElem.innerHTML = escapeHTML(this.prompt);
 
 		this.factory.insertInputElem (this.elem);
 	}
@@ -181,7 +181,7 @@ class TextareaInput {
 		this.promptElem = this.elem.querySelector ('.' + this.promptSubclass);
 		this.elem.id = this.id;
 		this.elem.classList.remove ('template');
-		this.promptElem.innerHTML = this.prompt;
+		this.promptElem.innerHTML = escapeHTML(this.prompt);
 
 		this.inputElem.addEventListener ('resize', () => { this.factory.eventEditor.resize(); });
 
@@ -193,7 +193,7 @@ class TextareaInput {
 	}
 
 	setValue (value) {
-		this.inputElem.value = unescape(value);
+		this.inputElem.value = value;
 	}
 
 	getId () {
@@ -234,7 +234,7 @@ class BandSearchSuggestions {
 	createSearchSuggestion (optTemplate, elem, opt, index) {
 		let clone = optTemplate.cloneNode (true);
 		
-		clone.innerHTML = opt.title;
+		clone.innerHTML = escapeHTML(opt.title);
 		clone.classList.remove ("template");
 		clone.id = elem.id + "_ss_" + index;
 
@@ -261,7 +261,7 @@ class BandSearchSuggestions {
 	addSuggestion (s) {
 		let clone = this.parent.templates.suggestion.cloneNode (true);
 		clone.classList.remove ('template');
-		clone.innerHTML = s.title;
+		clone.innerHTML = escapeHTML(s.title);
 		clone.addEventListener ('click', (ev) => { this.pickOption (s) });
 		this.elem.appendChild (clone);
 	}
@@ -308,7 +308,7 @@ class BandInput {
 		this.elem.classList.remove ('template');
 		this.inputElem = this.elem.querySelector ('input');
 		
-		this.elem.querySelector (this.templates.labelSelector).innerHTML = input.prompt;
+		this.elem.querySelector (this.templates.labelSelector).innerHTML = escapeHTML(input.prompt);
 	
 		this.inputElem.setAttribute ('type', 'text');
 		this.inputElem.addEventListener ('input', (ev) => { this.checkBandInput(ev);} );
@@ -378,7 +378,7 @@ class BandInput {
 
 	setValue (value) {
 		this.selectedItem = value.entity_id;
-		this.inputElem.value = unescape(value.name);
+		this.inputElem.value = value.name;
 	}
 
 	getId () {
@@ -509,7 +509,7 @@ class EventGeneratorType {
 		this.elem?.remove();
 
 		this.elem = this.eventGenerator.timelineTypeSelectorTemplate.cloneNode (true);
-		this.elem.innerHTML = this.type.type_display_name;
+		this.elem.innerHTML = escapeHTML(this.type.type_display_name);
 		this.elem.classList.remove ('template');
 		this.elem.id = this.getElemId ();
 
@@ -612,7 +612,7 @@ class ParticipantEntitySuggestionList {
 		let clone = this.entity.templates.suggestion.cloneNode (true);
 		clone.classList.remove ('template');
 		clone.classList.remove ('hidden');
-		clone.innerHTML = text;
+		clone.innerHTML = escapeHTML(text);
 		this.elem.insertBefore (clone, this.elem.firstChild);
 
 		clone.addEventListener ('mousedown', (ev) => { this.selectItem (id) })
@@ -693,7 +693,7 @@ class ParticipantEntityInput {
 
 		if (value !== null) {
 			this.selectedId = value.entity_id;
-			this.inp.value = unescape(value.name);
+			this.inp.value = value.name;
 			this.resizeParticipantInput (this.inp);
 		}
 	}
@@ -732,7 +732,7 @@ class ParticipantEntityInput {
 
 	selectItem (item) {
 		console.log ('Selected entity #' + item.id);
-		this.inp.value = unescape(item.title);
+		this.inp.value = item.title;
 		this.selectedId = item.id;
 		this.resizeParticipantInput (this.elem.querySelector ('input'));
 	}

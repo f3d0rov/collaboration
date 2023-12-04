@@ -91,7 +91,7 @@ function flashInputError (elemId, message = "") {
 	}
 
 	let errorElem = document.getElementById (elemId);
-	errorElem.innerHTML = message;
+	errorElem.innerHTML = escapeHTML(message);
 	errorElem.classList.add ("ondisplay");
 }
 

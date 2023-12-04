@@ -28,13 +28,13 @@ function cloneResult (result) {
 	let clone = template.cloneNode (true);
 	clone.id = "";
 	let title = clone.querySelector (".resultTitle");
-	title.innerHTML = result.title;
+	title.innerHTML = escapeHTML(result.title);
 	title.setAttribute ('href', result.url);
 	
 	if ('description' in result) {
 		let desc = clone.querySelector (".resultDescription");
 		desc.classList.add ('ondisplay');
-		desc.innerHTML = result.description;
+		desc.innerHTML = escapeHTML(result.description);
 	}
 
 	if ('picture_url' in result) {
@@ -82,7 +82,7 @@ async function displaySearchResults (ev) {
 		console.log (obj.results [i]);
 	}
 
-	document.getElementById ("searchTime").innerHTML = obj.time;
+	document.getElementById ("searchTime").innerHTML = escapeHTML(obj.time);
 	document.getElementById ("resultsFound").innerHTML = countString (obj.results.length);
 	
 	if (obj.results.length != 0) {

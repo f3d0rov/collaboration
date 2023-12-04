@@ -55,7 +55,7 @@ class ParticipantEntitySuggestionList {
 		let clone = this.entity.templates.suggestion.cloneNode (true);
 		clone.classList.remove ('template');
 		clone.classList.remove ('hidden');
-		clone.innerHTML = text;
+		clone.innerHTML = escapeHTML(text);
 		this.elem.insertBefore (clone, this.elem.firstChild);
 
 		clone.addEventListener ('mousedown', (ev) => { this.selectItem (id) })
@@ -135,7 +135,7 @@ class ParticipantEntityInput {
 
 		if (value !== null) {
 			this.selectedId = value.entity_id;
-			this.inp.value = unescape (value.name);
+			this.inp.value = value.name;
 			this.resizeParticipantInput (this.inp);
 		}
 	}
@@ -369,8 +369,8 @@ class EditSongView {
 		this.elem.querySelector ('.removeTrack').addEventListener ('click', () => { this.removeTrack(); });
 
 		if (this.songData != null) {
-			this.nameInput.value = unescape(this.songData.song);
-			this.trackIndex.innerHTML = this.songData.album_index;
+			this.nameInput.value = this.songData.song;
+			this.trackIndex.innerHTML = escapeHTML(this.songData.album_index);
 			this.album_index = this.songData.album_index;
 			this.addParticipant (this.songData.author);
 			for (let i of this.songData.participants) {
@@ -539,8 +539,8 @@ class SongView {
 	constructElement () {
 		this.elem?.remove();
 		this.elem = cloneTemplate (this.template);
-		this.elem.querySelector ('.' + this.indexClass).innerHTML = this.songData.album_index;
-		this.elem.querySelector ('.' + this.nameClass).innerHTML = this.songData.song;
+		this.elem.querySelector ('.' + this.indexClass).innerHTML = escapeHTML('' + this.songData.album_index);
+		this.elem.querySelector ('.' + this.nameClass).innerHTML = escapeHTML(this.songData.song);
 		this.elem.querySelector ('.' + this.authorsClass).innerHTML = this.generateAuthors();
 		this.tracklist.insertBefore (this.elem, this.aggrView.next !== null ? this.aggrView.next.elem() : null);
 
@@ -580,9 +580,9 @@ class SongView {
 	
 	generateAuthor (pe) {
 		if (pe.created) {
-			return '<a href="' + getEntityUrl (pe.entity_id) + '">' + pe.name + "</a>";
+			return '<a href="' + getEntityUrl (pe.entity_id) + '">' + escapeHTML(pe.name) + "</a>";
 		} else {
-			return '<a href="' + getUrlForCreation (pe.name) + '">' + pe.name + "</a>";
+			return '<a href="' + getUrlForCreation (pe.name) + '">' + escapeHTML(pe.name) + "</a>";
 		}
 	}
 
@@ -795,10 +795,10 @@ class AlbumView {
 	}
 
 	constructInfoCard () {
-		this.titleElem.innerHTML = this.albumData.data.album;
-		this.authorElem.innerHTML = '<a href="/e?id=' + this.albumData.data.author.entity_id + '">' + this.albumData.data.author.name + "</a>";
+		this.titleElem.innerHTML = escapeHTML(this.albumData.data.album);
+		this.authorElem.innerHTML = '<a href="/e?id=' + this.albumData.data.author.entity_id + '">' + escapeHTML(this.albumData.data.author.name) + "</a>";
 		this.publicationDateElem.innerHTML = dateToString (this.albumData.data.date);
-		this.descriptionElem.innerHTML = this.albumData.data.description;
+		this.descriptionElem.innerHTML = escapeHTML(this.albumData.data.description);
 		this.albumImage.setAttribute ("src", this.picture + "?" + new Date().getTime());
 	}
 

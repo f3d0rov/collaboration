@@ -64,7 +64,7 @@ function getEntityUrl (id){
 }
 
 function getLookupUrl (str) {
-	let keys = unescape(str).split (' ');
+	let keys = str.split (' ');
 	if (keys.length == 0) return "https://developer.mozilla.org/en-US/docs/Web/JavaScript";
 	let res = "https://www.google.com/search?q=" + keys[0];
 	for (let i = 1; i < keys.length; i++) res += "+" + keys[i];
@@ -72,14 +72,7 @@ function getLookupUrl (str) {
 }
 
 function getUrlForCreation (text) {
-	let spl = text.split (" ");
-	if (spl.length == 0) return "/create";
-	let res = "/create?q=" + spl[0];
-	for (let i = 1; i < spl.length; i++) {
-		if (spl[i] == "") continue;
-		res += "+" + spl[i];	
-	}
-	return res;
+	return "/create?q=" + encodeURIComponent (text);
 }
 
 
@@ -115,7 +108,7 @@ var msgCounter = 0;
 function message (text) {
 	let template = document.getElementById ("messageTemplate");
 	let clone = cloneTemplate (template);
-	clone.innerHTML = text;
+	clone.innerHTML = escapeHTML(text);
 	clone.classList.remove ("hidden");
 	template.parentElement.appendChild (clone);
 	
@@ -124,15 +117,16 @@ function message (text) {
 	setTimeout (() => { clone.remove(); }, 5E3 + 400);
 }
 
-function unescape (str) {
+function escapeHTML (str) {
 	let dict = {
-		"&lt;": '<',
-		"&gt;": '>',
-		"&quot;": '"',
-		"&#39;": "'"
+		'<': "&lt;",
+		">": "&gt;",
+		'"': "&quot;",
+		"'": "&#39;"
 	};
 
 	let res = str;
+	res = res.replaceAll ("&", '&amp;');
 	for (let i in dict) {
 		res = res.replaceAll (i, dict[i]);
 	}

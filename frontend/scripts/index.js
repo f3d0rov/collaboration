@@ -25,7 +25,7 @@ async function displaySearchSuggestion (event) {
 	let searchSuggestionObject = await searchSuggestionFetch.json();
 
 	let elem = document.getElementById ('searchSuggestionLink');
-	elem.innerHTML = searchSuggestionObject.text;
+	elem.innerHTML = escapeHTML(searchSuggestionObject.text);
 	elem.href = searchSuggestionObject.url;
 
 	let cont = document.querySelector ('.searchSuggestion');

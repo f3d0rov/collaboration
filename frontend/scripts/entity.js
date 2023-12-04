@@ -28,9 +28,9 @@ class EntityDataView {
 	updateElements () {
 		let entityData = this.entity.entityData;
 		document.title = entityData.name + " - COLLABORATION.";
-		this.entityNameElem.innerHTML = entityData.name;
+		this.entityNameElem.innerHTML = escapeHTML(entityData.name);
 		this.entityDatesElem.innerHTML = this.formDate (entityData);
-		this.entityDescriptionElem.innerHTML = entityData.description;
+		this.entityDescriptionElem.innerHTML = escapeHTML(entityData.description);
 
 		this.entityPicElem.setAttribute ('src', this.getPicturePath (entityData));
 		if (entityData.type == 'band') {
@@ -75,7 +75,7 @@ class EventReporter {
 			let clone = this.reportReasonTemplate.cloneNode (true);
 			clone.id = "";
 			clone.classList.remove ('template');
-			clone.innerHTML = i.name;
+			clone.innerHTML = escapeHTML(i.name);
 			this.reportReasonTemplate.parentElement.insertBefore (clone, this.reportReasonTemplate);
 			clone.addEventListener ('click', (ev) => { this.selectReason (ev, i.id); });
 		}
@@ -181,6 +181,7 @@ class EventDisplayObject {
 	}
 
 	formatString (str, data) { 
+		str = escapeHTML (str);
 		const getVariablesRegex = /{[^\{\}]*}/gm;
 		let vars = [...str.matchAll (getVariablesRegex)];
 		for (let j of vars) {
@@ -201,16 +202,14 @@ class EventDisplayObject {
 							}
 						}
 
-						let repl = '<a' + ((url != null) ? (' href = "' + url + '"') : "") + ">" + variable.name + "</a>";
+						let repl = '<a' + ((url != null) ? (' href = "' + url + '"') : "") + ">" + escapeHTML(variable.name) + "</a>";
 						str = str.replaceAll (i, repl);
 					} else {
 						console.log ("Can't convert object to string: ");
 						console.log (variable);
 					}
 				} else {
-					str = str.replaceAll (i, variable);
-					console.log (data);
-					console.log (`${i} -> ${variable}`);
+					str = str.replaceAll (i, escapeHTML(variable));
 				}
 			} else {
 				console.log ("No variable named '" + varName + "'(from " + i + ") in data object: ");
@@ -267,7 +266,7 @@ class EventDisplayObject {
 
 	generateParticipant (pc) {
 		let clone = this.eventsView.eventParticipantTemplate.cloneNode (true);
-		clone.innerHTML = pc.name;
+		clone.innerHTML = escapeHTML(pc.name);
 		clone.classList.remove ('template');
 		clone.id = '';
 		if (pc.created) {
