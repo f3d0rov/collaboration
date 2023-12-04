@@ -127,14 +127,20 @@ void clearTimedoutPendingEmailConfirmations () {
 	conn.commit();
 }
 
-void clearOldSearchCaches() {
+void clearOldSearchCaches () {
 	auto &mgr = SearchManager::get();
 	mgr.clearOldCache();
+}
+
+void clearOldUploadLinks () {
+	auto &mgr = UploadedResourcesManager::get();
+	mgr.clearOldUploadLinks();
 }
 
 void occasionalTasks () {
 	clearTimedoutPendingEmailConfirmations();
 	clearOldSearchCaches();
+	clearOldUploadLinks();
 }
 
 
@@ -302,7 +308,7 @@ int main (int argc, const char *argv[]) {
 
 	while (1) { // Ждем входящие подключения
 		occasionalTasks ();	
-		std::this_thread::sleep_for (std::chrono::minutes (10));
+		std::this_thread::sleep_for (std::chrono::minutes (1));
 	}
 
 	mg_stop (ctx); // Останавливаем сервер

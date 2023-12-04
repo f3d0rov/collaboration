@@ -97,6 +97,14 @@ void UploadedResourcesManager::clearUploadLink (std::string uploadId) {
 	if (conn.exec0 (query).affected_rows() != 1) throw std::logic_error ("UploadedResourcesManager::clearUploadLink: conn.exec0 (query).affected_rows() != 1");
 }
 
+void UploadedResourcesManager::clearOldUploadLinks () {
+	auto conn = database.connect ();
+	std::string query = "DELETE FROM resource_upload_links WHERE valid_until < CURRENT_TIMESTAMP;";
+	int count = conn.exec0 (query).affected_rows();
+	if (count != 0) logger << "Очистил просроченных ссылок на загрузку: " << count << std::endl;
+	conn.commit ();
+}
+
 
 
 UploadedResourcesManager::GeneratedResource UploadedResourcesManager::createUploadableResource (bool genUploadLink) {

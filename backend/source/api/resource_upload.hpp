@@ -38,6 +38,7 @@ class UploadedResourcesManager {
 		void setUploadData (int id, int userId, std::string mime);
 		int getIdByUploadId (std::string uploadId);
 		void clearUploadLink (std::string uploadId);
+		void clearOldUploadLinks ();
 
 		// returns an upload URL
 		GeneratedResource createUploadableResource (bool genUploadLink = true);

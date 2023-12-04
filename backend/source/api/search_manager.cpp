@@ -303,8 +303,11 @@ SearchManager::SearchSlice SearchManager::search (std::string query, std::set <s
 
 void SearchManager::clearOldCache () {
 	std::unique_lock cacheLock (this->_cacheMutex);
+	int oldCount = this->_cache.size();
 	auto now = SearchTimepoint::clock::now();
 	std::erase_if (this->_cache, [now] (auto &pair) { return pair.second.validUntil() > now; }); // C++20 ftw
+	int removed = oldCount - this->_cache.size();
+	if (removed != 0) logger << "Удалено устаревших записей в кэше поиска: " << removed << std::endl;
 }
 
 int SearchManager::indexNewResource (int refId, std::string url, std::string title, std::string descr, std::string type) {
