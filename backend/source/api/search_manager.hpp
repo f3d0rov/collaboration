@@ -8,6 +8,7 @@
 #include <map>
 #include <chrono>
 #include <algorithm>
+#include <mutex>
 
 #include "../database.hpp"
 #include "resource_upload.hpp"
@@ -138,6 +139,7 @@ class SearchManager {
 		static std::unique_ptr <SearchManager> _manager;
 
 		std::map <SearchQuery, CachedSearch> _cache;
+		std::mutex _cacheMutex;
 
 		SearchManager ();
 

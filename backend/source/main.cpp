@@ -127,8 +127,14 @@ void clearTimedoutPendingEmailConfirmations () {
 	conn.commit();
 }
 
+void clearOldSearchCaches() {
+	auto &mgr = SearchManager::get();
+	mgr.clearOldCache();
+}
+
 void occasionalTasks () {
 	clearTimedoutPendingEmailConfirmations();
+	clearOldSearchCaches();
 }
 
 

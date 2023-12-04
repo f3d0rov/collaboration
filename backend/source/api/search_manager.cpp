@@ -239,6 +239,8 @@ SearchManager::SearchManager () {
 
 SearchManager::SearchSlice SearchManager::search (SearchQuery query, int pos, int len) {
 	auto now = SearchTimepoint::clock::now();
+	std::unique_lock cacheLock (this->_cacheMutex);
+
 	if (this->_cache.contains (query)) {
 		if (this->_cache.at (query).validUntil() >= now) {
 			SearchManager::SearchSlice ret;
@@ -249,6 +251,8 @@ SearchManager::SearchSlice SearchManager::search (SearchQuery query, int pos, in
 			this->_cache.erase (query);
 		}
 	}
+
+	cacheLock.unlock ();
 
 	auto conn = database.connect();
 
@@ -278,6 +282,7 @@ SearchManager::SearchSlice SearchManager::search (SearchQuery query, int pos, in
 		}
  	}
 
+	cacheLock.lock();
 	this->_cache.emplace (std::make_pair (query, CachedSearch (resultBuilder, query)));
 
 	SearchManager::SearchSlice ret;
@@ -297,6 +302,7 @@ SearchManager::SearchSlice SearchManager::search (std::string query, std::set <s
 }
 
 void SearchManager::clearOldCache () {
+	std::unique_lock cacheLock (this->_cacheMutex);
 	auto now = SearchTimepoint::clock::now();
 	std::erase_if (this->_cache, [now] (auto &pair) { return pair.second.validUntil() > now; }); // C++20 ftw
 }
