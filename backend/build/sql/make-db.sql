@@ -1,4 +1,6 @@
 
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 create table users (
 	uid serial primary key not null,
 	username varchar(64) unique not null,
@@ -10,6 +12,46 @@ create table users (
 	last_access timestamp default CURRENT_TIMESTAMP,
 	permission_level int not null default 0
 );
+
+
+CREATE TABLE uploaded_resources (
+	id SERIAL PRIMARY KEY,
+	path VARCHAR (64) UNIQUE DEFAULT NULL,
+	mime VARCHAR (16) DEFAULT NULL,
+	uploaded_by INT REFERENCES users(uid) DEFAULT NULL,
+	uploaded_on DATE DEFAULT NULL
+);
+
+
+CREATE TABLE resource_upload_links (
+	id VARCHAR (128) PRIMARY KEY NOT NULL,
+	resource_id INT REFERENCES uploaded_resources (id) NOT NULL,
+	valid_until TIMESTAMP NOT NULL
+);
+
+
+CREATE TABLE indexed_resources (
+	id SERIAL NOT NULL PRIMARY KEY,
+	referenced_id INT,
+
+	url TEXT NOT NULL,
+	title TEXT NOT NULL,
+	description VARCHAR (256),
+
+	type VARCHAR (32) NOT NULL,
+	picture INT REFERENCES uploaded_resources (id) ON DELETE SET NULL
+);
+
+CREATE TABLE search_index (
+	resource_id int REFERENCES indexed_resources (id) ON DELETE CASCADE,
+	keyword TEXT NOT NULL,
+	value INT DEFAULT 1,
+
+	PRIMARY KEY (resource_id, keyword)
+);
+
+CREATE INDEX trgm_idx ON search_index USING GIST (keyword gist_trgm_ops);
+
 
 create table pending_email_confirmation (
 	uid int references users (uid) on delete cascade not null,
@@ -29,6 +71,7 @@ CREATE TABLE events (
 	id SERIAL PRIMARY KEY NOT NULL,
 	sort_index INT NOT NULL DEFAULT 0,
 	type VARCHAR (32) NOT NULL,
+	search_resource INT REFERENCES indexed_resources (id) ON DELETE SET NULL DEFAULT NULL,
 
 	description TEXT
 );
@@ -54,22 +97,6 @@ create table event_reports (
 );
 
 
-CREATE TABLE uploaded_resources (
-	id SERIAL PRIMARY KEY,
-	path VARCHAR (64) UNIQUE DEFAULT NULL,
-	mime VARCHAR (16) DEFAULT NULL,
-	uploaded_by INT REFERENCES users(uid) DEFAULT NULL,
-	uploaded_on DATE DEFAULT NULL
-);
-
-
-CREATE TABLE resource_upload_links (
-	id VARCHAR (128) PRIMARY KEY NOT NULL,
-	resource_id INT REFERENCES uploaded_resources (id) NOT NULL,
-	valid_until TIMESTAMP NOT NULL
-);
-
-
 CREATE TABLE entities (
 	id SERIAL PRIMARY KEY NOT NULL,
 	type VARCHAR (16) NOT NULL DEFAULT '',
@@ -82,6 +109,8 @@ CREATE TABLE entities (
 	CHECK (start_date <= CURRENT_DATE),
 	CHECK (end_date <= CURRENT_DATE),
 	CONSTRAINT valid_dates CHECK (start_date <= end_date), -- ? < vs <= - are there any one-day bands?
+
+	search_resource INT REFERENCES indexed_resources (id),
 
 	picture INT REFERENCES uploaded_resources (id) ON DELETE SET NULL,
 	awaits_creation BOOLEAN DEFAULT TRUE,
@@ -151,22 +180,6 @@ create table concerts (
 
 	event_id int references events(id)
 );
-
-CREATE TABLE indexed_resources (
-	id SERIAL NOT NULL PRIMARY KEY,
-	url TEXT NOT NULL UNIQUE,
-	title TEXT NOT NULL,
-	description TEXT,
-	type TEXT NOT NULL,
-	picture_path TEXT
-);
-
-CREATE TABLE search_index (
-	resource_id int REFERENCES indexed_resources (id) ON DELETE CASCADE,
-	keyword TEXT NOT NULL,
-	value INT DEFAULT 1
-);
-
 
 CREATE TABLE single_entity_related_events (
 	id INT PRIMARY KEY REFERENCES events ON DELETE CASCADE,

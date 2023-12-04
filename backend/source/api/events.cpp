@@ -4,6 +4,11 @@
 #define TYPE "type"
 
 
+std::string getEntityUrl (int id) {
+	return "/e?id=" + std::to_string (id);
+}
+
+
 UserSideEventException::UserSideEventException (std::string w):
 std::runtime_error (w) {
 
@@ -181,6 +186,57 @@ void EventType::updateParticipants (OwnedConnection &work, int eventId, std::vec
 		removeExceessParticipantsQuery += ");";
 		work.exec (removeExceessParticipantsQuery);
 	}
+}
+
+bool EventType::eventHasIndex (int eventId) {
+	std::string getIndexQuery =
+		"SELECT search_resource "
+		"FROM events "
+		"WHERE id="s + std::to_string (eventId) + ";";
+
+	auto conn = database.connect();
+	auto row = conn.exec1 (getIndexQuery);
+	return row.at (0).is_null () == false;
+}
+
+int EventType::getEventSearchResIndex (int eventId) {
+	std::string getIndexQuery =
+		"SELECT search_resource "
+		"FROM events "
+		"WHERE id="s + std::to_string (eventId) + ";";
+
+	auto conn = database.connect();
+	auto row = conn.exec1 (getIndexQuery);
+	return row.at (0).as <int> ();
+}
+
+
+int EventType::indexThis (int eventId, std::string name, std::string description, std::string url) {
+	auto &mgr = SearchManager::get();
+	int index = mgr.indexNewResource (eventId, url, name, description, this->getTypeName());
+	std::string setIndexQuery =
+		"UPDATE events "
+		"SET search_resource="s + std::to_string (index) + " "
+		"WHERE id=" + std::to_string (eventId) + ";";
+	auto conn = database.connect ();
+	conn.exec (setIndexQuery);
+	conn.commit();
+
+	return index;
+}
+
+int EventType::clearIndex (int eventId, std::string name, std::string description) {
+	int searchResIndex = this->getEventSearchResIndex (eventId);
+	auto &searchMgr = SearchManager::get();
+	searchMgr.clearIndexForResource (searchResIndex);
+	searchMgr.updateResourceData (searchResIndex, name, description);
+
+	return searchResIndex;
+}
+
+void EventType::indexKeyword (int resourceId, std::string str, int value) {
+	auto &searchMgr = SearchManager::get();
+	searchMgr.indexStringForResource (resourceId, str, value);
 }
 
 

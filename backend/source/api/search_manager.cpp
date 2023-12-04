@@ -77,11 +77,12 @@ std::partial_ordering SingleSearchResult::operator<=> (const SingleSearchResult 
 
 
 void to_json (nlohmann::json &j, const SingleSearchResult &r) {
-	j ["referenced_id"] = r.referencedId();
+	j ["id"] = r.referencedId();
 	j ["url"] = r.url();
 	j ["title"] = r.title();
 	j ["description"] = r.description();
 	j ["type"] = r.type();
+	j ["value"] = r.value();
 	
 	std::string picUrl = r.pictureUrl();
 	if (picUrl != "") j ["picture_url"] = picUrl;
@@ -139,9 +140,8 @@ std::string SearchQuery::allowedTypesSqlArray () const {
 
 
 
-SearchResults::SearchResults (std::vector <SingleSearchResult> &&res):
-_results (res) {
-
+SearchResults::SearchResults (std::vector <SingleSearchResult> &&res) {
+	std::swap (this->_results, res);
 }
 
 
@@ -151,7 +151,8 @@ int SearchResults::size() const {
 
 std::vector <SingleSearchResult> SearchResults::slice (int first, int length) const {
 	if (first > this->size()) return {};
-	int last = std::min (this->size() - 1, first + length - 1);
+	int absLast = this->size() - 1;
+	int last = std::min (absLast, first + length - 1);
 	std::vector <SingleSearchResult> result;
 	result.reserve (last - first + 1);
 
@@ -180,21 +181,18 @@ bool SearchResultsBuilder::hasResourceId (int id) {
 }
 
 void SearchResultsBuilder::addValueToResource (int id, float val) {
-	this->_results.at (id).addValue (val);
+	this->_results.at (id).addValue (val); // Could use max instead of sum
 }
 
 SearchResults SearchResultsBuilder::finalize() {
 	std::vector <SingleSearchResult> fin;
 	fin.reserve (this->size());
 
-	std::set <SingleSearchResult> toOrder;
 	for (auto &i: this->_results) {
-		toOrder.insert (i.second);
+		fin.push_back (i.second);
 	}
 
-	for (auto &i: toOrder) {
-		fin.push_back (i);
-	}
+	std::sort (fin.begin(), fin.end(), [](SingleSearchResult &a, SingleSearchResult &b) { return a > b; });
 
 	return SearchResults (std::move (fin));
 }
@@ -297,7 +295,12 @@ void SearchManager::clearOldCache () {
 }
 
 int SearchManager::indexNewResource (int refId, std::string url, std::string title, std::string descr, std::string type) {
+	if (descr.length() > MAX_SEARCH_DESCRIPTION_LENGTH) {
+		descr = descr.substr (0, MAX_SEARCH_DESCRIPTION_LENGTH - 3) + "...";
+	}
+
 	auto conn = database.connect();
+	
 	std::string insertQuery =
 		"INSERT INTO indexed_resources (referenced_id, url, title, description, type)"
 		"VALUES ("s
@@ -308,7 +311,23 @@ int SearchManager::indexNewResource (int refId, std::string url, std::string tit
 		+ conn.quoteDontEscapeHtml (type)
 		+ ") RETURNING id;";
 	auto row = conn.exec1 (insertQuery);
+	conn.commit();
 	return row.at (0).as <int>();
+}
+
+void SearchManager::updateResourceData (int resourceId, std::string title, std::string desription) {
+	if (desription.length() > MAX_SEARCH_DESCRIPTION_LENGTH) {
+		desription = desription.substr (0, MAX_SEARCH_DESCRIPTION_LENGTH - 3) + "...";
+	}
+
+	auto conn = database.connect();
+	std::string updateQuery =
+		"UPDATE indexed_resources "
+		"SET title=" + conn.quote (title) + ","
+		"description=" + conn.quote (desription) + ""
+		"WHERE id=" + std::to_string (resourceId) + ";";
+	conn.exec (updateQuery);
+	conn.commit();
 }
 
 std::set <std::string> SearchManager::getKeywords (std::string str) const {
@@ -337,11 +356,12 @@ void SearchManager::indexStringForResource (int resourceId, std::string str, int
 		"INSERT INTO search_index (resource_id, keyword, value) "
 		"VALUES ";
 	auto keywords = this->getKeywords (str);
+	if (keywords.size() == 0) return;
 	bool nf = false;
 	for (auto &i: keywords) {
 		if (nf) query += ",";
 		query += "("s + std::to_string (resourceId) + ","
-			+ conn.quote (i) + ","
+			+ conn.quoteDontEscapeHtml (i) + ","
 			+ std::to_string (value) + ")";
 		nf = true;
 	}
@@ -360,11 +380,19 @@ void SearchManager::clearIndexForResource (int resourceId) {
 
 void SearchManager::setPictureForResource (int resourceId, int pictureResourceId) {
 	std::string query =
-		"UPDATE search_index SET picture="s + std::to_string (pictureResourceId)
+		"UPDATE indexed_resources SET picture="s + std::to_string (pictureResourceId)
 		+ " WHERE id=" + std::to_string (resourceId) + ";";
 	auto conn = database.connect();
 	conn.exec (query);
 	conn.commit();
 }
 
+void SearchManager::setUrlForResource (int resourceId, std::string url) {
+	auto conn = database.connect();
+	std::string query =
+		"UPDATE indexed_resources SET url="s + conn.quoteDontEscapeHtml (url)
+		+ " WHERE id=" + std::to_string (resourceId) + ";";
+	conn.exec (query);
+	conn.commit();
+}
 

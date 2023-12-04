@@ -31,15 +31,15 @@ function cloneResult (result) {
 	title.innerHTML = result.title;
 	title.setAttribute ('href', result.url);
 	
-	if ('text' in result) {
+	if ('description' in result) {
 		let desc = clone.querySelector (".resultDescription");
 		desc.classList.add ('ondisplay');
-		desc.innerHTML = result.text;
+		desc.innerHTML = result.description;
 	}
 
-	if ('picture_path' in result) {
+	if ('picture_url' in result) {
 		let img = clone.querySelector (".resultIcon");
-		img.setAttribute ("src", result.picture_path);
+		img.setAttribute ("src", result.picture_url);
 		img.classList.add ("ondisplay");
 	}
 

@@ -7,6 +7,7 @@
 #include <set>
 #include <map>
 #include <chrono>
+#include <algorithm>
 
 #include "../database.hpp"
 #include "resource_upload.hpp"
@@ -15,10 +16,18 @@
 class SingleSearchResult;
 class SearchQuery;
 class SearchResults;
+class SearchResultsBuilder;
 class CachedSearch;
 class SearchManager;
 
 typedef std::chrono::time_point <std::chrono::system_clock> SearchTimepoint;
+
+#define SEARCH_VALUE_TITLE 10
+#define SEARCH_VALUE_AUTHOR 4
+#define SEARCH_VALUE_PARTICIPANT 3
+#define SEARCH_VALUE_DESCRIPTION 1
+
+#define MAX_SEARCH_DESCRIPTION_LENGTH 256
 
 
 class SingleSearchResult {
@@ -135,15 +144,16 @@ class SearchManager {
 
 		std::vector <SingleSearchResult> search (SearchQuery query, int pos, int len);
 		std::vector <SingleSearchResult> search (std::string query, int pos = 10, int len = 10);
-		std::vector <SingleSearchResult> search (std::string query, std::set <std::string> allowedTypes, int pos = 10, int len = 10);
+		std::vector <SingleSearchResult> search (std::string query, std::set <std::string> allowedTypes, int pos = 0, int len = 10);
 
 		void clearOldCache ();
 
-
 		int indexNewResource (int refId, std::string url, std::string title, std::string descr, std::string type);
+		void updateResourceData (int resourceId, std::string title, std::string desription);
 		void clearIndexForResource (int resourceId);
 		
 		std::set <std::string> getKeywords (std::string str) const;
 		void indexStringForResource (int resourceId, std::string str, int value);
 		void setPictureForResource (int resourceId, int pictureResourceId);
+		void setUrlForResource (int resourceId, std::string url);
 };

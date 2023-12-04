@@ -1,6 +1,67 @@
 
 #include "page.hpp"
 
+bool entityIsIndexed (int entityId) {
+	std::string getIndexQuery =
+		"SELECT search_resource "
+		"FROM entities "
+		"WHERE id="s + std::to_string (entityId) + ";";
+
+	auto conn = database.connect();
+	auto row = conn.exec1 (getIndexQuery);
+	return row.at (0).is_null() == false;
+}
+
+int getEntitySearchIndexResource (int entityId) {
+	std::string getIndexQuery =
+		"SELECT search_resource "
+		"FROM entities "
+		"WHERE id="s + std::to_string (entityId) + ";";
+
+	auto conn = database.connect();
+	auto row = conn.exec1 (getIndexQuery);
+	return row.at (0).as <int> ();
+}
+
+int indexEntity (int entityId, EntityData &data) {
+	auto &mgr = SearchManager::get();
+	int index = mgr.indexNewResource (
+		entityId,
+		CreatePageResource::urlForId (entityId),
+		data.name,
+		data.description,
+		data.type
+	);
+	return index;
+}
+
+int clearEntityIndex (int entityId, EntityData &data) {
+	auto &mgr = SearchManager::get();
+	int index = getEntitySearchIndexResource (entityId);
+	mgr.updateResourceData (index, data.name, data.description);
+	mgr.clearIndexForResource (index);
+	return index;
+}
+
+int updateEntityIndex (int entityId) {
+	auto entityData = EntityDataResource::getEntityDataById (entityId);
+	int index;
+
+	if (entityIsIndexed (entityId)) {
+		index = clearEntityIndex (entityId, entityData);
+	} else {
+		index = indexEntity (entityId, entityData);
+	}
+
+	auto &mgr = SearchManager::get();
+
+	mgr.indexStringForResource (index, entityData.name, SEARCH_VALUE_TITLE);
+	mgr.indexStringForResource (index, entityData.description, SEARCH_VALUE_DESCRIPTION);
+
+	return index;
+}
+
+
 CreatePageResource::CreatePageResource (mg_context *ctx, std::string uri):
 ApiResource (ctx, uri) {
 
@@ -12,16 +73,19 @@ int CreatePageResource::createEntity (OwnedConnection &work, std::string type, s
 		+ "WHERE name=" + work.quote (name) + ";";
 	auto result = work.exec (checkExistenceQuery);
 	
+	int id;
+
 	if (result.size() > 1) {
 		throw std::logic_error (
 			std::string ("CreatePageResource::processRequest::checkExistenceQuery returned too many rows for name='") + name + "'"
 		);
 	} else if (result.size() == 1) {
-		int id = result[0][0].as <int> ();
+		id = result[0][0].as <int> ();
 		bool awaitsCreation = result[0][1].as <bool> ();
 
 		if (!awaitsCreation) return -1;
-		std::string updateEntityQuery = std::string ("UPDATE entities ")
+		std::string updateEntityQuery =
+			"UPDATE entities "s
 			+ "SET type=" + work.quote (type) + ","
 			+ "name=" + work.quote (name) + ","
 			+ "description=" + work.quote (desc) + ","
@@ -32,13 +96,12 @@ int CreatePageResource::createEntity (OwnedConnection &work, std::string type, s
 			+ "end_date=" + ((endDate == "") ? "NULL" : work.quote(endDate)) 
 			+ " WHERE id=" + std::to_string (id) + ";";
 		work.exec (updateEntityQuery);
-		return id;
 
 	} else /* result.size() == 0 */ {
 		std::string insertEntityQuery = 
-			std::string("INSERT INTO entities (")
-			+ "type, name, description, awaits_creation, created_by, created_on, start_date, end_date"
-			+ ") VALUES ("
+			"INSERT INTO entities"s
+			"(type, name, description, awaits_creation, created_by, created_on, start_date, end_date)"
+			"VALUES ("
 			+ /* type */ 		work.quote (type) + ","
 			+ /* name */		work.quote (name) + ","
 			+ /* desc */		work.quote (desc) + ","
@@ -49,8 +112,10 @@ int CreatePageResource::createEntity (OwnedConnection &work, std::string type, s
 			+ /* end_date */ ((endDate == "") ? "NULL" : work.quote(endDate))
 			+ ") RETURNING id;";
 		auto insertion = work.exec (insertEntityQuery);
-		return insertion[0][0].as <int> ();
+		id = insertion[0][0].as <int> ();
 	}
+
+	return id;
 }
 
 int CreatePageResource::createEmptyEntityWithWork (OwnedConnection &work, const std::string &name) {
@@ -78,21 +143,17 @@ std::string CreatePageResource::pageUrlForTypedEntity (std::string type, int id)
 	return "/e?id=" + std::to_string(id);
 }
 
+/* static */ std::string CreatePageResource::urlForId (int id) {
+	return "/e?id=" + std::to_string(id);
+}
+
 std::unique_ptr<ApiResponse> CreatePageResource::processRequest (RequestData &rd, nlohmann::json body) {
-	logger << "Создаем страницу" << std::endl;
-	if (rd.method != "POST") return makeApiResponse (nlohmann::json{}, 405);
+	assertMethod (rd, "POST");
 
 	auto &userManager = UserManager::get();
 
 	auto user = userManager.getUserDataBySessionId (rd.getCookie(SESSION_ID));
 	if (!user.valid()) return makeApiResponse (nlohmann::json{}, 401);
-
-	if (!(
-		   body.contains ("type")
-		&& body.contains ("name")
-		&& body.contains ("description")
-		&& body.contains ("start_date")
-	)) return makeApiResponse (nlohmann::json{}, 400);
 
 	std::string type, name, description, startDate, endDate;
 
@@ -126,10 +187,12 @@ std::unique_ptr<ApiResponse> CreatePageResource::processRequest (RequestData &rd
 		"UPDATE entities SET picture="s + std::to_string(resourceData.resourceId) + " WHERE id=" + std::to_string (entityId) + ";";
 	conn.exec (setPicResourceQuery);
 
-	// Index created page
-	Searcher::indexWithWork (conn, type, url, name + " " + description, name, description, "");
-
 	conn.commit ();
+
+	int searchIndex = updateEntityIndex (entityId);
+	auto &searchMgr = SearchManager::get();
+	searchMgr.setPictureForResource (searchIndex, resourceData.resourceId);
+
 	logger << "Создана страница '" << name << "'" << std::endl;
 	auto response = makeApiResponse (
 		nlohmann::json {

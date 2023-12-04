@@ -19,6 +19,9 @@ void AlbumManager::addSongToAlbumByReleaseId (int albumId, int release) {
 	std::string query = "UPDATE songs SET album=" + std::to_string (albumId) + " WHERE release=" + std::to_string (release) + ";";
 	auto conn = database.connect();
 	conn.exec (query);
+
+
+
 	conn.commit();
 }
 
@@ -100,6 +103,11 @@ nlohmann::json AlbumManager::getAlbumData (int albumId) {
 	return base;
 }
 
+std::string AlbumManager::albumUrl (int albumId) {
+	return "/a?id=" + std::to_string (albumId);
+}
+
+
 int AlbumManager::getAlbumPictureResourceId (int id) {
 	std::string query = "SELECT picture FROM albums WHERE id="s + std::to_string (id) + ";";
 	auto conn = database.connect ();
@@ -117,6 +125,53 @@ std::string AlbumManager::getAlbumPictureUrl (int albumId) {
 	} else {
 		return url;
 	}
+}
+
+bool AlbumManager::albumIsIndexed (int albumId) {
+	std::string getIndexQuery =
+		"SELECT search_resource "
+		"FROM events "
+		"WHERE id="s + std::to_string (albumId) + ";";
+
+	auto conn = database.connect();
+	auto row = conn.exec1 (getIndexQuery);
+	return row.at (0).is_null() == false;
+}
+
+int AlbumManager::getAlbumSearchResIndex (int albumId) {
+	std::string getIndexQuery =
+		"SELECT search_resource "
+		"FROM events "
+		"WHERE id="s + std::to_string (albumId) + ";";
+
+	auto conn = database.connect();
+	auto row = conn.exec1 (getIndexQuery);
+	return row.at (0).as <int> ();
+}
+
+int AlbumManager::createAlbumSearchResIndex (int albumId, std::string name, std::string descr) {
+	auto &mgr = SearchManager::get();
+	int index = mgr.indexNewResource (
+		albumId,
+		this->albumUrl (albumId),
+		name,
+		descr,
+		"album"
+	);
+	return index; 
+}
+
+int AlbumManager::clearAlbumIndex (int albumId, std::string name, std::string descr) {
+	auto &mgr = SearchManager::get();
+	int index = this->getAlbumSearchResIndex (albumId);
+	mgr.updateResourceData (index, name, descr);
+	mgr.clearIndexForResource (index);
+	return index;
+}
+
+void AlbumManager::indexStringForAlbum (int index, std::string str, int value) {
+	auto &mgr = SearchManager::get();
+	mgr.indexStringForResource (index, str, value);
 }
 
 
@@ -170,8 +225,13 @@ int AlbumEventType::createEvent (nlohmann::json &rawData) {
 		+ /* pic */		std::to_string (picRes.resourceId) 
 		+ ");";
 	conn.exec (addAlbumQuery);
-
 	conn.commit();
+	conn.release();
+
+	int index = this->updateAlbumIndex (eventId);
+	auto &searchMgr = SearchManager::get();
+	searchMgr.setPictureForResource (index, picRes.resourceId);
+
 	return eventId;
 }
 
@@ -239,6 +299,7 @@ int AlbumEventType::updateEvent (nlohmann::json &data) {
 	}
 
 	conn.commit();
+	this->updateAlbumIndex (eventId);
 	return eventId;
 }
 
@@ -251,6 +312,39 @@ int AlbumEventType::getAuthorForEvent (OwnedConnection &work, int eventId) {
 		return result.at(0).at(0).as <int> ();
 	}
 }
+
+int AlbumEventType::updateAlbumIndex (int albumId) {
+	auto &albumMgr = AlbumManager::get();
+	int index;
+	auto albumData = this->getEvent (albumId);
+	auto data = albumData.at ("data").get <AlbumEventType::Data>();
+	auto parts = albumData.at ("participants").get <std::vector<ParticipantEntity>>();
+
+	if (albumMgr.albumIsIndexed (albumId)) {
+		index = albumMgr.clearAlbumIndex (
+			albumId,
+			data.author.name + " - " + data.album,
+			data.description
+		);
+	} else {
+		index = albumMgr.createAlbumSearchResIndex (
+			albumId,
+			data.author.name + " - " + data.album,
+			data.description
+		);
+	}
+
+	this->indexKeyword (index, data.album, SEARCH_VALUE_TITLE);
+	this->indexKeyword (index, data.author.name, SEARCH_VALUE_AUTHOR);
+	this->indexKeyword (index, data.description, SEARCH_VALUE_DESCRIPTION);
+
+	for (const auto &i: parts) {
+		this->indexKeyword (index, i.name, SEARCH_VALUE_PARTICIPANT);
+	}
+
+	return index;
+}
+
 
 void from_json (const nlohmann::json &j, AlbumEventType::Data &d) {
 	d.author = j.at ("author").get <ParticipantEntity>();

@@ -22,6 +22,8 @@ class PersonOnlyEventType;
 class EventManager;
 
 
+std::string getEntityUrl (int id);
+
 
 class UserSideEventException: public std::runtime_error {
 	public:
@@ -82,6 +84,12 @@ class EventType {
 	
 		void ensureParticipantion (OwnedConnection &work, int eventId, ParticipantEntity &pe);
 		void updateParticipants (OwnedConnection &work, int eventId, std::vector <ParticipantEntity> pe);
+
+		bool eventHasIndex (int eventId);
+		int getEventSearchResIndex (int eventId);
+		int indexThis (int eventId, std::string name, std::string description, std::string url);
+		int clearIndex (int eventId, std::string name, std::string description);
+		void indexKeyword (int resourceId, std::string str, int value);
 
 	public:
 		virtual std::string getTypeName () const = 0;

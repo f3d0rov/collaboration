@@ -12,7 +12,6 @@ class BandLeaveEventType;
 class SinglePublicationEventType;
 
 
-
 class SingleEntityRelatedEventType: virtual public EventType {
 	protected:
 		struct Data {
@@ -105,6 +104,8 @@ class SinglePublicationEventType: public AllEntitiesEventType {
 		int getAuthorForEvent (OwnedConnection &work, int eventId);
 
 		static int getEventIdForSong (int songId);
+
+		void indexSingle (int eventId, int albumId);
 };
 
 void from_json (const nlohmann::json &j, SinglePublicationEventType::Data &d);
