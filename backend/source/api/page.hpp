@@ -8,7 +8,7 @@
 
 #include "../api_resource.hpp"
 #include "user_auth.hpp"
-#include "search.hpp"
+#include "search_manager.hpp"
 #include "resource_upload.hpp"
 
 
@@ -39,6 +39,11 @@ class EntityData {
 		std::optional <std::string> picturePath;
 };
 
+bool entityIsIndexed (int entityId);
+int getEntitySearchIndexResource (int entityId);
+int indexEntity (int entityId, EntityData &data);
+int clearEntityIndex (int entityId, EntityData &data);
+int updateEntityIndex (int entityId);
 
 /***********
  * POST { 
@@ -57,6 +62,7 @@ class CreatePageResource: public ApiResource {
 		int createTypedEntity (OwnedConnection &work, int entityId, std::string type);
 
 		static std::string pageUrlForTypedEntity (std::string type, int id);
+		static std::string urlForId (int id);
 		std::unique_ptr <ApiResponse> processRequest (RequestData &rd, nlohmann::json body) override;
 };
 

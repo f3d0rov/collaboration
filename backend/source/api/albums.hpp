@@ -30,8 +30,17 @@ class AlbumManager {
 		std::vector <int> getSongIdsForAlbum (int albumId);
 		nlohmann::json getAlbumData (int albumId);
 
+		std::string albumUrl (int albumId);
+
 		int getAlbumPictureResourceId (int id);
 		std::string getAlbumPictureUrl (int albumId);
+
+		bool albumIsIndexed (int albumId);
+		int getAlbumSearchResIndex (int albumId);
+		int createAlbumSearchResIndex (int albumId, std::string name, std::string descr);
+		int clearAlbumIndex (int albumId, std::string name, std::string descr);
+		void updateAlbumIndex (int albumId, std::string name, std::string descr);
+		void indexStringForAlbum (int index, std::string str, int value);
 };
 
 
@@ -58,6 +67,7 @@ class AlbumEventType: public AllEntitiesEventType {
 		int updateEvent (nlohmann::json &data) override;
 
 		int getAuthorForEvent (OwnedConnection &work, int eventId);
+		int updateAlbumIndex (int albumId);
 };
 
 void from_json (const nlohmann::json &j, AlbumEventType::Data &d);

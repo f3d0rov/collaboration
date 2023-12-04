@@ -284,6 +284,9 @@ int SinglePublicationEventType::createEvent (nlohmann::json &rawData) {
 	conn.exec (addSongQuery);
 
 	conn.commit();
+
+	this->indexSingle (eventId, albumId);
+
 	return eventId;
 }
 
@@ -337,8 +340,7 @@ int SinglePublicationEventType::updateEvent (nlohmann::json &data) {
 				UpdateQueryElement <std::string>::make ("date", "release_date", "songs"),
 				UpdateQueryElement <std::string>::make ("description", "description", "events"),
 				UpdateQueryElement <ParticipantEntity>::make ("author", "author", "songs"),
-				UpdateQueryElement <int>::make ("album_index", "album_index", "songs"),
-				UpdateQueryElement <int>::make ("album", "album", "songs")
+				UpdateQueryElement <int>::make ("album_index", "album_index", "songs")
 			},
 			{
 				UpdateQueryGenerator::TableColumnValue {"events", "id", std::to_string (eventId)},
@@ -359,6 +361,9 @@ int SinglePublicationEventType::updateEvent (nlohmann::json &data) {
 	}
 
 	conn.commit();
+
+	this->indexSingle (eventId, 0);
+
 	return eventId;
 }
 
@@ -378,6 +383,32 @@ int SinglePublicationEventType::getAuthorForEvent (OwnedConnection &work, int ev
 	auto row = conn.exec1 (query);
 	return row.at (0).as <int>();
 }
+
+
+void SinglePublicationEventType::indexSingle (int eventId, int albumId) {
+	int index;
+
+	auto songData = this->getEvent (eventId);
+	auto data = songData.at ("data").get <SinglePublicationEventType::Data>();
+	auto participants = songData.at ("participants").get <std::vector <ParticipantEntity>>();
+
+
+	if (this->eventHasIndex (eventId)) {
+		index = this->clearIndex (eventId, data.author.name + " - " + data.song, data.description);
+	} else {
+		std::string url = (albumId != 0) ? ("/a?id=" + std::to_string (albumId)) : getEntityUrl (data.author.entityId);
+		index = this->indexThis (eventId, data.author.name + " - " + data.song, data.description, url);
+	}
+
+	this->indexKeyword (index, data.song, SEARCH_VALUE_TITLE);
+	this->indexKeyword (index, data.author.name, SEARCH_VALUE_AUTHOR);
+	this->indexKeyword (index, data.description, SEARCH_VALUE_DESCRIPTION);
+
+	for (const auto &i: participants) {
+		this->indexKeyword (index, i.name, SEARCH_VALUE_PARTICIPANT);
+	}
+}
+
 
 void from_json (const nlohmann::json &j, SinglePublicationEventType::Data &d) {
 	d.author = j.at ("author").get <ParticipantEntity>();

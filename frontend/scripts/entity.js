@@ -432,7 +432,7 @@ class EventsView {
 		let br = elem.getBoundingClientRect ();
 		return {
 			x: (br.left + br.right) / 2 + window.scrollX,
-			y: br.bottom - 16 + window.scrollY
+			y: br.bottom - 4 + window.scrollY
 		};
 	}
 	
@@ -440,7 +440,7 @@ class EventsView {
 		let br = elem.getBoundingClientRect ();
 		return {
 			x: (br.left + br.right) / 2 + window.scrollX,
-			y: br.top + 16 + window.scrollY
+			y: br.top + 4 + window.scrollY
 		};
 	}
 

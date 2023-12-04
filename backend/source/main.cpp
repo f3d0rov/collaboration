@@ -17,7 +17,7 @@
 #include "api_resource.hpp"
 
 #include "api/random_search_prompt_resource.hpp"
-#include "api/search.hpp"
+#include "api/search_resource.hpp"
 #include "api/user_auth.hpp"
 #include "api/page.hpp"
 
