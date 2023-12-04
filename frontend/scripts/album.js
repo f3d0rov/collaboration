@@ -295,13 +295,22 @@ class ParticipantList {
 	}
 }
 
-
+function flatten (songData) {
+	if (songData !== null && 'data' in songData) {
+		for (let i in songData.data) {
+			songData [i] = songData.data[i];
+		}
+	}
+	return songData;
+}
 
 class EditSongView {
 	constructor (aggrView, songData = null) {
 		this.songData = songData;
 		this.aggrView = aggrView;
 		this.next = null;
+
+		this.edited = true;
 		
 		this.template = document.getElementById ('editTrackTemplate');
 		this.participantInputTemplate = document.getElementById ('participantInputTemplate');
@@ -373,12 +382,36 @@ class EditSongView {
 		}
 		
 		this.nameInput.addEventListener ("keydown", (ev) => { if (ev.key == "Enter") this.focusNext();});
-
 	}
 
 	focusNext () {
 		if (this.aggrView.next == null) this.aggrView.album.createSong();
 		else this.aggrView.next.focus();
+	}
+
+	peDiffer (a, b) {
+		if (a.entity_id === b.entity_id) return false;
+		if (a.name === b.name) return false;
+		return true;
+	}
+
+	participantsDiffer (data) {
+		if (this.songData.participants.length != data.participants.length) return true;
+		for (let i = 0; i < this.songData.participants.length; i++) {
+			if (this.peDiffer (this.songData.participants[i], data.participants[i])) return true;
+		}
+		return false;
+	}
+
+	dataDiffers (data) {
+		return data.data.album_index != this.songData.album_index
+			|| this.peDiffer(data.data.author, this.songData.author)
+			|| data.data.song != this.songData.song;
+	}
+
+	wasEdited (data) {
+		if (this.songData == null) return true;
+		return this.participantsDiffer (data) || this.dataDiffers (data);
 	}
 
 	getSongData () {
@@ -396,6 +429,8 @@ class EditSongView {
 		data.data.album = this.aggrView.album.albumData.id;
 		data.data.album_index = this.album_index;
 		data.data.author = data.participants.length > 0 ? data.participants[0] : this.aggrView.album.albumData.author; // Debatable
+
+		data.edited = this.wasEdited (data);
 		return data;
 	}
 
@@ -463,6 +498,7 @@ class EditSongView {
 		this.album_index = index;
 		this.trackIndex.innerHTML = index;
 	}
+
 }
 
 class SongView {
@@ -585,7 +621,7 @@ class SongView {
 
 class AggregatedSongView {
 	constructor (songData, album) {
-		this.songData = this.flatten (songData);
+		this.songData = flatten (songData);
 		this.album = album;
 		if (songData !== null && ('participants' in this.songData == false))
 			this.songData.participants = [];
@@ -605,14 +641,7 @@ class AggregatedSongView {
 		}
 	}
 
-	flatten (songData) {
-		if (songData !== null && 'data' in songData) {
-			for (let i in songData.data) {
-				songData [i] = songData.data[i];
-			}
-		}
-		return songData;
-	}
+	
 
 	setNext (song) {
 		this.next = song;

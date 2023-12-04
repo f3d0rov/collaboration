@@ -82,6 +82,7 @@ function getUrlForCreation (text) {
 	return res;
 }
 
+
 function objDiff (orig, changed) {
 	let result = {};
 	for (let key in changed) {
@@ -134,7 +135,6 @@ function unescape (str) {
 	let res = str;
 	for (let i in dict) {
 		res = res.replaceAll (i, dict[i]);
-		console.log (i);
 	}
 	
 	return res;

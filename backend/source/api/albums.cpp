@@ -433,9 +433,11 @@ ApiResponsePtr UpdateAlbumResource::processRequest (RequestData &rd, nlohmann::j
 			} else {
 				int songId = getParameter <int> ("id", i);
 				// Old song with song_id = id;
-				int eventId = SinglePublicationEventType::getEventIdForSong (songId);
-				i ["id"] = eventId; // Id field must refer to the event id if we transfer the data to the events system
-				eventMgr.updateEvent (i, user.id());
+				if ((!i.contains ("edited")) || i.at ("edited").get <bool>()) { // Don't update song if it wasn't edited
+					int eventId = SinglePublicationEventType::getEventIdForSong (songId);
+					i ["id"] = eventId; // Id field must refer to the event id if we transfer the data to the events system
+					eventMgr.updateEvent (i, user.id());
+				}
 				toRemove.erase (songId);
 			}
 		}
