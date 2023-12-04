@@ -372,7 +372,7 @@ class BandInput {
 			created: (this.selectedItem != null),
 			name: this.inputElem.value
 		};
-		if (ret.created) ret.entity_id = this.selectedItem; 
+		if (ret.created) ret.entity_id = this.selectedItem.id; 
 		return ret;
 	}
 

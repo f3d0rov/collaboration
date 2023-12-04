@@ -384,7 +384,7 @@ body {
 }
 
 .editTrack .songInput {
-	background-color: #311111;
+	background-color: #200000;
 	border: none;
 	height: 30px;
 
@@ -396,6 +396,14 @@ body {
 	border-radius: 3px;
 	margin-top: 3px;
 	margin-left: 7px;
+
+	transition: background-color 0.2s ease-in-out;
+}
+
+.editTrack .songInput:focus {
+	background-color: #330b0b;
+	outline-width: 0;
+	outline: none;
 }
 
 

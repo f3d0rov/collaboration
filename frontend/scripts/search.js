@@ -41,6 +41,8 @@ function cloneResult (result) {
 		let img = clone.querySelector (".resultIcon");
 		img.setAttribute ("src", result.picture_url);
 		img.classList.add ("ondisplay");
+		title.classList.add ("major");
+		clone.classList.add ("major");
 	}
 
 	clone.addEventListener ('click', (ev)=> {window.location.href = result.url;});
