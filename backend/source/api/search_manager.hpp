@@ -129,6 +129,11 @@ class CachedSearch {
 
 
 class SearchManager {
+	public:
+		struct SearchSlice {
+			std::vector <SingleSearchResult> slice;
+			int total;
+		};
 	private:
 		static std::unique_ptr <SearchManager> _manager;
 
@@ -142,9 +147,9 @@ class SearchManager {
 
 		static SearchManager &get();
 
-		std::vector <SingleSearchResult> search (SearchQuery query, int pos, int len);
-		std::vector <SingleSearchResult> search (std::string query, int pos = 10, int len = 10);
-		std::vector <SingleSearchResult> search (std::string query, std::set <std::string> allowedTypes, int pos = 0, int len = 10);
+		SearchManager::SearchSlice search (SearchQuery query, int pos, int len);
+		SearchManager::SearchSlice search (std::string query, int pos = 10, int len = 10);
+		SearchManager::SearchSlice search (std::string query, std::set <std::string> allowedTypes, int pos = 0, int len = 10);
 
 		void clearOldCache ();
 

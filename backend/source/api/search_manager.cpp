@@ -237,11 +237,14 @@ SearchManager::SearchManager () {
 	return *SearchManager::_manager;
 }
 
-std::vector <SingleSearchResult> SearchManager::search (SearchQuery query, int pos, int len) {
+SearchManager::SearchSlice SearchManager::search (SearchQuery query, int pos, int len) {
 	auto now = SearchTimepoint::clock::now();
 	if (this->_cache.contains (query)) {
 		if (this->_cache.at (query).validUntil() >= now) {
-			return this->_cache.at (query).results().slice (pos, len);
+			SearchManager::SearchSlice ret;
+			ret.slice = this->_cache.at (query).results().slice (pos, len);
+			ret.total = this->_cache.at (query).results().size();
+			return ret;
 		} else {
 			this->_cache.erase (query);
 		}
@@ -276,15 +279,19 @@ std::vector <SingleSearchResult> SearchManager::search (SearchQuery query, int p
  	}
 
 	this->_cache.emplace (std::make_pair (query, CachedSearch (resultBuilder, query)));
-	return this->_cache.at (query).results().slice (pos, len);
+
+	SearchManager::SearchSlice ret;
+	ret.slice = this->_cache.at (query).results().slice (pos, len);
+	ret.total = this->_cache.at (query).results().size();
+	return ret;
 }
 
-std::vector <SingleSearchResult> SearchManager::search (std::string query, int pos, int len) {
+SearchManager::SearchSlice SearchManager::search (std::string query, int pos, int len) {
 	SearchQuery sQuery (query);
 	return this->search (sQuery, pos, len);
 }
 
-std::vector <SingleSearchResult> SearchManager::search (std::string query, std::set <std::string> allowedTypes, int pos, int len) {
+SearchManager::SearchSlice SearchManager::search (std::string query, std::set <std::string> allowedTypes, int pos, int len) {
 	SearchQuery sQuery (query, allowedTypes);
 	return this->search (sQuery, pos, len);
 }

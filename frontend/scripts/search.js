@@ -83,7 +83,7 @@ async function displaySearchResults (ev) {
 	}
 
 	document.getElementById ("searchTime").innerHTML = escapeHTML(obj.time);
-	document.getElementById ("resultsFound").innerHTML = countString (obj.results.length);
+	document.getElementById ("resultsFound").innerHTML = countString (obj.total);
 	
 	if (obj.results.length != 0) {
 		generateSearchResults (obj.results);
