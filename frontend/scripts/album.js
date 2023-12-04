@@ -370,7 +370,7 @@ class EditSongView {
 
 		if (this.songData != null) {
 			this.nameInput.value = this.songData.song;
-			this.trackIndex.innerHTML = escapeHTML(this.songData.album_index);
+			this.trackIndex.innerHTML = this.songData.album_index;
 			this.album_index = this.songData.album_index;
 			this.addParticipant (this.songData.author);
 			for (let i of this.songData.participants) {
