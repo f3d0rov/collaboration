@@ -201,7 +201,7 @@ std::unique_ptr<ApiResponse> CreatePageResource::processRequest (RequestData &rd
 			{"url", url},
 			{"upload_url",  resourceManager.getUploadUrl(resourceData.uploadId)}
 		},
-		200
+		201
 	);
 	return response;
 }

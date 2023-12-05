@@ -133,21 +133,10 @@ CREATE TABLE entity_reports (
 	UNIQUE (entity_id, reported_by, reason_id)
 );
 
-
-create table personalities (
-	id serial primary key not null,
-	entity_id INT REFERENCES entities(id) ON DELETE CASCADE
-);
-
 create table participation (
 	event_id int references events(id) ON DELETE CASCADE,
 	entity_id INT REFERENCES entities(id) ON DELETE CASCADE,
 	PRIMARY KEY (event_id, entity_id)
-);
-
-create table bands (
-	id serial primary key not null,
-	entity_id INT REFERENCES entities (id) ON DELETE CASCADE
 );
 
 CREATE TABLE albums (
