@@ -154,21 +154,28 @@ int main (int argc, const char *argv[]) {
 			{
 				ArgOption ("v", "version", "Вывод версии программы"),
 				ArgOption ("h", "help", "Вывод доступных опций"),
+
+				ArgOption ("i", "index", "Путь к директории с файлами фронтенда", true),
+				ArgOption ("", "no-cache", "Не кешировать веб-ресурсы"),
+				
 				ArgOption ("d", "domain", "Адрес сайта", true),
 				ArgOption ("s", "https", "Использовать https"),
-				ArgOption ("i", "index", "Путь к директории с файлами фронтенда", true),
 				ArgOption ("p", "port", "Порт для входящих запросов", true),
 				ArgOption ("", "secure-port", "Порт для входящих запросов через HTTPS", true),
 				ArgOption ("", "request-timeout", "Таймаут запросов", true),
 				ArgOption ("", "civetweb-error-log", "Файл для записи ошибок Civetweb", true),
+				
 				ArgOption ("", "db-config", "Путь к файлу .json с данными для подключения к PostgreSQL", true),
 				ArgOption ("", "db-connections", "Количество одновременных соединений с PostgreSQL", true),
 				ArgOption ("", "remake-db", "Удалить и заново создать базу данных"),
+
 				ArgOption ("", "smtp-config", "Путь к файлу .json с данными для подключения к SMTP-серверу", true),
 				ArgOption ("", "no-smtp", "Не отправлять письма"),
-				ArgOption ("", "no-cache", "Не кешировать веб-ресурсы"),
+
+
 				ArgOption ("", "log-sql", "Сохранять в логах все исполненные SQL-запросы"),
 				ArgOption ("", "log-width", "Максимальная длина строки в логе (не считая временной отметки)", true),
+
 				ArgOption ("", "log-api-in", "Сохранять в логах запросы приходящих API-запросов"),
 				ArgOption ("", "log-api-out", "Сохранять в логах тела ответов API-запросов"),
 				ArgOption ("", "log-api", "Сохранять в логах запросы и ответы API-запросов"),

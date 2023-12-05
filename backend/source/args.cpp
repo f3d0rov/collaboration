@@ -77,9 +77,13 @@ std::string ArgsParser::getExecPath() {
 }
 
 void ArgsParser::printHelp() {
-	std::cout << "Available options:" << std::endl;
+	std::cout << "Доступные опции:" << std::endl;
 
 	for (auto i: this->_optionList) {
-		std::cout << std::setfill(' ') << std::setw(25) << ("--" + i.fullName + ", -" + i.shortName) << " -" << std::setw(60) << std::setfill('-') << (" " + i.description) << std::endl; 
+		if (i.shortName != "") {
+			std::cout << std::setfill(' ') << std::setw(25) << ("--" + i.fullName + ", -" + i.shortName) << " | " << (" " + i.description) << std::endl; 
+		} else {
+			std::cout << std::setfill(' ') << std::setw(25) << ("--" + i.fullName) << " | " << (" " + i.description) << std::endl; 
+		}
 	}
 }
