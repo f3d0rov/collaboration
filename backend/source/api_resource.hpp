@@ -49,10 +49,10 @@ class ApiResource: public Resource {
 
 template <class T>
 T getParameter (std::string name, nlohmann::json &j) {
-	if (!j.contains (name)) throw UserMistakeException ("В json-объекте отсутствует поле '"s + name + "'");
+	if (!j.contains (name)) throw UserMistakeException ("В json-объекте отсутствует поле '"s + name + "'", 400, "bad_json");
 	try {
 		return j[name].get <T> ();
 	} catch (nlohmann::json::exception &e) {
-		throw UserMistakeException ("Невозможно привести к корректному типу поле '"s + name + "'");
+		throw UserMistakeException ("Невозможно привести к корректному типу поле '"s + name + "'", 400, "bad_json");
 	}
 }

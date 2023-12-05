@@ -11,6 +11,21 @@
 #define SALT_LEN 64
 
 
+// Login mistakes:
+#define USER_DOESNT_EXIST_CODE ("user_doesnt_exist")
+#define USER_NOT_CONFIRMED_CODE ("user_not_confirmed")
+#define PASSWORD_INCORRECT_CODE ("password_incorrect")
+
+// Uniqueness mistakes:
+#define EMAIL_TAKEN_CODE ("email_taken")
+#define USERNAME_TAKEN_CODE ("name_taken")
+
+// Format mistakes:
+#define BAD_EMAIL_CODE ("bad_email")
+#define BAD_NAME_CODE ("bad_name")
+#define BAD_PASSWORD_CODE ("bad_password")
+
+
 class UserData;
 class UserManager;
 

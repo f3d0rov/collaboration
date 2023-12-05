@@ -63,7 +63,7 @@ std::unique_ptr<_Response> ApiResource::processRequest (RequestData &rd) {
 		return resp;
 	} catch (UserMistakeException &e) {
 		auto resp = makeApiResponse (nlohmann::json {{"error", e.what()}}, e.statusCode());
-		if (e.errorCode() != "") resp->body["error_code"] = e.errorCode();
+		if (e.errorCode() != "") resp->body["status"] = e.errorCode();
 		if (common.logApiOut) logger << "[API OUT] " << resp->body.dump(2) << std::endl;
 		return resp;
 	}

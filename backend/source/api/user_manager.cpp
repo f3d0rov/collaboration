@@ -189,13 +189,13 @@ int UserManager::getUserIdBySessionId (std::string sessionId, OwnedConnection &c
 int UserManager::getUserIdByUsername (std::string username, OwnedConnection &conn) {
 	std::string query = "SELECT uid FROM users WHERE username ILIKE " + conn.quote (username) + ";";
 	auto result = conn.exec (query);
-	if (result.size() != 1) throw UserMistakeException ("Не существует пользователя с заданным именем");
+	if (result.size() != 1) throw UserMistakeException ("Не существует пользователя с заданным именем", 404, USER_DOESNT_EXIST_CODE);
 	return result.at (0).at (0).as <int>();
 }
 
 std::string UserManager::authUserWithWork (int uid, std::string device_ip, OwnedConnection &conn) {
+	if (!this->emailConfirmed (uid, conn)) throw UserMistakeException ("Невозможно авторизироваться - адрес почты не подтвержден", 400, USER_NOT_CONFIRMED_CODE);
 	std::string sessionId = this->generateSessionId (conn);
-	if (!this->emailConfirmed (uid, conn)) throw UserMistakeException ("Невозможно авторизироваться - адрес почты не подтвержден");
 
 	std::string addNewSession =
 		"INSERT INTO user_login "
@@ -269,7 +269,7 @@ std::string UserManager::loginUser (std::string username, std::string password, 
 	if (this->checkPassword (uid, password, conn)) {
 		return this->authUser (uid, deviceIp);
 	} else {
-		throw UserMistakeException ("Неверный пароль");
+		throw UserMistakeException ("Неверный пароль", 400, PASSWORD_INCORRECT_CODE);
 	}
 }
 
@@ -295,17 +295,17 @@ bool UserManager::usernameIsAvailable (std::string username) {
 }
 
 int UserManager::registerUser (std::string username, std::string password, std::string email) {
-	if (!this->checkEmailFormat (email)) throw UserMistakeException ("Неверный формат письма");
-	if (!this->checkUsernameFormat (username)) throw UserMistakeException ("Неверный формат имени пользователя");
-	if (!this->checkPasswordFormat (password)) throw UserMistakeException ("Неверный формат пароля");
+	if (!this->checkEmailFormat (email)) throw UserMistakeException ("Неверный формат адреса почты", 400, BAD_EMAIL_CODE);
+	if (!this->checkUsernameFormat (username)) throw UserMistakeException ("Неверный формат имени пользователя", 400, BAD_NAME_CODE);
+	if (!this->checkPasswordFormat (password)) throw UserMistakeException ("Неверный формат пароля", 400, BAD_PASSWORD_CODE);
 
 	auto conn = database.connect ();
 
 	if (!this->emailIsAvailableWithConn (email, conn))
-		throw UserMistakeException ("Адрес почты занят");
+		throw UserMistakeException ("Адрес почты занят", 400, EMAIL_TAKEN_CODE);
 
 	if (!this->usernameIsAvailableWithConn (username, conn))
-		throw UserMistakeException ("Имя пользователя занято");
+		throw UserMistakeException ("Имя пользователя занято", 400, USERNAME_TAKEN_CODE);
 
 	std::string pass_salt = this->generateSalt();
 	std::string pass_hash = this->hashForPassword (password, pass_salt);

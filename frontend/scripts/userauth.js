@@ -133,10 +133,13 @@ async function attemptLogin () {
 		case "success":
 			location.reload ();
 			return;
-		case "no_such_user":
+		case "user_doesnt_exist":
 			flashInputError ("loginUsernameError", "Данного пользователя не существует");
 			return;
-		case "incorrect_password":
+		case "user_not_confirmed":
+			flashInputError ("loginUsernameError", "Адрес почты не подтвержден");
+			return;
+		case "password_incorrect":
 			flashInputError ("loginPasswordError", "Неверный пароль");
 			return;
 	}
@@ -203,19 +206,19 @@ async function attemptRegister () {
 			document.getElementById ('registerForm').classList.remove ('ondisplay');
 			document.getElementById ('registrationSuccessful').classList.add ('ondisplay');
 			return;
-		case "username_taken":
+		case "name_taken":
 			flashInputError ("regUsernameError", "Выбранное имя занято - выберите другое.");
 			return;
 		case "email_taken":
 			flashInputError ("regEmailError", "Введенный e-mail уже зарегистрирован - возможно, вы хотите <a href=\"#\"> восстановить пароль </a>?");
 			return;
-		case "incorrect_username_format":
+		case "bad_name":
 			flashInputError ("regUsernameError");
 			return;
-		case "incorrect_email_format":
+		case "bad_email":
 			flashInputError ("regEmailError");
 			return;
-		case "incorrect_password_format":
+		case "bad_password":
 			flashInputError ("regPasswordError");
 			return;
 	}
