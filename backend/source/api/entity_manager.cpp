@@ -2,8 +2,22 @@
 #include "entity_manager.hpp"
 
 
-EntityTypeInterface::~EntityTypeInterface () = default;
+void to_json (nlohmann::json &j, const EntityTypeDescriptor &d) {
+	j ["type_id"] = d.typeId;
+	j ["type_name"] = d.typeName;
 
+	j ["has_end_date"] = d.hasEndDate;
+	j ["square_image"] = d.squareImage;
+
+	j ["title_string"] = d.titleString;
+	j ["start_date_string"] = d.startDateString;
+	if (d.hasEndDate) j ["end_date_string"] = d.endDateString;
+}
+
+
+
+
+EntityTypeInterface::~EntityTypeInterface () = default;
 
 
 // All functions do nothing by default
@@ -33,6 +47,21 @@ bool EntityTypeInterface::squareImage () const {
 	return true;
 }
 
+EntityTypeDescriptor EntityTypeInterface::getTypeDescriptor () const {
+	EntityTypeDescriptor td;
+	td.typeId = this->getTypeId();
+	td.typeName = this->getTypeName();
+
+	td.hasEndDate = this->hasEndDate();
+	td.squareImage = this->squareImage();
+
+	td.titleString = this->getTitleString();
+	td.startDateString = this->getStartDateString();
+	td.endDateString = this->getEndDateString();
+	return td;
+}
+
+
 
 
 
@@ -49,12 +78,12 @@ EntityManager::EntityManager () {
 }
 
 bool EntityManager::entityWithNameExists (OwnedConnection &conn, std::string name) {
-	std::string query = "SELECT 1 FROM entities WHERE name = " + conn.quote (name) + ";";
+	std::string query = "SELECT 1 FROM entities WHERE LOWER(name) = LOWER(" + conn.quote (name) + ");";
 	return conn.exec (query).size() != 0;
 }
 
 bool EntityManager::entityCreated (OwnedConnection &conn, std::string name) {
-	std::string query = "SELECT awaits_creation FROM entities WHERE name = " + conn.quote (name) + ";";
+	std::string query = "SELECT awaits_creation FROM entities WHERE LOWER(name) = LOWER(" + conn.quote (name) + ");";
 	return conn.exec1 (query).at (0).as <bool>() != true;
 }
 
@@ -64,12 +93,12 @@ bool EntityManager::entityCreated (OwnedConnection &conn, int entityId) {
 }
 
 int EntityManager::getEntityIdByName (OwnedConnection &conn, std::string name) {
-	std::string query = "SELECT id FROM entities WHERE name = " + conn.quote (name) + ";";
+	std::string query = "SELECT id FROM entities WHERE LOWER(name) = LOWER(" + conn.quote (name) + ");";
 	return conn.exec1 (query).at (0).as <int>();
 }
 
 std::optional <int> EntityManager::maybeGetEntityIdByName (OwnedConnection &conn, std::string name) {
-	std::string query = "SELECT id FROM entities WHERE name = " + conn.quote (name) + ";";
+	std::string query = "SELECT id FROM entities WHERE LOWER(name) = LOWER(" + conn.quote (name) + ");";
 	auto result = conn.exec (query);
 	if (result.size() == 0) return {};
 	return result.at (0).at (0).as <int>();
@@ -101,26 +130,23 @@ int EntityManager::getEntityIndexResId (OwnedConnection &conn, int entityId) {
 	return row.at (0).as <int> ();
 }
 
-int EntityManager::createEntityIndex (OwnedConnection &conn, int entityId) {
-	// auto &mgr = SearchManager::get();
-	// int index = mgr.indexNewResource (
-	// 	entityId,
-	// 	EntityManager::urlForEntity (entityId),
-	// 	data.name,
-	// 	data.description,
-	// 	data.type
-	// );
-	// return index;
+int EntityManager::createEntityIndex (OwnedConnection &conn, int entityId, EntityManager::BasicEntityData entityData) {
+	auto &mgr = SearchManager::get();
+	int index = mgr.indexNewResource (
+		entityId,
+		EntityManager::urlForEntity (entityId),
+		entityData.name,
+		entityData.description,
+		entityData.type
+	);
+	return index;
 	return -1;
 }
 
-int EntityManager::clearEntityIndex (OwnedConnection &conn, int entityId) {
+int EntityManager::clearEntityIndex (OwnedConnection &conn, int entityId, EntityManager::BasicEntityData entityData) {
 	auto &mgr = SearchManager::get();
 	int index = this->getEntityIndexResId (conn, entityId);
-	// !!! VERY IMPORTANT !!!
-	// TODO: DONT FORGET THIS
-	// !!! VERY IMPORTANT !!!
-	// mgr.updateResourceData (index, data.name, data.description);
+	mgr.updateResourceData (index, entityData.name, entityData.description);
 	mgr.clearIndexForResource (index);
 	return index;
 }
@@ -131,18 +157,31 @@ void EntityManager::indexStringForEntity (OwnedConnection &conn, int indexId, st
 }
 
 
+int EntityManager::getEntityPictureResourceId (OwnedConnection &conn, int entityId) {
+	std::string query = "SELECT picture FROM entities WHERE id=" + std::to_string (entityId);
+	return conn.exec1 (query).at (0).as <int>();
+}
+
+
 void EntityManager::registerType (std::shared_ptr <EntityTypeInterface> entityType) {
-	std::unique_lock lockForTypesUpdate(this->_typesModificationMutex); // Using `unique_lock` for unique access.
+	std::unique_lock lockForTypesUpdate (this->_typesModificationMutex); // Using `unique_lock` for unique access.
 	// Threads that access `_types` but don't modify it must use shared_lock to allow simultaneous use and
 	// protection agains race conditions (even though `_types` are not expected to change once the program is initialized).
 	// In case a concrete type implementation requires that only one thread can access it or its parts at once
-	// it will have to provide a separate mutex.
+	// it will have to do it by itself.
 
 	if (this->_types.contains (entityType->getTypeId()))
 		throw std::logic_error ("EntityManager: регистрация типа с уже зарегистрированным id = '"s + entityType->getTypeId() + "'");
 
 	this->_types.insert (std::make_pair (entityType->getTypeId(), entityType));
+	this->_typeDescriptors.push_back (entityType->getTypeDescriptor());
 }
+
+std::vector <EntityTypeDescriptor> EntityManager::getAvailableTypes () {
+	std::shared_lock dontUpdateTypes (this->_typesModificationMutex);
+	return this->_typeDescriptors;
+}
+
 
 int EntityManager::completeEntity (OwnedConnection &conn, int entityId, EntityManager::BasicEntityData entityData, int byUser) {
 	std::string updateEntityQuery =
@@ -154,8 +193,9 @@ int EntityManager::completeEntity (OwnedConnection &conn, int entityId, EntityMa
 		+ "created_by=" + std::to_string (byUser) + ","
 		+ "created_on=CURRENT_DATE,"
 		+ "start_date=" + conn.quote (entityData.startDate) + ","
-		+ "end_date=" + (entityData.endDate.has_value() ? "NULL" : conn.quote(entityData.endDate.value())) 
+		+ "end_date=" + (entityData.endDate.has_value() ? conn.quote(entityData.endDate.value()) : "NULL") 
 		+ " WHERE id=" + std::to_string (entityId) + ";";
+
 	conn.exec (updateEntityQuery);
 	return entityId;
 }
@@ -172,9 +212,23 @@ int EntityManager::createNewEntity (OwnedConnection &conn, EntityManager::BasicE
 		+ /* created_by */ 	std::to_string (byUser) + ","
 		+ /* created_on */  "CURRENT_DATE,"
 		+ /* start_date */	conn.quote (entityData.startDate) + ","
-		+ /* end_date */ (entityData.endDate.has_value() ? "NULL" : conn.quote(entityData.endDate.value())) 
+		+ /* end_date */ (entityData.endDate.has_value() ? conn.quote(entityData.endDate.value()) : "NULL")
 		+ ") RETURNING id;";
-	auto insertion = conn.exec1 (insertEntityQuery);
+	pqxx::row insertion;
+
+	try {
+		insertion = conn.exec1 (insertEntityQuery);
+	} catch (pqxx::check_violation &e) {
+		std::string errMsg = e.what();
+		logger << e.what() << "; e.sqlstate: " << e.sqlstate() << std::endl;
+
+		if (errMsg.find ("start_date_is_past") != errMsg.npos) throw UserMistakeException ("Начальная дата недействительна", 400, "bad_start_date");
+		if (errMsg.find ("end_date_is_past") != errMsg.npos) throw UserMistakeException ("Дата смерти недействительна", 400, "bad_end_date");
+		if (errMsg.find ("valid_dates") != errMsg.npos) throw UserMistakeException ("Дата смерти должна быть после даты рождения", 400, "bad_dates");
+
+		throw;
+	}
+
 	return insertion.at(0).as <int> ();
 }
 
@@ -195,8 +249,11 @@ EntityManager::ExtendedEntityData EntityManager::getEntityData (OwnedConnection 
 		ed.created = !(row.at ("awaits_creation").as <bool>());
 		ed.name = row ["name"].as <std::string>();
 
+
 		if (ed.created) {
 			ed.type = row ["type"].as <std::string>();
+			// Assign type related values
+			static_cast <EntityTypeDescriptor &> (ed) = this->_types.at (ed.type)->getTypeDescriptor();
 			ed.description = row ["description"].as <std::string>();
 
 			ed.startDate = row ["start_date"].as <std::string>();
@@ -239,10 +296,17 @@ int EntityManager::createEntity (EntityManager::BasicEntityData entityData, int 
 	nlohmann::json nothing{};
 	type->createEntity (conn, finalId, entityData.typeData.has_value() ? entityData.typeData.value() : nothing); // yeah.
 
-	int index = this->createEntityIndex (conn, finalId);
+	int index = this->createEntityIndex (conn, finalId, entityData);
 	this->indexStringForEntity (conn, index, entityData.name, SEARCH_VALUE_TITLE);
 	this->indexStringForEntity (conn, index, entityData.description, SEARCH_VALUE_DESCRIPTION);
 	type->indexEntity (conn, finalId);
+
+	auto &resourceManager = UploadedResourcesManager::get();
+	auto resourceData = resourceManager.createUploadableResource (false);
+
+	std::string setPicResourceQuery = 
+		"UPDATE entities SET picture="s + std::to_string(resourceData.resourceId) + " WHERE id=" + std::to_string (finalId) + ";";
+	conn.exec (setPicResourceQuery);
 
 	conn.commit();
 	return finalId;
@@ -265,6 +329,34 @@ void EntityManager::deleteEntity (int entityId, int byUser) {
 }
 
 
+int EntityManager::getOrCreateEntityByName (std::string name) {
+	auto conn = database.connect();
+	if (this->entityWithNameExists (conn, name)) {
+		return this->getEntityIdByName (conn, name);
+	} else {
+		std::string query = "INSERT INTO entities (name) VALUES (" + conn.quote (name) + ") RETURNING id;";
+		auto row = conn.exec1 (query);
+		conn.commit();
+		return row.at (0).as <int>();
+	}
+}
+
+std::string EntityManager::getUrlToUploadPicture (int entityId) {
+	auto conn = database.connect();
+	int resourceId = this->getEntityPictureResourceId (conn, entityId);
+	conn.release();
+	auto &resMgr = UploadedResourcesManager::get();
+	std::string uploadId = resMgr.generateUploadIdForResource (resourceId);
+	return resMgr.getUploadUrl (uploadId);
+}
+
+int EntityManager::size () {
+	std::shared_lock dontUpdateTypes (this->_typesModificationMutex);
+	return this->_types.size();
+}
+
+
+
 void to_json (nlohmann::json &j, const EntityManager::BasicEntityData &d) {
 	j ["type"] = d.type;
 	j ["name"] = d.name;
@@ -283,7 +375,8 @@ void from_json (const nlohmann::json &j, EntityManager::BasicEntityData &d) {
 
 void to_json (nlohmann::json &j, const EntityManager::ExtendedEntityData &d) {
 	to_json (j, static_cast <EntityManager::BasicEntityData> (d));
-	j ["id"] = d.id;
+	to_json (j, static_cast <EntityTypeDescriptor> (d));
+	j ["entity_id"] = d.id;
 	j ["created"] = d.created;
 	j ["created_by"] = d.createdBy;
 	j ["created_on"] = d.createdOn;

@@ -1,170 +1,238 @@
 
-
-async function tryCreatePage (ev) {
-
-	let type = document.querySelector (".typeSelectorButton.selected").getAttribute ("value");
-	let name = document.getElementById ("name").value;
-	let desc = document.getElementById ("description").value;
-	let startDate = document.getElementById ("startDate").value;
-	let alive = document.getElementById ("alive").checked;
-	let endDate = document.getElementById ("endDate").value;
-
-	let body = {
-		"type": type,
-		"name": name,
-		"description": desc,
-		"start_date": startDate
-	};
-	if (!alive) body["end_date"] = endDate;
-
-	console.log (body);
-	let resp = await fetch (
-		"/api/create",
-		{
-			"method": "POST",
-			"body": JSON.stringify(body),
-			"credentials": "same-origin"
-		}
-	);
-
-	console.log (resp);
-	let respBody = await resp.json ();
-	console.log ("" + respBody.status);
-	console.log (respBody);
-	if (respBody["status"] == "success") {
-		let imageSelector = document.getElementById ("imageSelector");
-		if (imageSelector.value != 0) await uploadImage(respBody.entity, respBody.upload_url);
-		window.location.href = respBody.url;
+class EntityCreator {
+	constructor () {
+		this.getTypeDescriptorsApi = {
+			"uri": "/api/entities/types",
+			"method": "GET"
+		};
+		this.getPictureUploadUrlApi = {
+			"uri": "/api/entities/askchangepic",
+			"method": "POST"
+		};
+		this.createEntityApi = {
+			"uri": "/api/entities/create",
+			"method": "POST"
+		};
 	}
-}
 
-async function uploadImage (entityId, url) {
-	let imageSelector = document.getElementById ("imageSelector");
-	let file = imageSelector.files[0];
-	if (checkImage (file) == false) return;
-	let imageBox = document.getElementById ('entityImage');
-	
-	let resp = await fetch (
-		url,
-		{
-			"method": "PUT",
-			"body": imageBox.getAttribute ("src"),
-			"credentials": "same-origin"
-		}
-	);
-	console.log (resp.status);
-}
-
-function processTypeSwitch (newType) {
-	console.log (newType);
-
-	if (newType == "person") {
-		document.getElementById ("imageBox").classList.remove ("square");
-		document.getElementById ('startDateName').innerHTML = "Дата рождения";
-		
-		document.getElementById ('aliveName').innerHTML = "Жив";
-		document.getElementById ('aliveBox').classList.remove ('hidden');
-		document.getElementById ('alive').dispatchEvent (new Event ('change'));
-	} else if (newType == "band") {
-		document.getElementById ("imageBox").classList.add ("square");
-		document.getElementById ('startDateName').innerHTML = "Дата основания";
-		
-		document.getElementById ('aliveBox').classList.add ('hidden');
-		document.getElementById ('endDateName').classList.add ('hidden');
-		document.getElementById ('endDate').classList.add ('hidden');
-	} else /* newType == "album" */{
-		document.getElementById ("imageBox").classList.add ("square");
-		document.getElementById ('startDateName').innerHTML = "Дата выпуска";
-
-		document.getElementById ('aliveBox').classList.add ('hidden');
-		document.getElementById ('endDateName').classList.add ('hidden');
-		document.getElementById ('endDate').classList.add ('hidden');
+	async initialize () {
+		this.initElements();
+		await this.initTypes();
 	}
-}
 
+	initElements () {
+		this.typeSelectorButtonTemplate = document.getElementById ('typeSelectorButtonTemplate');
+		this.imageBox = document.getElementById ("imageBox");
+		this.imageElem = document.getElementById ("entityImage");
+		this.inputsElem = document.getElementById ("photoAndData");
 
-function setupPageTypeSelector () {
-	let pageTypes = document.querySelectorAll ('.typeSelectorButton');
-	for (let i of pageTypes) {
-		i.addEventListener (
-			'click',
-			(ev) => {
-				let button = document.querySelector ('.typeSelectorButton.selected');
-				button.classList.remove ('selected');
-				ev.target.classList.add ('selected');
-				processTypeSwitch (ev.target.getAttribute('value'));
+		this.imageInput =  document.createElement ("input");
+		this.imageInput.type = "file";
+		this.imageInput.accept = "image/*";
+
+		this.imageBox.addEventListener ('click', () => { this.imageInput.click(); });
+		this.imageInput.addEventListener ('change', () => { this.selectImage(); });
+
+		this.nameInputPrompt = document.getElementById ("nameInputPrompt");
+		this.nameInputElem = document.getElementById ("name");
+		
+		let params = new URLSearchParams (window.location.search);
+		if (params.has ("q")) {
+			this.nameInputElem.value = params.get ("q");
+		}
+
+		this.startDatePrompt = document.getElementById ("startDatePrompt");
+		this.startDateElem = document.getElementById ("startDate");
+
+		this.aliveCheckboxCont = document.getElementById ("aliveBox");
+		this.aliveCheckbox = document.getElementById ("alive");
+		this.aliveCheckbox.addEventListener ('input', () => { this.updateAliveCheckbox(); });
+
+		this.endDatePrompt = document.getElementById ("endDatePrompt");
+		this.endDateElem = document.getElementById ("endDate");
+
+		this.descriptionElem = document.getElementById ("description");
+
+		this.createEntityButton = document.getElementById ("createPageButton");
+		this.createEntityButton.addEventListener ("click", () => { this.tryCreatePage(); });
+
+		this.createEntityButtonOkIcon = document.getElementById ("okButton");
+		this.createEntityButtonLoadingIcon = document.getElementById ("spinnerButton");
+	}
+
+	async initTypes () {
+		let typeDescriptorsArray = await fetchApi (this.getTypeDescriptorsApi);
+		console.log (typeDescriptorsArray.types);
+		this.typeDescriptors = {};
+		for (let i of typeDescriptorsArray.types) this.initType (i);
+	}
+
+	initType (type) {
+		this.typeDescriptors [type.type_id] = type;
+		this.typeDescriptors [type.type_id].elem = this.createTypeElement (type);
+	}
+
+	createTypeElement (type) {
+		let clone = cloneTemplate (this.typeSelectorButtonTemplate);
+		clone.innerHTML = type.type_name;
+		this.typeSelectorButtonTemplate.parentElement.insertBefore (clone, this.typeSelectorButtonTemplate);
+		clone.addEventListener ('click', () => { this.selectType (type.type_id); });
+		return clone;
+	}
+
+	selectType (typeId) {
+		this.selectedType = typeId;
+		this.type = this.typeDescriptors [typeId];
+		this.displaySelectedType (typeId);
+		this.applyType (typeId);
+	}
+
+	displaySelectedType (typeId) {
+		for (let i in this.typeDescriptors) {
+			if (i != typeId)
+				this.typeDescriptors[i].elem.classList.remove ("selected");
+		}
+		this.typeDescriptors [typeId].elem.classList.add ("selected");
+	}
+
+	applyType (typeId) {
+		if (this.type.square_image) {
+			this.imageBox.classList.add ("square");
+		} else {
+			this.imageBox.classList.remove ("square");
+		}
+
+		this.nameInputPrompt.innerHTML = escapeHTML (this.type.title_string);
+		this.startDatePrompt.innerHTML = escapeHTML (this.type.start_date_string);
+		
+		if (this.type.has_end_date) {
+			this.endDatePrompt.innerHTML = escapeHTML (this.type.end_date_string);
+			this.endDateElem.classList.remove ("hidden");
+			this.endDatePrompt.classList.remove ("hidden");
+			this.aliveCheckboxCont.classList.remove ("hidden");
+			this.updateAliveCheckbox();
+		} else {
+			this.endDateElem.classList.add ("hidden");
+			this.endDatePrompt.classList.add ("hidden");
+			this.aliveCheckboxCont.classList.add ("hidden");
+		}
+
+		this.displayInputs();
+	}
+
+	updateAliveCheckbox () {
+		if ((!this.aliveCheckbox.checked) && this.type.has_end_date) {
+			this.endDateElem.classList.remove ("hidden");
+			this.endDatePrompt.classList.remove ("hidden");
+		} else {
+			this.endDateElem.classList.add ("hidden");
+			this.endDatePrompt.classList.add ("hidden");
+		}
+	}
+
+	displayInputs () {
+		this.inputsElem.classList.remove ("invisible");
+	}
+
+	selectImage () {
+		let file = this.imageInput.files[0];
+
+		if (!this.checkImage (file)) {
+			imageSelector.value = "";
+			return;
+		}
+		
+		this.imageElem.file = file;
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			this.imageElem.setAttribute('src', e.target.result);
+			this.imageElem.classList.remove ('placeholder');
+		};
+
+		return new Promise (
+			(resolve, reject) => {
+				try {
+					reader.readAsDataURL (file);
+				} catch (ex) { 
+					return reject (ex);
+				}
+				resolve ();
 			}
 		);
 	}
-}
 
-function checkImage (file) {
-	if (!file.type.startsWith ("image/")) { // Wrong type
-		return false;
-	}
-	if (file.size > 4 * 1024 * 1024) { // 4 mb - too big
-		return false;
-	}
-	return true;
-}
-
-function setupImageInput () { 
-	let imageSelector = document.getElementById ('imageSelector');
-	imageSelector.addEventListener (
-		'change',
-		() => {
-			let imageSelector = document.getElementById ('imageSelector');
-			let file = imageSelector.files[0];
-
-			if (!checkImage (file)) {
-				imageSelector.value = "";
-				return;
-			}
-			
-			let imageBox = document.getElementById ('entityImage');
-			imageBox.file = file;
-			const reader = new FileReader();
-			reader.onload = (e) => {
-				imageBox.setAttribute('src', e.target.result);
-				imageBox.classList.remove ('placeholder');
-			};
-			reader.readAsDataURL (file);
-		}
-	);
-
-	document.getElementById ('imageBox').addEventListener (
-		'click',
-		(ev) => {
-			let imageSelector = document.getElementById ('imageSelector');
-			imageSelector.click();
-		}
-	)
-}
-
-function setupDataInput () {
-	let params = new URLSearchParams (window.location.search);
-	if (params.has ("q")) {
-		document.getElementById ("name").value = params.get ("q");
-
+	checkImage (img) {
+		// Wrong type
+		if (!img.type.startsWith ("image/")) return false;
+		// 4 mb - too big
+		if (img.size > 4 * 1024 * 1024)	return false;
+		return true;
 	}
 
-	let aliveCheckbox = document.getElementById ('alive');
-	aliveCheckbox.addEventListener (
-		'change',
-		() => {
-			if (aliveCheckbox.checked) {
-				document.getElementById ('endDate').classList.add ('hidden');
-				document.getElementById ('endDateName').classList.add ('hidden');
+	async tryCreatePage () {
+		if (this.lockSubmit === true) return;
+
+		this.lockSubmitButton();
+		try {
+			let body = this.formCreationBody();
+			console.log (body);
+
+			let resp = await fetchApi (this.createEntityApi, body);
+			console.log (resp);
+			if (resp.status == "success") {
+				await this.uploadPicture (resp.entity_id);
+				location.href = resp.url;
 			} else {
-				document.getElementById ('endDate').classList.remove ('hidden');
-				document.getElementById ('endDateName').classList.remove ('hidden');
+				message (resp.error);
 			}
-		}
-	);
-	aliveCheckbox.dispatchEvent (new Event('change'));
+		} catch { /* ??? */}
+		this.unlockSubmitButton ();
+	}
+	
+	lockSubmitButton () {
+		this.lockSubmit = true;
+		this.createEntityButtonLoadingIcon.classList.remove ("template");
+		this.createEntityButtonOkIcon.classList.add ("template");
+	}
 
-	document.getElementById ("createPageButton").addEventListener ('click', tryCreatePage);
-}
+	unlockSubmitButton () {
+		this.lockSubmit = false;
+		this.createEntityButtonLoadingIcon.classList.add ("template");
+		this.createEntityButtonOkIcon.classList.remove ("template");
+	}
+	
+	formCreationBody () {
+		let body = {};
+		body.name = this.nameInputElem.value;
+		body.description = this.descriptionElem.value;
+		body.start_date = this.startDateElem.value;
+		if ((!this.aliveCheckbox.checked) && this.type.has_end_date)
+			body.end_date = this.endDateElem.value;
+		body.type = this.type.type_id;
+		return body;
+	}
+
+	async uploadPicture (entityId) {
+		let file = this.imageInput.files[0];
+		if (this.checkImage (file) == false) return true;
+		let urlReq = await fetchApi (this.getPictureUploadUrlApi, {"entity_id": entityId});
+		
+		let resp = await fetch (
+			urlReq.url,
+			{
+				"method": "PUT",
+				"body": this.imageElem.getAttribute ("src"),
+				"credentials": "same-origin"
+			}
+		);
+
+		if (resp.ok == false)
+			message ("Не получилось загрузить изображение!");
+		return resp.ok;
+	}
+};
+
+var entityCreator = new EntityCreator;
 
 function showBackground (img) {
 	img.classList.add ("loaded");
@@ -182,9 +250,11 @@ function displayBackgroundOnLoad () {
 
 function setupPage () {
 	displayBackgroundOnLoad();
-	setupPageTypeSelector();
-	setupImageInput();
-	setupDataInput();
+	// setupPageTypeSelector();
+	// setupImageInput();
+	// setupDataInput();
+
+	entityCreator.initialize();
 }
 
 window.addEventListener (

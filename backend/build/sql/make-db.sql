@@ -106,8 +106,8 @@ CREATE TABLE entities (
 	start_date DATE NOT NULL DEFAULT '01-01-1970',
 	end_date DATE,
 	
-	CHECK (start_date <= CURRENT_DATE),
-	CHECK (end_date <= CURRENT_DATE),
+	CONSTRAINT start_date_is_past CHECK (start_date <= CURRENT_DATE),
+	CONSTRAINT end_date_is_past CHECK (end_date <= CURRENT_DATE),
 	CONSTRAINT valid_dates CHECK (start_date <= end_date), -- ? < vs <= - are there any one-day bands?
 
 	search_resource INT REFERENCES indexed_resources (id),

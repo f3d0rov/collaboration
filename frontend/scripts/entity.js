@@ -21,7 +21,7 @@ class EntityDataView {
 	}
 
 	getPicturePath (obj) {
-		if ('picture_path' in obj) return obj['picture_path'];
+		if ('picture_url' in obj) return obj.picture_url;
 		return this.defaultPicturePath;
 	}
 
@@ -33,7 +33,7 @@ class EntityDataView {
 		this.entityDescriptionElem.innerHTML = escapeHTML(entityData.description);
 
 		this.entityPicElem.setAttribute ('src', this.getPicturePath (entityData));
-		if (entityData.type == 'band') {
+		if (entityData.square_image) {
 			this.entityPicElem.classList.add ('square');
 		}
 	}
@@ -517,7 +517,7 @@ class Entity {
 		this.id = parseInt (params.get ("id"));
 
 		this.entityDataApiEndpoint = {
-			uri: "/api/p",
+			uri: "/api/entities/get",
 			method: "POST"
 		};
 		
@@ -532,7 +532,8 @@ class Entity {
 	}
 
 	async getEntityData () {
-		let obj = await fetchApi (this.entityDataApiEndpoint, {'id': this.id});
+		let obj = await fetchApi (this.entityDataApiEndpoint, {'entity_id': this.id});
+		console.log (obj);
 		return obj;
 	}
 
@@ -560,8 +561,8 @@ class Entity {
 		this.entityData = await this.getEntityData ();
 		this.veil = document.getElementById ('veil');
 
-		if ('redirect' in this.entityData) {
-			window.location.replace (this.entityData['redirect']);
+		if ('error' in this.entityData) {
+			window.location.replace ('/');
 		}
 
 		this.eventTypes = await this.getEventTypes ();

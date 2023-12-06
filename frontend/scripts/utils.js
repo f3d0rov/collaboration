@@ -13,9 +13,13 @@ async function fetchApi (endpoint, body = {}) {
 	if (fRes.ok) {
 		return await fRes.json();
 	} else {
-		flashNetworkError();
-		console.log (await fRes.text());
-		return null;
+		try {
+			return await fRes.json();
+		} catch {
+			flashNetworkError();
+			console.log (await fRes.text());
+			return null;
+		}
 	}
 }
 

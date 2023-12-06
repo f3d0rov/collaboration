@@ -19,7 +19,9 @@
 #include "api/random_search_prompt_resource.hpp"
 #include "api/search_resource.hpp"
 #include "api/user_auth.hpp"
-#include "api/page.hpp"
+
+#include "api/entity_types.hpp"
+#include "api/entity_resources.hpp"
 
 #include "api/events.hpp"
 #include "api/event_types.hpp"
@@ -258,8 +260,13 @@ int main (int argc, const char *argv[]) {
 	std::filesystem::path userdataFolder = "./user/";
 	uploadResourceManager.setDirectory (userdataFolder);
 
-	EventManager &eventManager = EventManager::getManager();
 
+	EntityManager &entityMgr = EntityManager::get();
+	entityMgr.registerType (std::make_shared <PersonEntityType>());
+	entityMgr.registerType (std::make_shared <BandEntityType>());
+	logger << "Зарегистрировано типов сущностей: " << entityMgr.size() << std::endl;
+
+	EventManager &eventManager = EventManager::getManager();
 	eventManager.registerEventType (std::make_shared <BandFoundationEventType>());
 	eventManager.registerEventType (std::make_shared <BandJoinEventType>());
 	eventManager.registerEventType (std::make_shared <BandLeaveEventType>());
@@ -291,15 +298,17 @@ int main (int argc, const char *argv[]) {
 	CheckEmailAvailability checkEmailAvailability 		(ctx, "api/u/check_email");
 	CheckSessionResource checkSessionResource 			(ctx, "api/u/whoami");
 
-	CreatePageResource createPageApiResource 			(ctx, "api/create");
+	GetEntityTypesResource getEntityTypesResource 		(ctx, "api/entities/types");
+	CreateEntityResource createPageApiResource 			(ctx, "api/entities/create");
+	RequestEntityPictureChangeResource requestPicChange (ctx, "api/entities/askchangepic");
+	GetEntityResource entityDataResource 				(ctx, "api/entities/get");
+
 	UploadResource uploadResource 						(ctx, "api/upload");
 	uploadResourceManager.setUploadUrl (std::string(uploadResource.uri()));
-	RequestPictureChangeResource requestPicChange 		(ctx, "api/askchangepic", std::string(uploadResource.uri()));
 
 	DynamicDirectory userPics 							(ctx, "imgs", "./user/");
 	uploadResourceManager.setDownloadUri (std::string(userPics.uri()));
 
-	EntityDataResource EntityDataResource 				(ctx, "api/p", std::string(uploadResource.uri()));
 
 	GetEntityEventDescriptorsResource eventDescriptorsResource (ctx, "api/events/types");
 	CreateEntityEventResource createEntityEventResource	(ctx, "api/events/create");

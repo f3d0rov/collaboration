@@ -13,8 +13,24 @@
 #include "search_manager.hpp"
 
 
+struct EntityTypeDescriptor;
 class EntityTypeInterface;
 class EntityManager;
+
+
+struct EntityTypeDescriptor {
+	std::string typeId;
+	std::string typeName;
+
+	bool hasEndDate;
+	bool squareImage;
+
+	std::string titleString;
+	std::string startDateString;
+	std::string endDateString;
+};
+
+void to_json (nlohmann::json &j, const EntityTypeDescriptor &d);
 
 
 class EntityTypeInterface {
@@ -37,6 +53,8 @@ class EntityTypeInterface {
 
 		virtual std::string getTypeName () const = 0;
 		virtual std::string getTypeId () const = 0;
+
+		EntityTypeDescriptor getTypeDescriptor () const;
 };
 
 
@@ -52,7 +70,7 @@ class EntityManager {
 			std::optional <nlohmann::json> typeData;
 		};
 
-		struct ExtendedEntityData: public BasicEntityData {
+		struct ExtendedEntityData: public BasicEntityData, public EntityTypeDescriptor {
 			int id; 		// Field valid on db read if entity was not created
 			bool created; 	// Field valid on db read if entity was not created
 			
@@ -66,6 +84,7 @@ class EntityManager {
 		static std::unique_ptr <EntityManager> _manager;
 
 		std::map <std::string, std::shared_ptr <EntityTypeInterface>> _types;
+		std::vector <EntityTypeDescriptor> _typeDescriptors;
 		std::shared_mutex _typesModificationMutex;
 
 		EntityManager ();
@@ -81,11 +100,13 @@ class EntityManager {
 
 		bool entityWasIndexed (OwnedConnection &conn, int entityId);
 		int getEntityIndexResId (OwnedConnection &conn, int entityId);
-		int createEntityIndex (OwnedConnection &conn, int entityId);
-		int clearEntityIndex (OwnedConnection &conn, int entityId);
+		int createEntityIndex (OwnedConnection &conn, int entityId, EntityManager::BasicEntityData entityData);
+		int clearEntityIndex (OwnedConnection &conn, int entityId, EntityManager::BasicEntityData entityData);
 		void indexStringForEntity (OwnedConnection &conn, int indexId, std::string str, int value);
 
 		EntityManager::ExtendedEntityData getEntityData (OwnedConnection &conn, int entityId);
+
+		int getEntityPictureResourceId (OwnedConnection &conn, int entityId);
 
 	public:
 		EntityManager (const EntityManager &) = delete;
@@ -94,11 +115,17 @@ class EntityManager {
 		static std::string urlForEntity (int entityId);
 
 		void registerType (std::shared_ptr <EntityTypeInterface> entityType);
+		std::vector <EntityTypeDescriptor> getAvailableTypes ();
 		
 		int createEntity (EntityManager::BasicEntityData entityData, int byUser);
 		EntityManager::ExtendedEntityData getEntity (int entityId);
 		int updateEntity (nlohmann::json &json, int byUser);
 		void deleteEntity (int entityId, int byUser);
+
+		int getOrCreateEntityByName (std::string name);
+		std::string getUrlToUploadPicture (int entityId);
+
+		int size();
 
 };
 
