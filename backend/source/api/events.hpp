@@ -6,8 +6,8 @@
 
 #include "../nlohmann-json/json.hpp"
 
-#include "page.hpp"
 #include "../database.hpp"
+#include "entity_manager.hpp"
 
 
 class UserSideEventException;
@@ -136,6 +136,7 @@ class EventManager {
 		EventManager (EventManager &&) = delete;
 	
 		std::map <std::string, std::shared_ptr <EventType>> _types;
+		// TODO: protect _types from race conditions
 
 		void addUserEventContribution (int userId, int eventId);
 

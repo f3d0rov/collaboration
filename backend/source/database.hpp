@@ -33,6 +33,7 @@ struct DatabaseConnection {
 };
 
 
+// TODO: const const const ?
 class OwnedConnection {
 	private:
 		int _connId = -1;

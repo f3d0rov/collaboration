@@ -56,13 +56,12 @@
 
 		<div class = "page typeSelector">
 			<div class = "typeSelectorPrompt">
-				Создаем страницу для:
+				Тип страницы:
 			</div> 
-			<div class = "typeSelectorButton selected" value = "person"> Личности </div>
-			<div class = "typeSelectorButton" value = "band"> Группы </div>
+			<div class = "typeSelectorButton template" id = "typeSelectorButtonTemplate"> Тип </div>
 		</div>
 
-		<div class = "page photoAndData">
+		<div class = "page invisible photoAndData" id = "photoAndData">
 			<div class = "imageBoxContainer">
 				<div class = "imageBox imageBoxBorder" id = "imageBox">
 					<img id = "entityImage" class = "imageBoxBorder" src="/resources/default_picture.svg">
@@ -72,34 +71,38 @@
 							Изображение до 4 МБ.
 						</div>
 					</div>
-					<input type = "file" id = "imageSelector" accept="image/*"/>
 				</div>
 			</div>
 			<div class = "dataCard">
-				<table class = "dataCardTable">
-					<tr>
-						<td class = "dataType"> Имя </td>
-						<td colspan="4"> <input id = "name"> </td>
-					</tr> 
-					<tr>
-						<td class = "dataType" id = "startDateName"> Дата рождения </td>
-						<td> <input type="date" class = "dateInput" id = "startDate"> </td>
-						<td class = "dataType" id = "aliveBox">
-							<input type="checkbox" class = "checkboxInput" id = "alive" checked>
+				<div class = "dataCardTable">
+					<div class = "dataCardTableRow">
+						<div class = "dataType" id = "nameInputPrompt"> Имя </div>
+						<div class = "dataInput"> <input id = "name" class = "textInput"> </div>
+					</div>
+					<div class = "dataCardTableRow">
+						<div class = "dataType" id = "startDatePrompt"> Дата рождения </div>
+						<div class = "dataInput fitWidth"> <input id = "startDate" type = "date" class = "dateInput"> </div>
+
+						<div class = "aliveBox" id = "aliveBox"> 
 							<span id = "aliveName"> Жив </span>
-						</td>
-						<td class = "dataType" id = "endDateName" id = "endDate"> Дата смерти </td>
-						<td> <input type="date" class = "dateInput" id = "endDate"/> </td>
-					</tr>
-					<tr>
-						<td class = "dataType"> Краткое описание </td>
-						<td colspan="4">
-							<textarea class = "shortDescription" id = "description" rows="3"></textarea>
-						</td>
-					</tr>
+							<input type="checkbox" class = "checkboxInput" id = "alive" checked>
+						</div>
+					</div>
+					<div class = "dataCardTableRow">	
+						<div class = "dataType" id = "endDatePrompt"> Дата смерти </div>
+						<div class = "dataInput fitWidth"> <input id = "endDate" type = "date" class = "dateInput"> </div>
+					</div>
+					<div class = "dataCardTableRow">
+						<div class = "dataType" id = "descriptionPrompt"> Краткое описание </div>
+						<div class = "dataInput">
+							<textarea class = "shortDescription textInput" id = "description" rows="3"></textarea>
+						</div>
+					</div>
+				</div>
 				</table>
 				<div class = "createPageButton" id = "createPageButton">
-					<img class = "createPageButtonIcon" src="resources/ok.svg">
+					<img class = "createPageButtonIcon" src="resources/ok.svg" id = "okButton">
+					<img class = "createPageButtonIcon template" src="resources/spinner.svg" id = "spinnerButton">
 					Создать страницу
 				</div>
 			</div>
@@ -189,6 +192,8 @@
 				</div>
 			</div>
 		</div>
+
+		<div class = "message hidden" id = "messageTemplate"></div>
 
 		<div class = "bottomLeftLinks"> 
 			<a href = "https://github.com/f3d0rov/collaboration"> <img src = "./resources/github-mark-white.svg" id = "github-link-image"> </a>

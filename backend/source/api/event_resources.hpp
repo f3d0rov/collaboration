@@ -4,7 +4,6 @@
 
 #include "events.hpp"
 #include "user_auth.hpp"
-#include "page.hpp"
 
 
 class GetEntityEventDescriptorsResource;

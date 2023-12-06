@@ -7,8 +7,6 @@
 #include "../api_resource.hpp"
 #include "../database.hpp"
 
-#include "page.hpp"
-
 class RandomSearchPromptResource: public ApiResource {
 	private:
 		std::mt19937_64 randomGenerator;

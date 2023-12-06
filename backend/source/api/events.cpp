@@ -19,7 +19,8 @@ std::runtime_error (w) {
 
 void ParticipantEntity::updateId () {
 	if (!created) {
-		this->entityId = EntityDataResource::getEntityByName (this->name);
+		auto &mgr = EntityManager::get();
+		this->entityId = mgr.getOrCreateEntityByName (this->name);
 	}
 }
 
