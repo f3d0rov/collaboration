@@ -136,7 +136,7 @@ int EntityManager::getEntityIndexResId (OwnedConnection &conn, int entityId) {
 	return row.at (0).as <int> ();
 }
 
-int EntityManager::createEntityIndex (OwnedConnection &conn, int entityId, EntityManager::BasicEntityData entityData) {
+int EntityManager::createEntityIndex (OwnedConnection &conn, int entityId, EntityManager::BasicEntityData entityData, int pictureResource) {
 	auto &mgr = SearchManager::get();
 	int index = mgr.indexNewResource (
 		entityId,
@@ -145,6 +145,8 @@ int EntityManager::createEntityIndex (OwnedConnection &conn, int entityId, Entit
 		entityData.description,
 		entityData.type
 	);
+
+	mgr.setPictureForResource (index, pictureResource);
 
 	std::string saveIndex = "UPDATE entities SET search_resource=" + std::to_string (index) + " WHERE id=" + std::to_string (entityId) + ";";
 	conn.exec0 (saveIndex);
@@ -306,17 +308,19 @@ int EntityManager::createEntity (EntityManager::BasicEntityData entityData, int 
 	nlohmann::json nothing{};
 	type->createEntity (conn, finalId, entityData.typeData.has_value() ? entityData.typeData.value() : nothing); // yeah.
 
-	int index = this->createEntityIndex (conn, finalId, entityData);
-	this->indexStringForEntity (conn, index, entityData.name, SEARCH_VALUE_TITLE);
-	this->indexStringForEntity (conn, index, entityData.description, SEARCH_VALUE_DESCRIPTION);
-	type->indexEntity (conn, finalId);
-
 	auto &resourceManager = UploadedResourcesManager::get();
 	auto resourceData = resourceManager.createUploadableResource (false);
 
 	std::string setPicResourceQuery = 
 		"UPDATE entities SET picture="s + std::to_string(resourceData.resourceId) + " WHERE id=" + std::to_string (finalId) + ";";
 	conn.exec (setPicResourceQuery);
+
+	int index = this->createEntityIndex (conn, finalId, entityData, resourceData.resourceId);
+	this->indexStringForEntity (conn, index, entityData.name, SEARCH_VALUE_TITLE);
+	this->indexStringForEntity (conn, index, entityData.description, SEARCH_VALUE_DESCRIPTION);
+	type->indexEntity (conn, finalId);
+	
+
 
 	conn.commit();
 	return finalId;

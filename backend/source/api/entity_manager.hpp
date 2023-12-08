@@ -102,7 +102,7 @@ class EntityManager {
 
 		bool entityWasIndexed (OwnedConnection &conn, int entityId);
 		int getEntityIndexResId (OwnedConnection &conn, int entityId);
-		int createEntityIndex (OwnedConnection &conn, int entityId, EntityManager::BasicEntityData entityData);
+		int createEntityIndex (OwnedConnection &conn, int entityId, EntityManager::BasicEntityData entityData, int pictureResource);
 		int clearEntityIndex (OwnedConnection &conn, int entityId, EntityManager::BasicEntityData entityData);
 		void indexStringForEntity (OwnedConnection &conn, int indexId, std::string str, int value);
 
