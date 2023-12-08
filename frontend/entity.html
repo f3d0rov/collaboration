@@ -72,36 +72,78 @@
 
 		<div class = "page">
 			<div id = "entityHeader">
-				<div id = "entityImageBox">
-					<img src="/resources/spinner.svg" id = "personImage">
+				<div class = "entityImageBox" id = "entityImageBox">
+					<img src="/resources/spinner.svg" id = "personImage" class = "entityImage">
 				</div>
 				<div id = "entityInfoCard">
 					<div id = "personHeader">
-						<span id = "personName"> ... </span>
-						<p>	<span id = "personLifetime"> ... </span>
+						<div id = "personName">
+							...
+						</div>
+						<div class = "entityTools" >
+							<span id = "personLifetime"> ... </span>
+							<img src = "resources/lookup.svg" class = "inlineButton lookupEntry" id = "lookupEntity"/>
+							<img src = "resources/edit.svg" class = "inlineButton editEntry" id = "editEntity"/>
+							<img src = "resources/report.svg" class = "inlineButton reportEntry" id = "reportEntity"/>
+						</div>
 					</div>
 					<div id = "personBio"> 
 						...
 					</div>
 				</div>
 			</div>
-			
-			<!-- <table>
-				<tr>
-					<td>
-						<img src="/resources/spinner.svg" id = "personImage">
-					</td>
-					<td id = "personCard">
-						<div id = "personHeader">
-							<span id = "personName"> ... </span>
-							<p>	<span id = "personLifetime"> ... </span>
+
+			<div class = "dataCard template" id = "entityEditor">
+				
+				<div class = "imageBox" id = "editorImageBox">
+					<img id = "entityImagePreview" class = "imageBoxBorder" src="/resources/spinner.svg">
+					<div id = "uploadOverlay" class = "imageBoxBorder">
+						<img id = "uploadOverlayIcon" src="resources/upload.svg">
+						<div class = "uploadOverlayText noselect">
+							Изображение до 4 МБ.
 						</div>
-						<div id = "personBio"> 
-							...
+					</div>
+				</div>
+
+				<div class = "dataCardTable">
+					<div class = "dataCardTableRow">
+						<!-- <div class = "dataType" id = "nameInputPrompt"> Имя </div> -->
+						<div class = "dataInput"> <input id = "nameInput" class = "textInput" placeholder="Имя"> </div>
+					</div>
+					<div class = "dataCardTableRow">
+						<div class = "dataType" id = "startDatePrompt"> Дата рождения </div>
+						<div class = "dataInput fitWidth"> <input id = "startDate" type = "date" class = "dateInput"> </div>
+
+						<div class = "aliveBox" id = "aliveBox"> 
+							<span id = "aliveName"> Жив </span>
+							<input type="checkbox" class = "checkboxInput" id = "alive" checked>
 						</div>
-					</td>
-				</tr>
-			</table> -->
+					</div>
+					<div class = "dataCardTableRow" id = "endDateRow">	
+						<div class = "dataType" id = "endDatePrompt"> Дата смерти </div>
+						<div class = "dataInput fitWidth"> <input id = "endDate" type = "date" class = "dateInput"> </div>
+					</div>
+					<div class = "dataCardTableRow">
+						<!-- <div class = "dataType" id = "descriptionPrompt"> Краткое описание </div> -->
+						<div class = "dataInput">
+							<textarea class = "shortDescription textInput" id = "description" rows="3" placeholder="Краткое описание"></textarea>
+						</div>
+					</div>
+
+
+					<div class = "updatePageButtons">
+						<div class = "createPageButton" id = "cancelPageButton">
+							<img class = "createPageButtonIcon" src="resources/bad.svg" id = "cancelButton">
+							Отмена
+						</div>
+						<div class = "createPageButton" id = "updatePageButton">
+							<img class = "createPageButtonIcon" src="resources/ok.svg" id = "okButton">
+							<img class = "createPageButtonIcon template" src="resources/spinner.svg" id = "spinnerButton">
+							Обновить страницу
+						</div>
+					</div>
+				</div>
+			</div>
 
 			<div class = "timeline" id = "timelineContainer">
 				<div class = "timelineElem template" id = "timelineElemTemplate">

@@ -51,6 +51,35 @@ std::unique_ptr<ApiResponse> CreateEntityResource::processRequest (RequestData &
 
 
 
+EditEntityResource::EditEntityResource (mg_context *ctx, std::string uri):
+ApiResource (ctx, uri) {
+	
+}
+
+std::unique_ptr<ApiResponse> EditEntityResource::processRequest (RequestData &rd, nlohmann::json body) {
+	assertMethod (rd, "POST");
+	auto &userManager = UserManager::get();
+	auto user = userManager.getUserDataBySessionId (rd.getCookie(SESSION_ID));
+	if (!user.valid()) return makeApiResponse (nlohmann::json{}, 401);
+
+	int entityId = getParameter <int> ("entity_id", body);
+
+	EntityManager::BasicEntityData data;
+	try {
+		data = body.get <EntityManager::BasicEntityData> ();
+	} catch (nlohmann::json::exception &e) {
+		throw UserMistakeException ("Невозможно преобразовать данные к необходимому типу", 400, "bad_json");
+	}
+
+	auto &mgr = EntityManager::get();
+	mgr.updateEntity (entityId, data, user.id());
+
+	return makeApiResponse (nlohmann::json {{"status", "success"}}, 202);
+}
+
+
+
+
 GetEntityResource::GetEntityResource (mg_context *ctx, std::string uri):
 ApiResource (ctx, uri) {
 

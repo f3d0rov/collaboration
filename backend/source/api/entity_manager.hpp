@@ -10,6 +10,7 @@
 
 #include "../utils.hpp"
 #include "../database.hpp"
+#include "events.hpp"
 #include "search_manager.hpp"
 
 
@@ -94,6 +95,7 @@ class EntityManager {
 		bool entityCreated (OwnedConnection &conn, int entityId);
 		int getEntityIdByName (OwnedConnection &conn, std::string name);
 		std::optional <int> maybeGetEntityIdByName (OwnedConnection &conn, std::string name);
+		std::shared_ptr <EntityTypeInterface> getEntityType (OwnedConnection &conn, int entityId);
 
 		int completeEntity (OwnedConnection &conn, int entityId, EntityManager::BasicEntityData entityData, int byUser);
 		int createNewEntity (OwnedConnection &conn, EntityManager::BasicEntityData entityData, int byUser);
@@ -108,6 +110,11 @@ class EntityManager {
 
 		int getEntityPictureResourceId (OwnedConnection &conn, int entityId);
 
+		template <class T>
+		std::string updateVarString (OwnedConnection &conn, const T &var, std::string name, bool &notFirst);
+
+		// Throws a UserMistakeException instead of pqxx::check_violation. Don't call from outside of a `catch` block.
+		void terminateCheckViolation (pqxx::check_violation &e);
 	public:
 		EntityManager (const EntityManager &) = delete;
 		EntityManager (EntityManager &&) = delete;
@@ -119,7 +126,7 @@ class EntityManager {
 		
 		int createEntity (EntityManager::BasicEntityData entityData, int byUser);
 		EntityManager::ExtendedEntityData getEntity (int entityId);
-		int updateEntity (nlohmann::json &json, int byUser);
+		int updateEntity (int entityId, EntityManager::BasicEntityData data, int byUser);
 		void deleteEntity (int entityId, int byUser);
 
 		int getOrCreateEntityByName (std::string name);
@@ -133,3 +140,12 @@ void to_json (nlohmann::json &j, const EntityManager::BasicEntityData &d);
 void from_json (const nlohmann::json &j, EntityManager::BasicEntityData &d);
 
 void to_json (nlohmann::json &j, const EntityManager::ExtendedEntityData &d);
+
+
+
+template <class T>
+std::string EntityManager::updateVarString (OwnedConnection &conn, const T &var, std::string name, bool &notFirst) {
+	std::string ret = notFirst ? "," : "";
+	notFirst = true;
+	return ret + name + "=" + wrapType (var, conn);
+}

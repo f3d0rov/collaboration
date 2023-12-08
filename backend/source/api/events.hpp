@@ -173,6 +173,9 @@ class EventManager {
 		int updateEvent (nlohmann::json &data, int byUser);
 		void deleteEvent (int eventId, int byUser);
 
+		void reindexEvent (OwnedConnection &conn, int eventId);
+		void reindexEventsForEntity (OwnedConnection &conn, int entityId);
+
 		// Data fields to create different event types
 		nlohmann::json getAvailableEventDescriptors ();
 		

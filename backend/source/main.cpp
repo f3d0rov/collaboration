@@ -300,6 +300,7 @@ int main (int argc, const char *argv[]) {
 
 	GetEntityTypesResource getEntityTypesResource 		(ctx, "api/entities/types");
 	CreateEntityResource createPageApiResource 			(ctx, "api/entities/create");
+	EditEntityResource editEntityResource 				(ctx, "api/entities/update");
 	RequestEntityPictureChangeResource requestPicChange (ctx, "api/entities/askchangepic");
 	GetEntityResource entityDataResource 				(ctx, "api/entities/get");
 

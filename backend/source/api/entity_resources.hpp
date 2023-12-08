@@ -44,6 +44,13 @@ class CreateEntityResource: public ApiResource {
 };
 
 
+class EditEntityResource: public ApiResource {
+	public:
+		EditEntityResource (mg_context *ctx, std::string uri);
+		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
+};
+
+
 class GetEntityResource: public ApiResource {
 	public:
 		GetEntityResource (mg_context *ctx, std::string uri);

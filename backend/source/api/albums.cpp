@@ -158,6 +158,13 @@ int AlbumManager::createAlbumSearchResIndex (int albumId, std::string name, std:
 		descr,
 		"album"
 	);
+
+	std::string insertIndexIntoAlbum = "UPDATE events SET search_resource=" + std::to_string (index)
+		+ " WHERE id=" + std::to_string (albumId) + ";";
+	auto conn = database.connect();
+	conn.exec0 (insertIndexIntoAlbum);
+	conn.commit();
+
 	return index; 
 }
 

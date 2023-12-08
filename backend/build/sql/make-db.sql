@@ -39,7 +39,8 @@ CREATE TABLE indexed_resources (
 	description VARCHAR (256),
 
 	type VARCHAR (32) NOT NULL,
-	picture INT REFERENCES uploaded_resources (id) ON DELETE SET NULL
+	picture INT REFERENCES uploaded_resources (id) ON DELETE SET NULL,
+	CONSTRAINT one_index_per_resource UNIQUE (referenced_id, type)
 );
 
 CREATE TABLE search_index (

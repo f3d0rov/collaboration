@@ -158,6 +158,8 @@ class SearchManager {
 		int indexNewResource (int refId, std::string url, std::string title, std::string descr, std::string type);
 		void updateResourceData (int resourceId, std::string title, std::string desription);
 		void clearIndexForResource (int resourceId);
+		void removeResource (OwnedConnection &conn, int resourceId);
+		void removeResource (int resourceId);
 		
 		std::set <std::string> getKeywords (std::string str) const;
 		void indexStringForResource (int resourceId, std::string str, int value);

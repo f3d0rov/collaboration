@@ -8,10 +8,20 @@ class EntityDataView {
 	}
 
 	initElements () {
+		this.root = document.getElementById ("entityHeader");
 		this.entityNameElem = document.getElementById ("personName");
 		this.entityDatesElem = document.getElementById ("personLifetime");
 		this.entityDescriptionElem = document.getElementById ("personBio");
 		this.entityPicElem = document.getElementById ("personImage");
+
+		this.lookupEntityButton = document.getElementById ("lookupEntity");
+		this.lookupEntityButton.addEventListener ('click', () => { this.lookupEntity(); });
+
+		this.editEntityButton = document.getElementById ("editEntity");
+		this.editEntityButton.addEventListener ('click', () => { this.editEntity(); });
+
+		this.reportEntityButton = document.getElementById ("reportEntity");
+		this.reportEntityButton.addEventListener ('click', () => { this.reportEntity(); });
 	}
 
 	formDate (obj) {
@@ -42,7 +52,245 @@ class EntityDataView {
 		this.initElements ();
 		this.updateElements ();
 	}
+
+	hide () {
+		this.root.classList.add ("template");
+	}
+
+	show () {
+		this.root.classList.remove ("template");
+	}
+
+	lookupEntity () {
+		let lookupUrl = genLookupUrl (this.entity.entityData.name);
+		window.open (lookupUrl, '_blank', 'noopener');
+	}
+
+	editEntity () {
+		this.entity.update();
+	}
+
+	reportEntity () {
+
+	}
 }
+
+class EntityEditor {
+	constructor (entity) {
+		this.entityObj = entity;
+		this.defaultPicturePath = '/resources/default_picture.svg';
+
+		this.updateDataApi = {
+			"uri": "api/entities/update",
+			"method": "POST"
+		};
+
+		this.requestImageUploadUrlApi = {
+			"uri": "api/entities/askchangepic",
+			"method": "POST"
+		};
+	}
+
+	initialize () {
+		this.entity = this.entityObj.entityData;
+		this.initElements();
+		this.initEvents();
+		this.initValues();
+	}
+
+	initElements () {
+		this.root = document.getElementById ("entityEditor");
+
+		this.nameInput = document.getElementById ("nameInput");
+		this.startDateInput = document.getElementById ("startDate");
+		this.endDateInput = document.getElementById ("endDate");
+		this.descriptionInput = document.getElementById ("description");
+		this.imagePreview = document.getElementById ("entityImagePreview");
+		this.imageSelectButton = document.getElementById ("uploadOverlay");
+		this.imageBox = document.getElementById ("editorImageBox");
+
+		this.startDatePrompt = document.getElementById ("startDatePrompt");
+		this.endDatePrompt = document.getElementById ("endDatePrompt");
+		this.endDateRow = document.getElementById ("endDateRow");
+		this.aliveCheckbox = document.getElementById ("alive");
+		this.aliveCheckboxContainer = document.getElementById ("aliveBox");
+
+		this.submitUpdateButton = document.getElementById ("updatePageButton");
+		this.cancelUpdateButton = document.getElementById ("cancelPageButton");
+		this.updatingSpinnerIcon = document.getElementById ("spinnerButton");
+		this.awaitingUserInputIcon = document.getElementById ("okButton");
+
+	}
+
+	initEvents () {
+		this.imageSelectButton.addEventListener ('click', () => { this.selectImage(); } );
+		this.cancelUpdateButton.addEventListener ('click', () => { this.cancelUpdate(); });
+		this.submitUpdateButton.addEventListener ('click', () => { this.submitUpdate(); });
+		this.aliveCheckbox.addEventListener ('input', () => { this.checkAliveCheckbox(); });
+	}
+
+	getPictureUrl () {
+		if ('picture_url' in this.entity) {
+			return this.entity.picture_url;
+		} else {
+			return this.defaultPicturePath;
+		}
+	}
+
+	initValues () {
+		this.nameInput.value = this.entity.name;
+		this.descriptionInput.value = this.entity.description;
+
+		this.startDatePrompt.innerHTML = this.entity.start_date_string;
+		this.startDateInput.value = this.entity.start_date;
+		if (this.entity.has_end_date) {
+			this.endDatePrompt.innerHTML = this.entity.end_date_string;
+			if ('end_date' in this.entity) {
+				this.aliveCheckbox.checked = false;
+				this.endDateInput.value = this.entity.end_date;
+			} else {
+				this.aliveCheckbox.checked = true;
+			}
+		} else {
+			this.endDateRow.classList.add ("template");
+			this.aliveCheckboxContainer.classList.add ("template");
+		}
+
+		this.imagePreview.setAttribute ('src', this.getPictureUrl());
+		if (this.entity.square_image) {
+			this.imageBox.classList.add ("square");
+		}
+
+		this.checkAliveCheckbox();
+	}
+
+	checkAliveCheckbox () {
+		if ((this.aliveCheckbox.checked == false) && this.entity.has_end_date) {
+			this.endDateInput.classList.remove ("hidden");
+			this.endDatePrompt.classList.remove ("hidden");
+		} else {
+			this.endDateInput.classList.add ("hidden");
+			this.endDatePrompt.classList.add ("hidden");
+		}
+	}
+
+	selectImage () {
+		if (('imgInput' in this) === false) {
+			this.imgInput = document.createElement ("input");
+			this.imgInput.setAttribute ("type", "file");
+			this.imgInput.setAttribute ("accept", "image/*");
+			
+			this.imgInput.addEventListener (
+				'change',
+				() => {
+					let file = this.imgInput.files[0];
+		
+					if (!this.checkImage (file)) {
+						this.imgInput.value = "";
+						return;
+					}
+					
+					this.imagePreview.file = file;
+					const reader = new FileReader();
+					reader.onload = (e) => {
+						this.imagePreview.setAttribute('src', e.target.result);
+						this.imagePreview.classList.remove ('placeholder');
+					};
+					reader.readAsDataURL (file);
+				}
+			);
+		}
+		this.imgInput.click();
+	}
+
+	checkImage (file) {
+		if (!file.type.startsWith ("image/")) { // Wrong type
+			return false;
+		}
+		if (file.size > 4 * 1024 * 1024) { // 4 mb - too big
+			return false;
+		}
+		return true;
+	}
+
+	cancelUpdate () {
+		this.entityObj.cancelUpdate ();
+	}
+
+	async submitUpdate () {
+		if (this.submitLocked === true) return;
+		this.lockSubmit ();
+
+		try {
+			let updateData = this.formUpdateBody();
+			console.log (updateData);
+			let resp = await fetchApi (this.updateDataApi, updateData);
+			console.log (resp);
+
+			if (resp.status == "success") {
+				await this.uploadPicture ();
+				this.entityObj.finishUpdate();
+			} else {
+				message (resp.error);
+			}
+		} catch {} // Just make sure submit button is unlocked
+
+		this.unlockSubmit ();
+	}
+	
+	formUpdateBody () {
+		let body = {};
+		body.entity_id = this.entity.entity_id;
+		body.type = this.entity.type_id;
+
+		body.name = this.nameInput.value;
+		body.description = this.descriptionInput.value;
+		body.start_date = this.startDateInput.value;
+		if ((!this.aliveCheckbox.checked) && this.entity.has_end_date)
+			body.end_date = this.endDateInput.value;
+		return body;
+	}
+
+	lockSubmit () {
+		this.submitLocked = true;
+		this.updatingSpinnerIcon.classList.remove ("template");
+		this.awaitingUserInputIcon.classList.add ("template");
+	}
+
+	unlockSubmit () {
+		this.submitLocked = false;
+		this.updatingSpinnerIcon.classList.add ("template");
+		this.awaitingUserInputIcon.classList.remove ("template");
+	}
+
+	async uploadPicture () {
+		if ('imgInput' in this === false) return;
+		let file = this.imgInput.files[0];
+		if (this.checkImage (file) == false) return true;
+		let urlReq = await fetchApi (this.requestImageUploadUrlApi, {"entity_id": this.entity.entity_id});
+		
+		let resp = await fetch (
+			urlReq.url,
+			{
+				"method": "PUT",
+				"body": this.imagePreview.getAttribute ("src"),
+				"credentials": "same-origin"
+			}
+		);
+
+		if (resp.ok == false)
+			message ("Не получилось загрузить изображение!");
+		return resp.ok;
+	}
+
+	show () {
+		this.root.classList.remove ("template");
+	}
+
+	hide () {
+		this.root.classList.add ("template");
+	}
+};
 
 class EventReporter {
 	constructor (eventsView) {
@@ -528,6 +776,7 @@ class Entity {
 
 		this.dataView = new EntityDataView (this);
 		this.eventsView = new EventsView (this);
+		this.entityEditor = new EntityEditor (this);
 		this.eventEditor = null;
 	}
 
@@ -572,7 +821,8 @@ class Entity {
 
 		Promise.all ([
 			this.dataView.initialize(),
-			this.eventsView.initialize()
+			this.eventsView.initialize(),
+			this.entityEditor.initialize()
 		]).then (
 			() => { this.unveil(); },
 			(err) => { flashNetworkError(); console.log (err); } 
@@ -610,6 +860,23 @@ class Entity {
 		this.eventEditor = null;
 		this.showAddEventButton ();
 		this.eventsView.resize();
+	}
+
+	update () {
+		this.dataView.hide ();
+		this.entityEditor.show ();
+		this.eventsView.resize ();
+	}
+
+	cancelUpdate () {
+		this.dataView.show ();
+		this.entityEditor.hide ();
+		this.eventsView.resize ();
+	}
+
+	finishUpdate () {
+		// Refresh the page to display updated info. Ugly, simple and gets the job done.
+		location.reload();
 	}
 }
 

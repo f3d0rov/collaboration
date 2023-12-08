@@ -104,6 +104,12 @@ std::optional <int> EntityManager::maybeGetEntityIdByName (OwnedConnection &conn
 	return result.at (0).at (0).as <int>();
 }
 
+std::shared_ptr <EntityTypeInterface> EntityManager::getEntityType (OwnedConnection &conn, int entityId) {
+	std::string query = "SELECT type FROM entities WHERE id = " + std::to_string (entityId) + ";";
+	return this->_types.at(conn.exec1 (query).at (0).as <std::string>());
+}
+
+
 /* static */ std::string EntityManager::urlForEntity (int entityId) {
 	return "/e?id=" + std::to_string (entityId);
 }
@@ -139,8 +145,11 @@ int EntityManager::createEntityIndex (OwnedConnection &conn, int entityId, Entit
 		entityData.description,
 		entityData.type
 	);
+
+	std::string saveIndex = "UPDATE entities SET search_resource=" + std::to_string (index) + " WHERE id=" + std::to_string (entityId) + ";";
+	conn.exec0 (saveIndex);
+
 	return index;
-	return -1;
 }
 
 int EntityManager::clearEntityIndex (OwnedConnection &conn, int entityId, EntityManager::BasicEntityData entityData) {
@@ -160,6 +169,14 @@ void EntityManager::indexStringForEntity (OwnedConnection &conn, int indexId, st
 int EntityManager::getEntityPictureResourceId (OwnedConnection &conn, int entityId) {
 	std::string query = "SELECT picture FROM entities WHERE id=" + std::to_string (entityId);
 	return conn.exec1 (query).at (0).as <int>();
+}
+
+void EntityManager::terminateCheckViolation (pqxx::check_violation &e) {
+	std::string errMsg = e.what();
+	if (errMsg.find ("start_date_is_past") != errMsg.npos) throw UserMistakeException ("Начальная дата недействительна", 400, "bad_start_date");
+	if (errMsg.find ("end_date_is_past") != errMsg.npos) throw UserMistakeException ("Дата смерти недействительна", 400, "bad_end_date");
+	if (errMsg.find ("valid_dates") != errMsg.npos) throw UserMistakeException ("Дата смерти должна быть после даты рождения", 400, "bad_dates");
+	throw;
 }
 
 
@@ -219,14 +236,7 @@ int EntityManager::createNewEntity (OwnedConnection &conn, EntityManager::BasicE
 	try {
 		insertion = conn.exec1 (insertEntityQuery);
 	} catch (pqxx::check_violation &e) {
-		std::string errMsg = e.what();
-		logger << e.what() << "; e.sqlstate: " << e.sqlstate() << std::endl;
-
-		if (errMsg.find ("start_date_is_past") != errMsg.npos) throw UserMistakeException ("Начальная дата недействительна", 400, "bad_start_date");
-		if (errMsg.find ("end_date_is_past") != errMsg.npos) throw UserMistakeException ("Дата смерти недействительна", 400, "bad_end_date");
-		if (errMsg.find ("valid_dates") != errMsg.npos) throw UserMistakeException ("Дата смерти должна быть после даты рождения", 400, "bad_dates");
-
-		throw;
+		this->terminateCheckViolation (e);
 	}
 
 	return insertion.at(0).as <int> ();
@@ -242,7 +252,7 @@ EntityManager::ExtendedEntityData EntityManager::getEntityData (OwnedConnection 
 	auto result = conn.exec (getEntityDataByIdQuery);
 
 	if (result.size() == 0) {
-		throw UserMistakeException ("Сущность не существует", 404, "not_found");
+		throw UserMistakeException ("Страница не существует", 404, "not_found");
 	} else {
 		auto row = result[0];
 		ed.id = entityId;
@@ -281,13 +291,13 @@ int EntityManager::createEntity (EntityManager::BasicEntityData entityData, int 
 	auto conn = database.connect();
 
 	if (this->_types.contains (entityData.type) == false)
-		throw UserMistakeException ("Тип сущности '"s + entityData.type + "' не зарегистрирован", 400, "bad_type");
+		throw UserMistakeException ("Тип страницы '"s + entityData.type + "' не зарегистрирован", 400, "bad_type");
 	
 	auto type = this->_types.at (entityData.type);
 	auto id = this->maybeGetEntityIdByName (conn, entityData.name);
 	int finalId = 0;
 	if (id.has_value()) {
-		if (this->entityCreated (conn, id.value())) throw UserMistakeException ("Сущность уже создана!", 409, "already_created");
+		if (this->entityCreated (conn, id.value())) throw UserMistakeException ("Страница уже создана!", 409, "already_created");
 		finalId = this->completeEntity (conn, id.value(), entityData, byUser);
 	} else {
 		finalId = this->createNewEntity (conn, entityData, byUser);
@@ -318,14 +328,84 @@ EntityManager::ExtendedEntityData EntityManager::getEntity (int entityId) {
 	return this->getEntityData (conn, entityId);
 }
 
-int EntityManager::updateEntity (nlohmann::json &json, int byUser) {
+int EntityManager::updateEntity (int entityId, EntityManager::BasicEntityData data, int byUser) {
 	std::shared_lock dontModifyTypes (this->_typesModificationMutex);
-	return -1;
+	auto conn = database.connect();
+
+	// Form update query with changed parameters
+	bool notFirst = false;
+	std::string query = "UPDATE entities SET ";
+	query += this->updateVarString (conn, data.name, "name", notFirst);
+	query += this->updateVarString (conn, data.description, "description", notFirst);
+	query += this->updateVarString (conn, data.startDate, "start_date", notFirst);
+	if (data.endDate.has_value())
+		query += this->updateVarString (conn, data.endDate.value(), "end_date", notFirst);
+
+	query += "WHERE id=" + std::to_string (entityId) + ";";
+
+	// Don't do anything if no changes requested
+	if (!notFirst) {
+		return entityId;
+	}
+
+	try {
+		int affRows = conn.exec0 (query).affected_rows();
+
+		if (affRows == 1) { // Updated 1 row, all good
+			// TODO: add user participation
+			
+			// Re-index updated entity
+			int index = this->clearEntityIndex (conn, entityId, data);
+			this->indexStringForEntity (conn, index, data.name, SEARCH_VALUE_TITLE);
+			this->indexStringForEntity (conn, index, data.description, SEARCH_VALUE_DESCRIPTION);
+			this->getEntityType (conn, entityId)->indexEntity (conn, index);
+
+			// Commit changes
+			conn.commit ();
+			conn.release ();
+
+			// Temporary fix (we need to push the changes because events will update from another connection)
+			auto conn2 = database.connect();
+
+			// Update index of events that this entity participates in
+			auto &eventMgr = EventManager::getManager ();
+			eventMgr.reindexEventsForEntity (conn2, entityId);
+			conn2.commit();
+
+			return entityId;
+		} else if (affRows == 0) { // No rows updated, no such entity id
+			throw UserMistakeException ("Нет страницы с заданным id", 404, "entity_not_found");
+		} else { // affected rows > 1: query logic is bad
+			throw std::logic_error ("EntityManager::updateEntity: affected_rows > 1");
+		}
+	} catch (pqxx::check_violation &e) {
+		// One of the constraints of `entities` table failed. Throw UserMistakeExeption with explanation.
+		this->terminateCheckViolation (e);
+	}
+
+
+	return entityId;
 }
 
 void EntityManager::deleteEntity (int entityId, int byUser) {
 	std::shared_lock dontModifyTypes (this->_typesModificationMutex);
+	
+	auto &resourceMgr = UploadedResourcesManager::get();
+	auto &indexMgr = SearchManager::get();
 
+	auto conn = database.connect();
+	int picture = this->getEntityPictureResourceId (conn, entityId);
+	int index = this->getEntityIndexResId (conn, entityId);
+
+	resourceMgr.removeResource (picture);
+	indexMgr.removeResource (conn, index);
+
+	auto entity = this->getEntityData (conn, entityId);
+	this->_types [entity.typeId]->deleteEntity (conn, entityId);
+
+	std::string query = "DELETE FROM entities WHERE id=" + std::to_string (entityId) + ";";
+	conn.exec (query);
+	conn.commit();
 }
 
 

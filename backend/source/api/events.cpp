@@ -265,7 +265,6 @@ void EventType::deleteEvent (int id) {
 }
 
 
-
 std::vector <std::string> AllEntitiesEventType::getApplicableEntityTypes () const {
 	return {"band", "person"};
 }
@@ -410,8 +409,9 @@ nlohmann::json EventManager::getEventsForEntity (int entityId) {
 }
 
 int EventManager::updateEvent (nlohmann::json &data, int byUser) {
-	auto id = this->getEventTypeFromJson (data)->updateEvent (data);
-	this->addUserEventContribution (byUser, id);
+	int id = getParameter <int> ("id", data);
+	this->getEventTypeById (id)->updateEvent (data);
+	if (byUser != 0) this->addUserEventContribution (byUser, id);
 	return id;
 }
 
@@ -419,6 +419,26 @@ void EventManager::deleteEvent (int eventId, int byUser) {
 	this->getEventTypeById (eventId)->deleteEvent (eventId);
 	// this->addUserEventContribution (byUser, eventId); // Can't add a contribution for a deleted event
 }
+
+void EventManager::reindexEvent (OwnedConnection &conn, int eventId) {
+	nlohmann::json data {{"id", eventId}};
+	this->updateEvent (data, 0);
+}
+
+void EventManager::reindexEventsForEntity (OwnedConnection &conn, int entityId) {
+	// Get event list
+	std::string getEventListQuery = std::string()
+		+ "SELECT id FROM events INNER JOIN participation ON participation.event_id=events.id WHERE entity_id="
+		+ std::to_string (entityId) + ";";
+
+	pqxx::result result = conn.exec (getEventListQuery);
+
+	for (int i = 0; i < result.size(); i++) {
+		this->reindexEvent (conn, result[i][0].as <int>());
+	}
+}
+
+
 
 nlohmann::json EventManager::getAvailableEventDescriptors () {
 	nlohmann::json result = nlohmann::json::object();

@@ -31,10 +31,11 @@ body {
 
 }
 
-#entityImageBox {
+.entityImageBox {
 	display: flex;
 	width: fit-content;
 	justify-content: flex-start;
+	position: relative;
 }
 
 
@@ -45,7 +46,7 @@ body {
 	padding-left: 10px;
 }
 
-#personImage {
+.entityImage {
 	width: 200px;
 	height: 300px;
 
@@ -62,7 +63,7 @@ body {
 }
 
 
-#personImage.square {
+.entityImage.square {
 	width: 300px;
 	height: 300px;
 	margin-left: 0px;
@@ -79,6 +80,9 @@ body {
 	font-family: 'Oswald', sans-serif;
 	font-size: 64px;
 	line-height: 64px;
+
+	display: flex;
+	flex-flow: column;
 }
 
 #personHeader p {
@@ -625,5 +629,316 @@ textarea.creationInput {
 .participantSuggestion:hover {
 	cursor: pointer;
 	background-color: #640a0a;
+}
+
+.dataCardTable {
+	width: 100%;
+	display: flex;
+	flex-flow: column;
+	margin-left: 10px;
+}
+
+.dataCardTableRow {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	padding-right: 10px;
+	
+	justify-content: flex-start;
+	justify-items: flex-start;
+
+	margin-bottom: 5px;
+}
+
+.dataType {
+	flex: 210px 0 0;
+
+	padding-right: 15px;
+	vertical-align: top;
+	width: 20%;
+	opacity: 1;
+
+	transition: opacity 0.1s ease-in-out;
+}
+
+.dataType.hidden {
+	opacity: 0;
+}
+
+.dataInput {
+	flex: 100px 4 1;
+	margin-right: 15px;
+}
+
+.dataInput.fitWidth {
+	flex-grow: 0;
+	flex-shrink: 0;
+	width: fit-content;
+}
+
+.aliveBox {
+	width: fit-content;
+	display: flex;
+	align-items: center;
+	padding-right: 10px;
+}
+
+input {
+	color: white;
+	font-size: 32px;
+	font-family: 'Oswald', sans-serif;
+
+
+	background-color: #330b0b;
+
+	border: none;
+
+	border-radius: 5px;
+}
+
+#nameInput {
+	font-size: 64px;
+}
+
+.textInput {
+	padding-left: 4px;
+	padding-right: 4px;
+	width: 100%;
+	
+	-webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+	-moz-box-sizing: border-box;    /* Firefox, other Gecko */
+	box-sizing: border-box;         /* Opera/IE 8+ */
+}
+
+input.dateInput {
+	width: fit-content;
+}
+
+input.checkboxInput {
+	display: inline-block;
+	vertical-align: bottom;
+	width: 30px;
+	height: 30px;
+	accent-color: #6e1616;
+}
+
+.photoAndData {
+	display: flex;
+	align-items: flex-start;
+	min-width: 1100px;
+	opacity: 1;
+
+	transition: opacity 0.2s ease-in-out;
+	/* justify-items: start; */
+}
+
+
+.dataCard {
+	flex: 800px 1;
+
+	display: flex;
+	/* flex-flow: column; */
+	align-items: flex-start;
+	/* justify-content: flex-start; */
+	/* padding: 10px; */
+	/* margin: 5px; */
+	border-radius: 10px;
+}
+
+
+#endDate {
+	opacity: 1;
+	transition: opacity 0.1s ease-in-out;
+}
+
+#endDate.hidden {
+	opacity: 0;
+}
+
+#aliveBox {
+	width: 150px;
+}
+
+.shortDescription {
+	background-color: #330b0b;
+
+	color: white;
+	font-size: 28px;
+	font-family: 'Oswald', sans-serif;
+
+	border: none;
+	border-radius: 5px;
+	border-bottom-right-radius: 0px;
+	
+	min-height: 100px;
+
+	width: 100%;
+
+	resize: none;
+}
+
+.createPageButtonIcon {
+	width: 34px;
+	height: 34px;
+	opacity: 0.6;
+	margin: 5px;
+
+	transition: opacity 0.2s ease-in-out;
+}
+
+.createPageButton {
+	display: flex;
+	align-items: center;
+
+	align-self: flex-end;
+	color: #acacac;
+
+	padding: 7px;
+	border-radius: 3px;
+
+	transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.createPageButton:hover {
+	color: white;
+	cursor: pointer;
+}
+
+.createPageButton:hover .createPageButtonIcon {
+	opacity: 1;
+}
+
+.updatePageButtons {
+	display: flex;
+	justify-content: flex-end;
+}
+
+
+.imageBoxBorder {
+	border-top-left-radius: 15px;
+	border-bottom-right-radius: 15px;
+	border-top-right-radius: 5px;
+	border-bottom-left-radius: 5px;
+}
+
+.imageBox {
+	position: relative;
+	width: 200px;
+}
+
+.imageBox.square {
+	width: 300px;
+}
+
+
+#entityImagePreview {
+	width: 200px;
+	height: 300px;
+	margin-left: 0px;
+	margin-right: 0px;
+
+	object-fit: cover;
+
+	border: solid 1px;
+	border-color: white;
+
+	vertical-align: top;
+
+	background-color: #130d0ddd;
+}
+
+
+#uploadOverlay {
+	position: absolute;
+
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+
+	margin-left: 0;
+	margin-right: 0;
+
+	background-color: rgba(0, 0, 0, 0.5);
+	opacity: 0;
+
+	transition: opacity 0.2s ease-in-out;
+}
+
+.imageBox.square .imageBoxBorder, .imageBox.square #entityImagePreview, .imageBox.square #uploadOverlay {
+	width: 300px;
+}
+
+#uploadOverlayIcon {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	left: 0;
+	top: 0;
+
+	scale: 0.2;
+
+	transition: scale 0.2s ease-in-out;
+}
+
+.uploadOverlayText {
+	position: absolute;
+	text-align: center;
+
+	left: 0;
+	bottom: 20px;
+	width: 100%;
+	
+	font-size: 24px;
+}
+
+#uploadOverlay:hover {
+	opacity: 1;
+	cursor: pointer;
+}
+
+#uploadOverlay:hover #uploadOverlayIcon {
+	scale: 0.53;
+}
+
+.inlineButton {
+	display: inline;
+	width: 36px;
+	height: 36px;
+
+	margin-left: 5px;
+	
+	opacity: 0;
+	transition: opacity 0.2s ease-in-out,
+				scale 0.2s ease-in-out;
+
+	vertical-align: text-top;
+}
+
+.inlineButton.hidden {
+	visibility: hidden;
+}
+
+.inlineButton.beacon {
+	visibility: visible;
+	opacity: 1;
+
+	scale: 1.5;
+}
+
+ .inlineButton {
+	opacity: 0.2;
+}
+
+#entityHeader .inlineButton:hover, #entityHeader:hover .inlineButton:hover {
+	opacity: 1;
+	scale: 1.2;
+	cursor: pointer;
+}
+
+
+.entityTools {
+	display: flex;
+	align-items: center;
 }
 

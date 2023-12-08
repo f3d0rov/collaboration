@@ -346,6 +346,18 @@ void SearchManager::updateResourceData (int resourceId, std::string title, std::
 	conn.commit();
 }
 
+
+void SearchManager::removeResource (OwnedConnection &conn, int resourceId) {
+	std::string query = "DELETE FROM indexed_resources WHERE id=" + std::to_string (resourceId) + ";";
+	conn.exec0 (query);
+}
+
+void SearchManager::removeResource (int resourceId) {
+	auto conn = database.connect();
+	this->removeResource (conn, resourceId);
+	conn.commit();
+}
+
 std::set <std::string> SearchManager::getKeywords (std::string str) const {
 	std::set <std::string> keywords;
 	const std::string whitespaces = " \n\t\v";
