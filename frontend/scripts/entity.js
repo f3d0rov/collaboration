@@ -67,11 +67,11 @@ class EntityDataView {
 	}
 
 	editEntity () {
-		this.entity.update();
+		if (demandAuth()) this.entity.update();
 	}
 
 	reportEntity () {
-
+		if (!demandAuth()) return;
 	}
 }
 
