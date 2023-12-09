@@ -28,7 +28,8 @@
 #include "api/event_resources.hpp"
 #include "api/albums.hpp"
 
-#include "api/song_manager.hpp"
+// #include "api/song_manager.hpp"
+#include "api/report_manager.hpp"
 
 
 #define DEFAULT_PORT "8080"
@@ -317,11 +318,16 @@ int main (int argc, const char *argv[]) {
 	UpdateEntityEventResource updateEntityEventResource (ctx, "api/events/update");
 	DeleteEntityEventResource deleteEntityEventResource (ctx, "api/events/delete");
 	EventReportTypesResource eventReportTypesResource 	(ctx, "api/events/report_types");
-	ReportEntityEventResource reportEventResource 		(ctx, "api/events/report");
+	// ReportEntityEventResource reportEventResource 		(ctx, "api/events/report");
 
 	AlbumDataResource albumDataResource 				(ctx, "api/albums/get");
 	UpdateAlbumResource updateAlbumResource				(ctx, "api/albums/update");
 	RequestAlbumImageChangeResource albumImageUploader	(ctx, "api/album/askchangepic");
+
+	GetReportReasonsResource reportReasonsResource 		(ctx, "api/reports/reasons");
+	ReportResource reportResource						(ctx, "api/reports/report");
+	GetReportsResource getPendingReportsResource		(ctx, "api/reports/pending");
+	SatisfyReportResource SatisfyReportResource			(ctx, "api/reports/satisfy");
 
 	while (1) { // Ждем входящие подключения
 		occasionalTasks ();	
