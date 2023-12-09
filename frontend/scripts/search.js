@@ -1,4 +1,12 @@
 
+var prompt;
+var currentPage = 0;
+var pageLock = true;
+
+let searchApi = {
+	uri: "/api/search",
+	method: "POST"
+};
 
 
 function properCountStringForm (count) {
@@ -48,17 +56,21 @@ function cloneResult (result) {
 	clone.addEventListener ('click', (ev)=> {window.location.href = result.url;});
 	template.parentElement.insertBefore (clone, template);
 	clone.classList.remove ("template");
+	setTimeout (() => { clone.classList.add ("ondisplay"); }, 10);
 }
 
-function generateSearchResults (results) {
+async function appendSearchResults (results) {
 	for (let i of results) {
 		cloneResult (i);
+		await delay (50);
 	}
+	// Release page lock
+	pageLock = false;
 }
 
 async function displaySearchResults (ev) {
 	const params = new URLSearchParams (window.location.search);
-	let prompt = params.get ("q");
+	prompt = params.get ("q");
 	document.getElementById ('headerSearchBox').value = prompt;
 
 	document.getElementById ("createPageResult").addEventListener (
@@ -70,26 +82,16 @@ async function displaySearchResults (ev) {
 		}
 	);
 	
-	let resp = await fetch (
-		"/api/search",
-		{
-			"body": JSON.stringify ({ "prompt": prompt }),
-			"method": "POST"
-		}
-	);
-	let obj = await resp.json ();
-
+	let obj = await fetchApi (searchApi, {"prompt": prompt });
 	console.log (obj);
-	for (let i = 0; i < obj.results.length; i++) {
-		console.log (obj.results [i]);
-	}
 
 	document.getElementById ("searchTime").innerHTML = escapeHTML(obj.time);
 	document.getElementById ("resultsFound").innerHTML = countString (obj.total);
 	
 	if (obj.results.length != 0) {
-		generateSearchResults (obj.results);
+		appendSearchResults (obj.results);
 	}
+	pageLock = false;
 	document.getElementById ("searchAwait").classList.remove ("ondisplay");
 }
 
@@ -107,10 +109,34 @@ function displayBackgroundOnLoad () {
 	}
 }
 
+async function uploadMoreIfAtEnd () {
+	// Return if user didn't scroll to the bottom
+	if (Math.abs(window.scrollHeight - window.scrollTop - window.clientHeight) > 5) return;
+
+	// Don't do anything if page is locked. Lock it if it's not.
+	if (pageLock) return;
+	pageLock = true;
+	
+	currentPage += 1;
+	let resp = await fetchApi (searchApi, {"prompt": prompt, "page": currentPage});
+	console.log (resp);
+	if (resp.results.length == 0) return; // Don't release `pageLock` if no more search results available
+	// Append received search results and release `pageLock`
+	appendSearchResults (resp.results);
+
+}
+
 window.addEventListener (
 	'load',
 	() => {
 		displayBackgroundOnLoad ();
 		displaySearchResults ();
+	}
+);
+
+window.addEventListener (
+	'scroll',
+	() => {
+		uploadMoreIfAtEnd ();
 	}
 );

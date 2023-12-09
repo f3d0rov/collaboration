@@ -33,8 +33,13 @@
 	font-size: 24px;
 }
 
+.searchResults {
+	position: relative;
+}
+
 .searchResult {
 	display: flex;
+	position: relative;
 
 	width: 90%;
 	padding: 10px;
@@ -49,7 +54,19 @@
 
 	font-size: 26px;
 
-	transition: background-color 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+	transition: background-color 0.1s ease-in-out,
+				box-shadow 0.1s ease-in-out,
+				opacity 0.2s ease-in-out,
+				right 0.1s ease-in-out;
+
+	opacity: 0;
+
+	right: 100%;
+}
+
+.searchResult.ondisplay {
+	opacity: 1;
+	right: 0%;
 }
 
 .searchResult.major {

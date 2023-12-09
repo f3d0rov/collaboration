@@ -17,7 +17,7 @@ std::unique_ptr<ApiResponse> SearchResource::processRequest (RequestData &rd, nl
 
 	auto start = std::chrono::high_resolution_clock::now();
 	auto &mgr = SearchManager::get();
-	auto result = mgr.search (prompt, page, 20);
+	auto result = mgr.search (prompt, 20 * page, 20);
 	auto timeToExec = usElapsedFrom_hiRes (start);
 	return std::make_unique <ApiResponse> (nlohmann::json{{"results", result.slice}, {"time", prettyMicroseconds (timeToExec)}, {"total", result.total}}, 200);
 }
@@ -39,7 +39,7 @@ ApiResponsePtr EntitySearchResource::processRequest (RequestData &rd, nlohmann::
 
 	auto start = std::chrono::high_resolution_clock::now();
 	auto &mgr = SearchManager::get();
-	auto result = mgr.search (prompt, {"person", "band"}, page, 10);
+	auto result = mgr.search (prompt, {"person", "band"}, 10 * page, 10);
 	auto timeToExec = usElapsedFrom_hiRes (start);
 	return makeApiResponse (nlohmann::json{{"results", result.slice}, {"time", prettyMicroseconds (timeToExec)}, {"total", result.total}}, 200);
 }
@@ -61,7 +61,7 @@ ApiResponsePtr TypedSearchResource::processRequest (RequestData &rd, nlohmann::j
 
 	auto start = std::chrono::high_resolution_clock::now();
 	auto &mgr = SearchManager::get();
-	auto result = mgr.search (prompt, {this->_type}, page, 10);
+	auto result = mgr.search (prompt, {this->_type}, 10 * page, 10);
 	auto timeToExec = usElapsedFrom_hiRes (start);
 	return makeApiResponse (nlohmann::json{{"results", result.slice}, {"time", prettyMicroseconds (timeToExec)}, {"total", result.total}}, 200);
 }
