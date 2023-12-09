@@ -102,6 +102,9 @@ void ReportManager::report (const ReportManager::ReportTicket &rt, int reportedB
 	// Connect to the database and execute the query
 	auto conn = database.connect();
 	conn.exec0 (query);
+
+	// All good, commit transaction
+	conn.commit();
 }
 
 

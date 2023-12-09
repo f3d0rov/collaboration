@@ -52,6 +52,7 @@ std::vector <nlohmann::json> AlbumManager::getSongsForAlbum (int albumId) {
 
 		if (row.at ("release").is_null() == false) {
 			int event = row.at ("release").as <int>();
+			song ["event_id"] = event;
 			std::string getParticipants = 
 				"SELECT name, id, awaits_creation FROM participation INNER JOIN entities ON participation.entity_id=entities.id "
 				"WHERE event_id=" + std::to_string (event) + ";";
