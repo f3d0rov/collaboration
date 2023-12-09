@@ -1,4 +1,5 @@
 drop table if exists event_report_reasons cascade;
+drop table if exists report_reasons cascade;
 drop table if exists single_entity_related_events cascade;
 drop table if exists concerts cascade;
 drop table if exists songs cascade;
@@ -7,6 +8,7 @@ drop table if exists bands cascade;
 drop table if exists participation cascade;
 drop table if exists personalities cascade;
 drop table if exists entity_reports cascade;
+drop table if exists reports cascade;
 drop table if exists resource_upload_links cascade;
 drop table if exists entity_photo_upload_links cascade;
 drop table if exists uploaded_resources cascade;

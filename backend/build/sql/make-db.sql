@@ -84,17 +84,22 @@ create table user_event_contributions (
 	event_id int references events(id) ON DELETE CASCADE
 );
 
-CREATE TABLE event_report_reasons (
+CREATE TABLE report_reasons (
 	id SERIAL PRIMARY KEY,
+	reportable_type VARCHAR (64),
 	name VARCHAR (128) NOT NULL
 );
 
-create table event_reports (
-	id serial primary key not null,
-	event_id int references events(id) ON DELETE CASCADE,
-	reported_by int references users(uid) ON DELETE CASCADE,
-	reason_id INT REFERENCES event_report_reasons(id) ON DELETE CASCADE NOT NULL,
-	UNIQUE (event_id, reported_by, reason_id)
+CREATE TABLE reports (
+	id SERIAL PRIMARY KEY NOT NULL,
+	reported_id INT NOT NULL,
+	pending BOOL DEFAULT TRUE,
+
+	reported_by INT REFERENCES users(uid) ON DELETE CASCADE,
+	reason_id INT REFERENCES report_reasons(id) ON DELETE CASCADE NOT NULL,
+	reported_on DATE,
+
+	CONSTRAINT single_unique_report UNIQUE (reported_id, reported_by, reason_id)
 );
 
 
@@ -124,14 +129,6 @@ CREATE TABLE entity_photo_upload_links (
 	id VARCHAR (128) PRIMARY KEY NOT NULL,
 	entity_id INT REFERENCES entities (id),
 	valid_until timestamp not null
-);
-
-CREATE TABLE entity_reports (
-	id SERIAL PRIMARY KEY NOT NULL,
-	entity_id INT REFERENCES entities(id) ON DELETE CASCADE,
-	reported_by INT REFERENCES users(uid) ON DELETE CASCADE,
-	reason_id INT NOT NULL,
-	UNIQUE (entity_id, reported_by, reason_id)
 );
 
 create table participation (
@@ -178,8 +175,17 @@ CREATE TABLE single_entity_related_events (
 	CHECK (event_date <= CURRENT_DATE)
 );
 
-INSERT INTO event_report_reasons (name) 
+INSERT INTO report_reasons (reportable_type, name) 
 VALUES 
-	('Недостоверные данные'),
-	('Спам');
+	('entity', 'Недостоверные данные'),
+	('entity', 'Некорректное изображение'),
+	('entity', 'Спам'),
+
+	('event', 'Недостоверные данные'),
+	('event', 'Спам'),
+
+	('album', 'Недостоверные данные'),
+	('album', 'Некорректное изображение'),
+	('album', 'Спам');
+
 
