@@ -471,8 +471,8 @@ class EventDisplayObject {
 	}
 
 	isOrderedBefore (event) {
-		if (this.isEarlierThanEvent (event) && event.isEarlierThanEvent (this)) {
-			return this.event.order_index < event.order_index;
+		if (this.isEarlierThanEvent (event) == event.isEarlierThanEvent (this)) {
+			return this.event.sort_index < event.event.sort_index;
 		}
 		return this.isEarlierThanEvent (event);
 	}
