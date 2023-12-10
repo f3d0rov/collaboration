@@ -188,4 +188,14 @@ VALUES
 	('album', 'Некорректное изображение'),
 	('album', 'Спам');
 
-
+CREATE OR REPLACE FUNCTION trimStringToLengthLimit (str TEXT, len INT) RETURNS TEXT
+AS $$
+BEGIN
+	IF LENGTH (str) > len
+	THEN
+		RETURN LEFT (str, len - 3) || '...';
+	ELSE
+		RETURN str;
+	END IF;
+END;
+$$ LANGUAGE PLPGSQL;

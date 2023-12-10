@@ -311,9 +311,10 @@ void SearchManager::clearOldCache () {
 }
 
 int SearchManager::indexNewResource (int refId, std::string url, std::string title, std::string descr, std::string type) {
-	if (descr.length() > MAX_SEARCH_DESCRIPTION_LENGTH) {
-		descr = descr.substr (0, MAX_SEARCH_DESCRIPTION_LENGTH - 3) + "...";
-	}
+	// This breaks UTF8
+	// if (descr.length() > MAX_SEARCH_DESCRIPTION_LENGTH) {
+	// 	descr = descr.substr (0, MAX_SEARCH_DESCRIPTION_LENGTH - 3) + "...";
+	// }
 
 	auto conn = database.connect();
 	
@@ -323,7 +324,7 @@ int SearchManager::indexNewResource (int refId, std::string url, std::string tit
 		+ std::to_string (refId) + ","
 		+ conn.quoteDontEscapeHtml (url) + ","
 		+ conn.quote (title) + ","
-		+ conn.quote (descr) + ","
+		+ "trimStringToLengthLimit(" + conn.quote (descr) + ", 256),"
 		+ conn.quoteDontEscapeHtml (type)
 		+ ") RETURNING id;";
 	auto row = conn.exec1 (insertQuery);
@@ -340,7 +341,7 @@ void SearchManager::updateResourceData (int resourceId, std::string title, std::
 	std::string updateQuery =
 		"UPDATE indexed_resources "
 		"SET title=" + conn.quote (title) + ","
-		"description=" + conn.quote (desription) + ""
+		"description=trimStringToLengthLimit(" + conn.quote (desription) + ", 256)"
 		"WHERE id=" + std::to_string (resourceId) + ";";
 	conn.exec (updateQuery);
 	conn.commit();
