@@ -93,11 +93,13 @@ CREATE TABLE report_reasons (
 CREATE TABLE reports (
 	id SERIAL PRIMARY KEY NOT NULL,
 	reported_id INT NOT NULL,
-	pending BOOL DEFAULT TRUE,
 
 	reported_by INT REFERENCES users(uid) ON DELETE CASCADE,
 	reason_id INT REFERENCES report_reasons(id) ON DELETE CASCADE NOT NULL,
 	reported_on DATE,
+
+	pending BOOL DEFAULT TRUE,
+	closed_by INT REFERENCES users(uid) ON DELETE SET NULL DEFAULT NULL,
 
 	CONSTRAINT single_unique_report UNIQUE (reported_id, reported_by, reason_id)
 );

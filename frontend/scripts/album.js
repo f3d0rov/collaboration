@@ -575,7 +575,7 @@ class SongView {
 	}
 
 	reportThis () {
-		// TODO
+		reporter.report (this.songData.event_id, 'event');
 	}
 	
 	generateAuthor (pe) {
@@ -1145,7 +1145,7 @@ class AlbumView {
 	}
 
 	reportAlbum () {
-		if (!demandAuth()) return;
+		reporter.report (this.albumData.id, 'album');
 	}
 	
 
