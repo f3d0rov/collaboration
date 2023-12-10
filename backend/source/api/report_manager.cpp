@@ -159,14 +159,14 @@ void ReportManager::reportSatisfied (int reportId, int byUser) {
 		"UPDATE reports "
 		"SET pending=FALSE,"
 			"closed_by="s + std::to_string (byUser) + " "
-		"WHERE report_id=" + std::to_string (reportId) + ";";
+		"WHERE report_id=" + std::to_string (reportId) + " AND pending = TRUE;";
 
 	// Connect to the database, start a transaction. Execute the query
 	auto conn = database.connect();
 	int affectedRows = conn.exec0 (query).affected_rows();
 
 	// If `affectedRows` is 0, then the provided reportId is invalid
-	if (affectedRows == 0) throw UserMistakeException ("Репорта с заданным id не существует", 404, "report_not_found");
+	if (affectedRows == 0) throw UserMistakeException ("Жалобы с заданным id не существует / она уже закрыта", 404, "report_not_found");
 
 	// More than one rows affected means that query logic is false and result should not be commited
 	if (affectedRows > 1) throw std::logic_error ("ReportManager::reportSatisfied: affectedRows > 1");
@@ -174,7 +174,6 @@ void ReportManager::reportSatisfied (int reportId, int byUser) {
 	// 1 row affected: everything's OK, commit changes.
 	conn.commit();
 }
-
 
 
 
