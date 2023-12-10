@@ -333,10 +333,6 @@ int SearchManager::indexNewResource (int refId, std::string url, std::string tit
 }
 
 void SearchManager::updateResourceData (int resourceId, std::string title, std::string desription) {
-	if (desription.length() > MAX_SEARCH_DESCRIPTION_LENGTH) {
-		desription = desription.substr (0, MAX_SEARCH_DESCRIPTION_LENGTH - 3) + "...";
-	}
-
 	auto conn = database.connect();
 	std::string updateQuery =
 		"UPDATE indexed_resources "

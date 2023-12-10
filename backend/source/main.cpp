@@ -317,7 +317,7 @@ int main (int argc, const char *argv[]) {
 	GetEntityEventsResource getEntityEventsResource		(ctx, "api/events/getfor");
 	UpdateEntityEventResource updateEntityEventResource (ctx, "api/events/update");
 	DeleteEntityEventResource deleteEntityEventResource (ctx, "api/events/delete");
-	EventReportTypesResource eventReportTypesResource 	(ctx, "api/events/report_types");
+	// EventReportTypesResource eventReportTypesResource 	(ctx, "api/events/report_types");
 	// ReportEntityEventResource reportEventResource 		(ctx, "api/events/report");
 
 	AlbumDataResource albumDataResource 				(ctx, "api/albums/get");
