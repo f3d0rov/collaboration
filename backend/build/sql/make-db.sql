@@ -140,7 +140,7 @@ create table participation (
 );
 
 CREATE TABLE albums (
-	id INT REFERENCES events (id) PRIMARY KEY,
+	id INT REFERENCES events (id) PRIMARY KEY ON DELETE CASCADE,
 	title VARCHAR (256) NOT NULL,
 	author INT REFERENCES entities (id) ON DELETE CASCADE,
 	release_date DATE,
