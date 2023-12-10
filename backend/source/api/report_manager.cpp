@@ -102,6 +102,9 @@ void ReportManager::report (const ReportManager::ReportTicket &rt, int reportedB
 	// Connect to the database and execute the query
 	auto conn = database.connect();
 	conn.exec0 (query);
+
+	// All good, commit transaction
+	conn.commit();
 }
 
 
@@ -143,6 +146,38 @@ std::vector <ReportManager::ReportInfo> ReportManager::getPendingReports () {
 }
 
 
+void ReportManager::reportSatisfied (int reportId, int byUser) {
+	// Get user manager and check user's access level
+	auto &userMgr = UserManager::get();
+	auto userData = userMgr.getUserDataById (byUser);
+
+	// Return if user is not authorized to satisfy reports 
+	if (userData.hasAccessLevel (1) == false) throw UserMistakeException ("Пользователь не уполномочен", 403, "forbidden");
+
+	// Form a query to close the report
+	const std::string query = 
+		"UPDATE reports "
+		"SET pending=FALSE,"
+			"closed_by="s + std::to_string (byUser) + " "
+		"WHERE report_id=" + std::to_string (reportId) + ";";
+
+	// Connect to the database, start a transaction. Execute the query
+	auto conn = database.connect();
+	int affectedRows = conn.exec0 (query).affected_rows();
+
+	// If `affectedRows` is 0, then the provided reportId is invalid
+	if (affectedRows == 0) throw UserMistakeException ("Репорта с заданным id не существует", 404, "report_not_found");
+
+	// More than one rows affected means that query logic is false and result should not be commited
+	if (affectedRows > 1) throw std::logic_error ("ReportManager::reportSatisfied: affectedRows > 1");
+
+	// 1 row affected: everything's OK, commit changes.
+	conn.commit();
+}
+
+
+
+
 
 void to_json (nlohmann::json &j, const ReportManager::ReportReason &rt) {
 	j ["reportable_type"] = rt.reportableType;
@@ -163,4 +198,105 @@ void to_json (nlohmann::json &j, const ReportManager::ReportInfo &rt) {
 	j ["report_id"] = rt.reportId;
 	j ["reported_on"] = rt.reportedOn;
 	j ["pending"] = rt.pending;
+}
+
+
+
+
+GetReportReasonsResource::GetReportReasonsResource (mg_context *ctx, std::string uri):
+ApiResource (ctx, uri) {
+
+}
+
+ApiResponsePtr GetReportReasonsResource::processRequest (RequestData &rd, nlohmann::json body) {
+	assertMethod (rd, "GET");
+
+	// Access the report manager and respond with the report types
+	auto &mgr = ReportManager::get();
+	return makeApiResponse (nlohmann::json {{"reasons", mgr.getReportTypes()}}, 200);
+}
+
+
+ReportResource::ReportResource (mg_context *ctx, std::string uri):
+ApiResource (ctx, uri) {
+
+}
+
+ApiResponsePtr ReportResource::processRequest (RequestData &rd, nlohmann::json body) {
+	assertMethod (rd, "POST");
+
+	// Access the user manager and check user's session data
+	auto &userMgr = UserManager::get();
+	auto user = userMgr.getUserDataBySessionId (rd.getCookie (SESSION_ID));
+
+	// Respond 401 if user is not authorized
+	if (user.valid() == false) makeApiResponse (nlohmann::json{{"status", "unauthorized"}}, 401);
+
+	// Access the report manager and file a report ticket
+	auto &reportMgr = ReportManager::get();
+	auto ticket = getParameter <ReportManager::ReportTicket> ("ticket", body);
+	reportMgr.report (ticket, user.id());
+
+	// Everything's OK, return 200
+	return makeApiResponse (nlohmann::json {{"status", "success"}}, 202);
+}
+
+
+GetReportsResource::GetReportsResource (mg_context *ctx, std::string uri):
+ApiResource (ctx, uri) {
+
+}
+
+ApiResponsePtr GetReportsResource::processRequest (RequestData &rd, nlohmann::json body) {
+	assertMethod (rd, "GET");
+
+	// Access the user manager and check user's permissions
+	auto &userMgr = UserManager::get();
+	auto user = userMgr.getUserDataBySessionId (rd.getCookie (SESSION_ID));
+	
+	// Respond 401 if user is unauthorized
+	if (user.valid() == false)
+		return makeApiResponse (nlohmann::json {{"status", "unauthorized"}}, 401);
+
+	// Respond 403 if user doesn't have the permission to view this resource
+	if (user.accessLevel() < 1)
+		return makeApiResponse (nlohmann::json {{"status", "forbidden"}}, 403);
+
+	// Access the report manager and respond with the pending reports
+	auto &reportMgr = ReportManager::get();
+	return makeApiResponse (nlohmann::json {{"reports", reportMgr.getPendingReports()}}, 200);
+}
+
+
+
+
+SatisfyReportResource::SatisfyReportResource (mg_context *ctx, std::string uri):
+ApiResource (ctx, uri) {
+
+}
+
+ApiResponsePtr SatisfyReportResource::processRequest (RequestData &rd, nlohmann::json body) {
+	assertMethod (rd, "POST");
+
+	// Access the user manager and check user's permissions
+	auto &userMgr = UserManager::get();
+	auto user = userMgr.getUserDataBySessionId (rd.getCookie (SESSION_ID));
+	
+	// Respond 401 if user is unauthorized
+	if (user.valid() == false)
+		return makeApiResponse (nlohmann::json {{"status", "unauthorized"}}, 401);
+
+	// Respond 403 if user doesn't have the permission to view this resource
+	if (user.accessLevel() < 1)
+		return makeApiResponse (nlohmann::json {{"status", "forbidden"}}, 403);
+
+	// Get the id of the report that was satisfied
+	int reportId = getParameter <int> ("report_id", body);
+
+	// Access the report manager and set the report's status
+	auto &reportMgr = ReportManager::get();
+	reportMgr.reportSatisfied (reportId, user.id());
+
+	// Everything's ok, respond 200
+	return makeApiResponse (nlohmann::json{{"status", "success"}}, 200);
 }

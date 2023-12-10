@@ -71,7 +71,7 @@ class EntityDataView {
 	}
 
 	reportEntity () {
-		if (!demandAuth()) return;
+		reporter.report (this.entity.entityData.entity_id, 'entity');
 	}
 }
 
@@ -292,122 +292,6 @@ class EntityEditor {
 	}
 };
 
-class EventReporter {
-	constructor (eventsView) {
-		this.getReportTypesEndpoint = {
-			"uri": "/api/events/report_types",
-			"method": "GET"
-		};
-		this.reportEventEndpoint = {
-			"uri": "api/events/report",
-			"method": "POST"
-		};
-	}
-
-	async initialize () {
-		this.veil = document.getElementById ("reportWindowVeil");
-		this.window = document.getElementById ("reportWindow");
-		this.cancelButton = document.getElementById ('cancelReport');
-		this.submitButton = document.getElementById ('sendReport');
-		this.reportReasonTemplate = document.getElementById ("reportTypeOptionTemplate");
-
-		this.reportReasons = await fetchApi (this.getReportTypesEndpoint);
-		this.setupElements ();
-
-		this.selectedReason = null;
-		this.eventId = null;
-	}
-
-	setupElements () {
-		for (let i of this.reportReasons) {
-			let clone = this.reportReasonTemplate.cloneNode (true);
-			clone.id = "";
-			clone.classList.remove ('template');
-			clone.innerHTML = escapeHTML(i.name);
-			this.reportReasonTemplate.parentElement.insertBefore (clone, this.reportReasonTemplate);
-			clone.addEventListener ('click', (ev) => { this.selectReason (ev, i.id); });
-		}
-
-		this.submitButton.addEventListener ('click', (ev) => { this.submit(); });
-		this.cancelButton.addEventListener ('click', () => { this.hideWindow(); });
-		this.veil.addEventListener ('click', () => { this.hideWindow(); })
-
-		window.addEventListener ('resize', () => { this.resize(); });
-	}
-
-	enableSubmitButton () {
-		this.submitButton.classList.remove ("inactive");
-	}
-
-	disableSubmitButton () {
-		this.submitButton.classList.add ('inactive');
-	}
-
-	selectReason (ev, id) {
-		let opponents = document.querySelectorAll ('.selected.reportTypeOption');
-
-		for (let i of opponents) {
-			i.classList.remove ('selected');
-		}
-
-		ev.target.classList.add ('selected');
-		this.selectedReason = id;
-		this.enableSubmitButton ();
-	}
-
-	resize() {
-		let wbcr = this.window.getBoundingClientRect();
-		let pbcr = {
-			width: window.innerWidth,
-			height: window.innerHeight
-		};
-		this.window.style.left = ((pbcr.width - wbcr.width) / 2) + "px";
-		this.window.style.top = ((pbcr.height - wbcr.height) / 2) + "px";
-	}
-	
-	showWindow () {
-		this.veil.classList.add ("ondisplay");
-		this.window.classList.add ("ondisplay");
-		this.veil.classList.remove ("hiddenRep");
-		this.window.classList.remove ("hiddenRep");
-		this.resize();
-	}
-
-	hideWindow () {
-		this.veil.classList.add ("hiddenRep");
-		this.window.classList.add ("hiddenRep");
-		this.eventId = null;
-
-		setTimeout (() => {
-			this.veil.classList.remove ("ondisplay");
-			this.window.classList.remove ("ondisplay");
-		}, 200);
-		this.reset();
-	}
-
-	reset () {
-		this.selectedReason = null;
-		let opponents = document.querySelectorAll ('.selected.reportTypeOption');
-		for (let i of opponents) {
-			i.classList.remove ('selected');
-		}
-		this.disableSubmitButton ();
-	}
-
-	reportEvent (eventId) {
-		this.eventId = eventId;
-		this.showWindow ();
-	}
-
-	async submit () {
-		if (this.selectedReason === null) return;
-		let res = fetchApi (this.reportEventEndpoint, {"event_id": parseInt(this.eventId), "reason_id": parseInt(this.selectedReason)});
-		res.then ( () => { message ("Жалоба отправлена!"); });
-		this.hideWindow ();
-
-	}
-}
-
 
 class EventDisplayObject {
 	constructor (event, eventsView) {
@@ -503,8 +387,7 @@ class EventDisplayObject {
 	}
 
 	reportEntry () {
-		if (!demandAuth()) return;
-		this.eventsView.eventReporter.reportEvent (this.event.id);
+		reporter.report (this.event.id, 'event');
 	}
 
 	editEntry () {
@@ -619,8 +502,6 @@ class EventsView {
 		this.firstEvent = null;
 		this.events = [];
 		this.connectors = [];
-
-		this.eventReporter = new EventReporter;
 	}
 
 	insertEvent (event) {
@@ -753,8 +634,6 @@ class EventsView {
 		for (let i of events) {
 			this.constructEvent (i);
 		}
-
-		this.eventReporter.initialize();
 	}
 }
 

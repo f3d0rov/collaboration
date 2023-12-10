@@ -7,6 +7,8 @@
 #include "../database.hpp"
 #include "../api_resource.hpp"
 
+#include "user_manager.hpp"
+
 
 class ReportManager {
 	public:
@@ -51,8 +53,37 @@ class ReportManager {
 		std::vector <ReportManager::ReportReason> getReportTypesFor (const std::string &reportableType);
 		void report (const ReportManager::ReportTicket &rt, int reportedBy);
 		std::vector <ReportManager::ReportInfo> getPendingReports ();
+		void reportSatisfied (int reportId, int byUser);
 };
 
 void to_json (nlohmann::json &j, const ReportManager::ReportReason &rt);
 void from_json (const nlohmann::json &j, ReportManager::ReportTicket &rt);
 void to_json (nlohmann::json &j, const ReportManager::ReportInfo &rt);
+
+
+class GetReportReasonsResource: public ApiResource {
+	public:
+		GetReportReasonsResource (mg_context *ctx, std::string uri);
+		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
+};
+
+
+class ReportResource: public ApiResource {
+	public:
+		ReportResource (mg_context *ctx, std::string uri);
+		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
+};
+
+class GetReportsResource: public ApiResource {
+	public:
+		GetReportsResource (mg_context *ctx, std::string uri);
+		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
+};
+
+
+class SatisfyReportResource: public ApiResource {
+	public:
+		SatisfyReportResource (mg_context *ctx, std::string uri);
+		ApiResponsePtr processRequest (RequestData &rd, nlohmann::json body) override;
+};
+
