@@ -693,6 +693,10 @@ class Entity {
 			window.location.replace ('/');
 		}
 
+		if (this.entityData.created === false) {
+			window.location.replace (getUrlForCreation (this.entityData.name));
+		}
+
 		this.eventTypes = await this.getEventTypes ();
 		
 		console.log (this.entityData);

@@ -39,6 +39,7 @@ class EntityCreator {
 		let params = new URLSearchParams (window.location.search);
 		if (params.has ("q")) {
 			this.nameInputElem.value = params.get ("q");
+			document.getElementById ('headerSearchBox').value = this.nameInputElem.value;
 		}
 
 		this.startDatePrompt = document.getElementById ("startDatePrompt");
