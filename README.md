@@ -1,4 +1,4 @@
-![COLLABORATION.](https://github.com/f3d0rov/collaboration/blob/f3d0rov-patch-1/logo.png?raw=true)
+![COLLABORATION.](https://github.com/f3d0rov/collaboration/blob/main/logo.png?raw=true)
 # COLLABORATION.
 Веб-сервис базы данных участия разных музыкантов в написании альбомов, участии в концертах и прочем. Разрабатывался для запуска на платформах под управлением Linux (Скорее всего, возможен запуск и на Windows - исходный код сервера не использует ничего специфичного для Linux). В настоящее время доступен по адресу [collaboration.pw](https://www.collaboration.pw) (Браузер будет жаловаться на угрозу безопасности из-за самоподписанного сертификата - можно спокойно принять риск и продолжить).
 
