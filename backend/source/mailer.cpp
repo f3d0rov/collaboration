@@ -70,7 +70,7 @@ void Mailer::sendHtmlLetter (std::string destination, std::string subject, std::
 	std::string message = this->openReadSubstitute (this->_emailTemplatesFolderPath + path, replace);
 	jed_utils::cpp::HTMLMessage msg (
 		this->_myAddress.value(),
-		{ jed_utils::MessageAddress (destination.c_str()) },
+		{ jed_utils::cpp::MessageAddress (destination.c_str()) },
 		subject.c_str(),
 		message.c_str()
 	);
