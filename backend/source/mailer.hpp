@@ -5,9 +5,10 @@
 #include <mutex>
 #include <optional>
 
+#include <smtpclient/cpp/htmlmessage.hpp>
+#include <smtpclient/cpp/messageaddress.hpp>
 #include <smtpclient/cpp/opportunisticsecuresmtpclient.hpp>
-#include <smtpclient/htmlmessage.h>
-#include <smtpclient/plaintextmessage.h>
+#include <smtpclient/cpp/plaintextmessage.hpp>
 #include "nlohmann-json/json.hpp"
 
 #include "utils.hpp"
