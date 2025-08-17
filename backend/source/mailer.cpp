@@ -13,7 +13,7 @@ void Mailer::init (std::string jsonConfigPath) {
 
 	jed_utils::cpp::PlaintextMessage testMsg (
 		this->_myAddress.value(),
-		this->_myAddress.value(),
+		{ this->_myAddress.value() },
 		"Startup test message",
 		"Запущен сервер COLLABORATION."
 	);
