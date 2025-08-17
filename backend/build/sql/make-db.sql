@@ -140,7 +140,7 @@ create table participation (
 );
 
 CREATE TABLE albums (
-	id INT REFERENCES events (id) ON DELETE CASCADE,
+	id INT REFERENCES events (id) PRIMARY KEY ON DELETE CASCADE,
 	title VARCHAR (256) NOT NULL,
 	author INT REFERENCES entities (id) ON DELETE CASCADE,
 	release_date DATE,
@@ -171,7 +171,7 @@ create table concerts (
 );
 
 CREATE TABLE single_entity_related_events (
-	id INT PRIMARY KEY REFERENCES events ON DELETE CASCADE,
+	id INT PRIMARY KEY REFERENCES events,
 	entity_id INT REFERENCES entities NOT NULL,
 	event_date DATE NOT NULL,
 	CHECK (event_date <= CURRENT_DATE)
