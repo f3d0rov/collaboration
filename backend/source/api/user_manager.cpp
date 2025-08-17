@@ -131,9 +131,9 @@ bool UserManager::checkUsernameFormat (std::string username) {
 }
 
 bool UserManager::checkEmailFormat (std::string email) {
-	// bool jed_utils::cpp::MessageAddress::isEmailAddressValid is private and non-static, so we're using the second best thing
+	// bool jed_utils::MessageAddress::isEmailAddressValid is private and non-static, so we're using the second best thing
 	try {
-		jed_utils::cpp::MessageAddress addr (email.c_str());
+		jed_utils::MessageAddress addr (email.c_str());
 		// Check happens here:
 		// https://github.com/jeremydumais/CPP-SMTPClient-library/blob/master/src/messageaddress.cpp, line #18
 		return true;
