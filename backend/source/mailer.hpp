@@ -21,7 +21,7 @@ typedef const std::unordered_map <std::string, std::string>& EmailSubstitutions;
 class Mailer {
 	private:
 		std::optional <jed_utils::cpp::OpportunisticSecureSMTPClient> _client;
-		std::optional <jed_utils::MessageAddress> _myAddress;
+		std::optional <jed_utils::cpp::MessageAddress> _myAddress;
 		std::mutex _clientMutex;
 
 		int _port;
