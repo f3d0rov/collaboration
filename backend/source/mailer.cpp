@@ -11,7 +11,7 @@ void Mailer::init (std::string jsonConfigPath) {
 	this->_client->setCredentials (jed_utils::cpp::Credential (this->_username, this->_password));
 	this->_myAddress.emplace (this->_username.c_str(), this->_displayName.c_str());
 
-	jed_utils::cpp::PlaintextMessage testMsg (
+	jed_utils::PlaintextMessage testMsg (
 		this->_myAddress.value(),
 		this->_myAddress.value(),
 		"Startup test message",
