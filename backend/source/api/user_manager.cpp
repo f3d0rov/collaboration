@@ -1,7 +1,7 @@
 
 #include "user_manager.hpp"
 
-#include <smtpclient/plaintextmessage.h>
+#include <smtpclient/cpp/messageaddress.hpp>
 
 
 UserData::UserData (bool):
