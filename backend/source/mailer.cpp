@@ -11,7 +11,7 @@ void Mailer::init (std::string jsonConfigPath) {
 	this->_client->setCredentials (jed_utils::cpp::Credential (this->_username, this->_password));
 	this->_myAddress.emplace (this->_username.c_str(), this->_displayName.c_str());
 
-	jed_utils::PlaintextMessage testMsg (
+	jed_utils::cpp::PlaintextMessage testMsg (
 		this->_myAddress.value(),
 		this->_myAddress.value(),
 		"Startup test message",
@@ -68,9 +68,9 @@ void Mailer::sendHtmlLetter (std::string destination, std::string subject, std::
 	if (!this->_started) return;
 	std::unique_lock lock (this->_clientMutex);
 	std::string message = this->openReadSubstitute (this->_emailTemplatesFolderPath + path, replace);
-	jed_utils::HTMLMessage msg (
+	jed_utils::cpp::HTMLMessage msg (
 		this->_myAddress.value(),
-		{ jed_utils::MessageAddress (destination.c_str()) },
+		{ jed_utils::cpp::MessageAddress (destination.c_str()) },
 		subject.c_str(),
 		message.c_str()
 	);
