@@ -1,6 +1,8 @@
 
 #include "user_manager.hpp"
 
+#include <smtpclient/plaintextmessage.h>
+
 
 UserData::UserData (bool):
 _valid (false) {

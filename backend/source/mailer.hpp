@@ -6,6 +6,7 @@
 #include <optional>
 
 #include <smtpclient/cpp/opportunisticsecuresmtpclient.hpp>
+#include <smtpclient/plaintextmessage.h>
 #include "nlohmann-json/json.hpp"
 
 #include "utils.hpp"
