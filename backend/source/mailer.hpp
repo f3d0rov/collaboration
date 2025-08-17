@@ -5,7 +5,7 @@
 #include <mutex>
 #include <optional>
 
-#include <smtpclient/cpp/opportunisticsecuresmtpclient.hpp>
+#include <smtpclient/opportunisticsecuresmtpclient.hpp>
 #include "nlohmann-json/json.hpp"
 
 #include "utils.hpp"
